@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.cornishman2.detekta",
+        "sha256_cert_fingerprints": ["2D:BB:F1:BD:44:5B:65:12:06:E0:86:4A:FB:19:A5:78:1B:0B:F8:E6:51:7B:1B:8D:58:9A:C1:E9:47:DC:E9:95"]
+      }
+    }]
