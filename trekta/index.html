@@ -137,13 +137,13 @@
     <input type="file" id="find-card-photo-input" accept="image/*;capture=camera" class="hidden" onchange="handleFavouriteCardPhotoSelected(event)">
     <input type="file" id="place-card-photo-input" accept="image/*;capture=camera" class="hidden" onchange="handlePlaceCardPhotoSelected(event)">
     <input type="file" id="map-photo-input" accept="image/*;capture=camera" class="hidden" onchange="handleMapPhotoSelected(event)">
-    <input type="file" id="quick-photo-place-input" accept="image/*;capture=camera" class="hidden" onchange="handleQuickPhotoPlaceSelected(event)">
+    <input type="file" id="quick-photo-place-input" accept="image/*" capture="environment" class="hidden" onchange="handleQuickPhotoPlaceSelected(event)">
 
 
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.63
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.64
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -4197,16 +4197,17 @@ function getRouteTypeColour(type) {
 }
 
 function onStarRatingClick(el, groupName) {
-    const val = el.value;
+    const val = parseInt(el.value);
     const form = el.closest('form');
     if (!form) return;
     form.querySelectorAll('input[name="' + groupName + '"]').forEach(function(r) {
         const span = r.nextElementSibling;
         if (!span) return;
-        if (r.value === val) {
-            span.style.borderColor = '#16a34a';
-            span.style.color = '#16a34a';
-            span.style.backgroundColor = '#f0fdf4';
+        // Highlight all stars up to and including selected value in amber
+        if (parseInt(r.value) <= val) {
+            span.style.borderColor = '#eab308';
+            span.style.color = '#eab308';
+            span.style.backgroundColor = '#fefce8';
         } else {
             span.style.borderColor = '#e5e7eb';
             span.style.color = '#9ca3af';
@@ -9701,10 +9702,10 @@ async function showEditPlaceModal(placeId, mapId) {
         r.checked = r.value === ratingVal;
         const span = r.nextElementSibling;
         if (span) {
-            if (r.value === ratingVal && ratingVal) {
-                span.style.borderColor = '#16a34a';
-                span.style.color = '#16a34a';
-                span.style.backgroundColor = '#f0fdf4';
+            if (parseInt(r.value) <= parseInt(ratingVal) && ratingVal) {
+                span.style.borderColor = '#eab308';
+                span.style.color = '#eab308';
+                span.style.backgroundColor = '#fefce8';
             } else {
                 span.style.borderColor = '#e5e7eb';
                 span.style.color = '#9ca3af';
@@ -17938,7 +17939,7 @@ function quickLogStarPlace(stars) {
     const cfg = _STAR_CONFIG[stars];
     if (!cfg) return;
     const desc = cfg.label + ' ' + '★'.repeat(stars);
-    quickLogPlaceByCategory('', 'STAR', { description: desc, status: cfg.status, rating: cfg.rating, type: 'Unknown' });
+    quickLogPlaceByCategory('', 'STAR', { description: desc, status: cfg.status, rating: cfg.rating, type: 'Other' });
 }
 
 function _quickPhotoStarPlace(stars) {
@@ -18041,7 +18042,7 @@ async function handleQuickPhotoPlaceSelected(event) {
             description: _desc1,
             status: p.status || 'Visited',
             rating: String(p.rating || p.stars || ''),
-            type: 'Unknown',
+            type: 'Other',
             placePhotoData: photoData
         });
         return;
