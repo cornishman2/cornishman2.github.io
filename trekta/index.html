@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.73
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.74
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -2114,17 +2114,14 @@ function getAppTotals() {
     const totalMaps = allMaps.length;
 
     let totalPlaces = 0;
-    let totalLandmarks  = 0;
+    let totalFavourites = 0;
     for (const s of allMaps) {
-        totalPlaces += getMapPlacesOnly(s).length;
-        totalLandmarks  += getMapLandmarksOnly(s).length;
+        const targets = Array.isArray(s.targets) ? s.targets.filter(t => t && !t.deleted) : [];
+        totalPlaces     += targets.length;
+        totalFavourites += targets.filter(t => t.favourite).length;
     }
 
-    const totalFavourites = Array.isArray(favourites)
-        ? favourites.filter(f => f && !f.deleted).length
-        : 0;
-
-    return { totalMaps, totalPlaces, totalLandmarks, totalFavourites };
+    return { totalMaps, totalPlaces, totalFavourites };
 }
 
 
@@ -14780,10 +14777,7 @@ function renderSettingsPage() {
                 <div class="text-xs uppercase routing-wide text-gray-500">Routes</div>
                 <div class="text-2xl font-bold text-gray-800">${settingsTotalRoutes}</div>
             </div>
-            <div class="p-3 rounded-lg bg-gray-50 border border-gray-200 text-center">
-                <div class="text-xs uppercase routing-wide text-gray-500">Landmarks</div>
-                <div class="text-2xl font-bold text-gray-800">${settingsTotals.totalLandmarks || 0}</div>
-            </div>
+
             <div class="p-3 rounded-lg bg-gray-50 border border-gray-200 text-center">
                 <div class="text-xs uppercase routing-wide text-gray-500">Photos</div>
                 <div class="text-2xl font-bold text-gray-800">${settingsTotalPhotos}</div>
