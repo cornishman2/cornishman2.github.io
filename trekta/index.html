@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.71
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.72
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -1149,7 +1149,7 @@
             <!-- Name -->
             <div class="mb-4">
                 <label for="profile-name" class="block text-sm font-medium text-gray-700">
-                    Explorer Name *
+                    Your Name *
                 </label>
                 <input
                     type="text"
@@ -1160,16 +1160,30 @@
                 >
             </div>
 
-            <!--  club / group (NEW, optional) -->
+            <!-- Mobile -->
             <div class="mb-4">
-                <label for="profile-ncmd-number" class="block text-sm font-medium text-gray-700">
-                     Club / Group <span class="text-gray-400">(optional)</span>
+                <label for="profile-mobile" class="block text-sm font-medium text-gray-700">
+                    Mobile <span class="text-gray-400">(optional — shown on photos)</span>
                 </label>
                 <input
-                    type="text"
-                    id="profile-ncmd-number"
-                    name="profileNcmdNumber"
-                    placeholder="e.g. 123456"
+                    type="tel"
+                    id="profile-mobile"
+                    name="profileMobile"
+                    placeholder="e.g. 07700 900000"
+                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary"
+                >
+            </div>
+
+            <!-- Email -->
+            <div class="mb-4">
+                <label for="profile-email" class="block text-sm font-medium text-gray-700">
+                    Email <span class="text-gray-400">(optional — shown on photos)</span>
+                </label>
+                <input
+                    type="email"
+                    id="profile-email"
+                    name="profileEmail"
+                    placeholder="e.g. name@example.com"
                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary"
                 >
             </div>
@@ -1259,7 +1273,7 @@ const appVersion = APP_VERSION;      // legacy alias used by older export/report
 // --- GLOBAL STATE & INITIALIZATION ---
 let maps = [];
 let favourites = [];  // permanent library of Favourites
-let userProfile            = { name: 'A. Person', clubNumber: '' };
+let userProfile            = { name: 'A. Person', mobile: '', email: '' };
 let photoSettings          = { maxWidthPx: 1200 };
 let navSession             = null;
 let hasRenderedFirstGpsFix = false;
@@ -6365,7 +6379,7 @@ function loadDataFromLocalStorage() {
             }
         } else {
             // Re-initialize sample profile if needed
-          userProfile = { name: "A. Person", clubNumber: "" };
+          userProfile = { name: "A. Person", mobile: "", email: "" };
 
         }
 
@@ -10222,10 +10236,11 @@ async function handleEditPlaceSubmit(event) {
 
             // Pre-fill after render
             const nameEl   = document.getElementById('profile-name');
-            const clubEl   = document.getElementById('profile-ncmd-number');
-            if (nameEl)  nameEl.value  = userProfile.name || '';
-
-            if (clubEl)  clubEl.value  = userProfile.clubNumber || '';
+            const mobileEl = document.getElementById('profile-mobile');
+            const emailEl  = document.getElementById('profile-email');
+            if (nameEl)   nameEl.value   = userProfile.name   || '';
+            if (mobileEl) mobileEl.value = userProfile.mobile || '';
+            if (emailEl)  emailEl.value  = userProfile.email  || '';
 
             const form = document.getElementById('edit-profile-form');
             if (form) {
@@ -10253,12 +10268,14 @@ function handleEditProfileSubmit(event) {
     // All fields are OPTIONAL
     const newName = (form['profileName']?.value || '').trim();
 
-    const newClubNumber = (form['profileNcmdNumber']?.value || '').trim();
+    const newMobile = (form['profileMobile']?.value || '').trim();
+    const newEmail  = (form['profileEmail']?.value  || '').trim();
 
     // Update global state (allow blanks)
     userProfile.name = newName;
 
-    userProfile.clubNumber = newClubNumber;
+    userProfile.mobile = newMobile;
+    userProfile.email  = newEmail;
 
     // Update ONLY the user name in existing places (do NOT update device)
     // Only do this if the old name was non-empty and it actually changed.
@@ -14832,14 +14849,9 @@ return `
             <!-- 1. YOUR PROFILE -->
             <div class="bg-white p-4 rounded-xl shadow-lg mb-6 border border-gray-100">
                 <h3 class="text-xl font-semibold text-gray-700 mb-3">Your Profile</h3>
-                <p class="text-md text-gray-800 mb-1"><strong>Name:</strong> ${userProfile.name}</p>
-<p class="text-md text-gray-800 mb-1">
-  <strong> Membership number :</strong> ${
-    (userProfile.clubNumber && userProfile.clubNumber.trim())
-      ? userProfile.clubNumber.trim()
-      : '<span class="text-gray-400">—</span>'
-  }
-</p>
+                <p class="text-md text-gray-800 mb-1"><strong>Name:</strong> ${userProfile.name || '—'}</p>
+                <p class="text-md text-gray-800 mb-1"><strong>Mobile:</strong> ${userProfile.mobile || '<span class="text-gray-400">—</span>'}</p>
+                <p class="text-md text-gray-800 mb-1"><strong>Email:</strong> ${userProfile.email || '<span class="text-gray-400">—</span>'}</p>
 
 
                 <div class="mt-4 pt-3 border-t border-gray-100">
@@ -14851,8 +14863,13 @@ return `
                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
                         </div>
                         <div>
-                            <label for="profile-ncmd-number" class="block text-sm font-medium text-gray-700"> Club / Group <span class="text-gray-400">(optional)</span></label>
-                            <input type="text" id="profile-ncmd-number" name="profileNcmdNumber" placeholder="e.g. 123456"
+                            <label for="profile-mobile" class="block text-sm font-medium text-gray-700">Mobile <span class="text-gray-400">(optional)</span></label>
+                            <input type="tel" id="profile-mobile" name="profileMobile" placeholder="e.g. 07700 900000"
+                                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
+                        </div>
+                        <div>
+                            <label for="profile-email" class="block text-sm font-medium text-gray-700">Email <span class="text-gray-400">(optional)</span></label>
+                            <input type="email" id="profile-email" name="profileEmail" placeholder="e.g. name@example.com"
                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
                         </div>
                         <div class="flex gap-3 pt-2">
@@ -16246,7 +16263,8 @@ async function exportMapReportPdf() {
         detailPairs.push(['Site type', map.siteType || '']);
         detailPairs.push(['Soil rating', map.soilRating || '']);
         detailPairs.push(['Device(s) used', map.device || '']);
-        detailPairs.push(['Club / Group', (userProfile && userProfile.clubNumber) ? String(userProfile.clubNumber) : '']);
+        detailPairs.push(['Mobile', (userProfile && userProfile.mobile) ? String(userProfile.mobile) : '']);
+        detailPairs.push(['Email',  (userProfile && userProfile.email)  ? String(userProfile.email)  : '']);
 
         const detailsRowsHtml = detailPairs
             .filter(([_, v]) => v !== null && v !== undefined && String(v).trim() !== '')
