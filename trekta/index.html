@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.60
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.61
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -6081,96 +6081,14 @@ function formatMapPermissionDate(value) {
  */
         /** Saves the current maps and profile data to Local Storage. */
 function saveFavouritesToLocalStorage() {
-    try {
-        localStorage.setItem('trektaFavourites', JSON.stringify(favourites));
-    } catch (e) {
-        console.error("Error saving Favourites to Local Storage:", e);
-        // No toast here – we don't want to confuse the user
-    }
+    // No-op: favourites are now stored as place.favourite = true in map.targets
 }
 
 function createFavouriteFromPlace(place, map) {
-    // LIMITS: block creating favourites if over limit / expired
-    const r = canCreate('favourites');
-    if (!r.ok) {
-        showMessage(r.reason, 'error');
-        return false;
-    }
-
-    // Photos from the place (we now prefer IndexedDB refs)
-    let photoRefs = [];
-    let thumbDataUrl = '';
-
-    if (Array.isArray(place.photos) && place.photos.length) {
-        const first = place.photos[0];
-
-        if (isIndexedDbPhotoRef(first)) {
-            // New style: photos already refer to IndexedDB blobs
-            photoRefs = place.photos.slice();
-            thumbDataUrl = '';
-        } else {
-            // Legacy style: place.photos are data URLs (rare now)
-            photoRefs = []; // we won't convert them here
-            thumbDataUrl =
-                place.photos[0] ||
-                place.placePhotoData ||
-                place.photoDataUrl ||
-                '';
-        }
-    } else if (place.placePhotoData || place.photoDataUrl) {
-        // No array, just a single thumbnail
-        thumbDataUrl = place.placePhotoData || place.photoDataUrl;
-    }
-
-    const primaryRef = photoRefs[0] || '';
-
-    const find = {
-        id: generateId(),
-
-        // Links back to original context (not required to still exist)
-        mapId: map.id,
-        mapName: map.name || 'Untitled map',
-        mapDescription: map.description || '',
-        placeId: place.id,
-
-        // Core fields
-        description: place.description || 'Unnamed Favourite',
-        type: place.type || 'Unknown',
-        rating: place.rating || '',
-        notes: '',
-
-        // Location
-        coordinates: place.coordinates || '',
-        accuracy: place.accuracy || '',
-        centerOnMap: !!place.centerOnMap,
-
-        // Media
-        placePhotoData: thumbDataUrl,  // thumbnail for UI (legacy / fallback)
-        photos: photoRefs,              // IndexedDB references (idb:...)
-        findPhotoRef: primaryRef,       // first ref for convenience
-
-        // Logged date/time
-        dateCreated: Date.now(),
-
-        // Metadata
-        statusAtSave: place.status || '',
-        user: place.user || userProfile.name || '',
-        device: ''
-    };
-
-    favourites.push(find);
-
-    // Save favourites separately (no scary warnings)
-    saveFavouritesToLocalStorage();
-
-    // Optional small vibration for mobile feedback (safe no-op on unsupported devices)
-    if (navigator.vibrate) {
-        navigator.vibrate(120);
-    }
-
+    // No-op: use place.favourite = true instead
     return true;
 }
-        
+
 function saveMapsToLocalStorage() {
     try {
         localStorage.setItem('trektaMaps', JSON.stringify(maps));
@@ -6196,7 +6114,7 @@ function saveMapsToLocalStorage() {
 function loadDataFromLocalStorage() {
     try {
         const storedMaps = localStorage.getItem('trektaMaps');
-        const storedFavourites   = localStorage.getItem('trektaFavourites');   // <--- NEW
+        // trektaFavourites removed — favourites are now place.favourite = true
         const storedProfile = localStorage.getItem('trektaProfile');
         const storedUserId  = localStorage.getItem('trektaUserId');
         loadPhotoSettingsFromLocalStorage();
@@ -6257,12 +6175,8 @@ function loadDataFromLocalStorage() {
             maps.forEach(ensureMapMetaDefaults);
         }
 
-// Load Favourites (can be empty even if maps exist)
-        if (storedFavourites) {
-            favourites = JSON.parse(storedFavourites);
-        } else {
-            favourites = [];
-        }
+// Favourites now live on places (place.favourite = true)
+        favourites = [];
 
         if (storedProfile) {
             // Update userProfile only if storedProfile exists and is valid
@@ -10402,37 +10316,15 @@ async function handleMapAction(button) {
                         };
                     });
 
-                    // Build favourites with real coordinates
-                    const newFavourites = fDefs.map(f => {
-                        const tgt  = map.targets.find(t => t.id === f.tid);
-                        const tDef = tDefs.find(t => t.id === f.tid);
-                        return {
-                            id: 'df_' + f.tid,
-                            mapId: map.id,
-                            mapName: map.name,
-                            mapDescription: map.description,
-                            placeId: f.tid,
-                            description: tDef ? tDef.description : '',
-                            type: tDef ? tDef.type : 'Unknown',
-                            category: tDef ? tDef.category : '',
-                            rating: f.rating || (tDef ? tDef.rating : ''),
-                            notes: f.ident,
-                            notes: f.notes || '',
-                            notes: '',
-                            visitStatus: 'Noted',
-                            coordinates: tgt ? tgt.coordinates : '',
-                            accuracy: tgt ? tgt.accuracy : '',
-                            centerOnMap: false,
-                            placePhotoData: tDef ? (photos[tDef.placePhoto] || '') : '',
-                            findPhotoData: tDef ? (photos[tDef.favPhoto] || '') : '',
-                            photos: [], findPhotoRef: '',
-                            dateCreated: dNow - Math.round(Math.random() * 3600000),
-                            statusAtSave: 'Visited',
-                            user: 'Demo Explorer', device: 'Demo Device',
-                            deleted: false
-                        };
+                    // Mark demo places as favourites using the new place.favourite flag
+                    fDefs.forEach(f => {
+                        const place = map.targets.find(t => t.id === f.tid);
+                        if (place) {
+                            place.favourite = true;
+                            place.rating = f.rating || place.rating || '';
+                            if (f.notes) place.notes = f.notes;
+                        }
                     });
-                    newFavourites.forEach(f => favourites.push(f));
 
                     // Build routes with real coordinates
                     // Walk: green, Heritage: amber, Bike: blue
@@ -10946,38 +10838,6 @@ function handlePlaceAction(element) {
                 break;
             }
 
-            case 'saveFavourite': {
-                // 1) Create the Favourite snapshot
-                place.isFavourite = true;
-                const created = createFavouriteFromPlace(place, map);
-
-                // If creation was blocked (limits/expiry), do NOT delete the place
-                if (!created) return;
-
-                // 2) Now delete the original place (user request)
-                // IMPORTANT: we do NOT delete IndexedDB photos here because the Favourite references them.
-                const maybePromise = deletePlacePermanently(mapId, placeId);
-
-                // Support both sync + async implementations of deletePlacePermanently
-                if (maybePromise && typeof maybePromise.then === 'function') {
-                    maybePromise.then((ok) => {
-                        if (ok && navigationPlaceId === placeId) navigationPlaceId = null;
-                        showMessage('Copied to Favourites and removed from Places.', 'success');
-                        render();
-                    }).catch((e) => {
-                        console.error('Error deleting place after saving find:', e);
-                        showMessage('Favourite saved, but failed to remove the place.', 'warning');
-                        render();
-                    });
-                    return; // we’ll finish in the promise handlers
-                } else {
-                    const ok = !!maybePromise;
-                    if (ok && navigationPlaceId === placeId) navigationPlaceId = null;
-                    showMessage('Copied to Favourites and removed from Places.', 'success');
-                }
-
-                break;
-            }
 
             case 'navigate': {
                 navigationPlaceId = placeId;
