@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.57
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.58
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -12692,22 +12692,29 @@ switch (s) {
                         </button>
                     </div>
 
-                    <!-- Row 3: Edit / Copy / Delete -->
-                    <div class="grid grid-cols-3 gap-2">
+                    <!-- Row 3: Edit / Favourite / Share / Delete -->
+                    <div class="grid grid-cols-2 gap-2 mb-2">
                         <button type="button"
                             onclick="showEditPlaceModal('${place.id}', '${mapId}')"
                             class="w-full inline-flex items-center justify-center px-3 py-3 rounded-md bg-green-600 text-white hover:bg-green-700 text-xs sm:text-sm font-semibold">
-                            Edit details
+                            <i class="fas fa-edit mr-1"></i> Edit
                         </button>
                         <button type="button"
                             data-action="toggleFavourite" data-id="${place.id}" data-map-id="${mapId}"
                             class="w-full inline-flex items-center justify-center px-3 py-3 rounded-md ${place.favourite ? 'bg-red-500 hover:bg-red-600' : 'bg-amber-500 hover:bg-amber-600'} text-white text-xs sm:text-sm font-semibold">
                             ${place.favourite ? '♥ Unfavourite' : '♡ Favourite'}
                         </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button"
+                            onclick="sharePlaceAsHtml('${place.id}', '${mapId}')"
+                            class="w-full inline-flex items-center justify-center px-3 py-3 rounded-md bg-blue-600 text-white hover:bg-blue-700 text-xs sm:text-sm font-semibold">
+                            <i class="fas fa-share-alt mr-1"></i> Share
+                        </button>
                         <button type="button"
                             onclick="openInlinePlaceDelete('${place.id}')"
                             class="w-full inline-flex items-center justify-center px-3 py-3 rounded-md bg-red-600 text-white hover:bg-red-700 text-xs sm:text-sm font-semibold">
-                            Delete
+                            <i class="fas fa-trash mr-1"></i> Delete
                         </button>
                     </div>
 
@@ -17653,6 +17660,96 @@ function triggerFavouritePhotoCapture(findId) {
     _findCardPhotoPending = findId;
     const inp = document.getElementById('find-card-photo-input');
     if (inp) { inp.value = ''; inp.click(); }
+}
+
+async function sharePlaceAsHtml(placeId, mapId) {
+    const map = maps.find(s => s.id === mapId);
+    const place = map && Array.isArray(map.targets) ? map.targets.find(t => String(t.id) === String(placeId)) : null;
+    if (!place) { showMessage('Place not found.', 'error'); return; }
+
+    showMessage('Preparing place report…', 'info');
+
+    const allRefs = [];
+    if (Array.isArray(place.photos) && place.photos.length) {
+        allRefs.push(...place.photos);
+    } else if (place.placePhotoData || place.photoData) {
+        allRefs.push(place.placePhotoData || place.photoData);
+    }
+
+    const photoDataUrls = [];
+    for (const ref of allRefs) {
+        try {
+            if (typeof ref === 'string' && ref.startsWith('data:image/')) {
+                photoDataUrls.push(ref);
+            } else if (typeof ref === 'string' && ref.startsWith('idb:')) {
+                const id   = parsePhotoRef(ref);
+                const blob = id != null ? await loadPhotoBlob(id) : null;
+                if (blob) {
+                    const url = await new Promise((res, rej) => {
+                        const reader = new FileReader();
+                        reader.onload  = () => res(reader.result);
+                        reader.onerror = rej;
+                        reader.readAsDataURL(blob);
+                    });
+                    photoDataUrls.push(url);
+                }
+            }
+        } catch (e) { console.warn('Photo load error:', e); }
+    }
+
+    const photosHtml = photoDataUrls.map(url =>
+        '<img src="' + url + '" style="max-width:100%;border-radius:8px;margin-bottom:12px;">'
+    ).join('');
+
+    const stars = place.rating ? '★'.repeat(Number(place.rating)) : '';
+    const favHeart = place.favourite ? ' ♥' : '';
+    const coordsText = place.coordinates && place.coordinates !== 'No GPS logged' ? place.coordinates : '—';
+    const dateText = place.dateCreated ? new Date(place.dateCreated).toLocaleDateString('en-GB') : '—';
+    const mapName = map ? (map.name || 'Unnamed map') : '—';
+
+    const html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'
+        + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        + '<title>' + (place.description || 'Place') + ' — Trekta</title>'
+        + '<style>body{font-family:sans-serif;max-width:600px;margin:0 auto;padding:16px;color:#1f2937}'
+        + 'h1{font-size:1.4rem;font-weight:700;color:#16a34a;margin-bottom:4px}'
+        + '.meta{font-size:0.8rem;color:#6b7280;margin-bottom:16px}'
+        + 'table{width:100%;border-collapse:collapse;font-size:0.9rem;margin-bottom:16px}'
+        + 'td{padding:6px 8px;border-bottom:1px solid #e5e7eb}'
+        + 'td:first-child{font-weight:600;color:#374151;width:40%}'
+        + '.footer{font-size:0.75rem;color:#9ca3af;text-align:center;margin-top:24px}'
+        + '</style></head><body>'
+        + '<h1>' + (place.description || 'Unnamed Place') + favHeart + '</h1>'
+        + '<div class="meta">Logged ' + dateText + ' · Map: ' + mapName + '</div>'
+        + photosHtml
+        + '<table>'
+        + '<tr><td>Type</td><td>' + (place.type || '—') + '</td></tr>'
+        + '<tr><td>Status</td><td>' + (place.status || '—') + '</td></tr>'
+        + (stars ? '<tr><td>Rating</td><td>' + stars + '</td></tr>' : '')
+        + '<tr><td>Coordinates</td><td>' + coordsText + '</td></tr>'
+        + '</table>'
+        + '<div class="footer">Shared from Trekta – Map Your World</div>'
+        + '</body></html>';
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const file = new File([blob], (place.description || 'place').replace(/[^a-z0-9]/gi,'_') + '.html', { type: 'text/html' });
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+            await navigator.share({ files: [file], title: place.description || 'Place' });
+            return;
+        } catch (e) { if (e.name !== 'AbortError') console.warn('Share failed:', e); }
+    }
+
+    // Fallback: download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showMessage('Place report downloaded.', 'success');
 }
 
 async function shareFavouriteAsHtml(findId) {
