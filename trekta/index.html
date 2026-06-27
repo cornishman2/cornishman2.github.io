@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.5
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.6
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13473,31 +13473,16 @@ const toPercent = (x, y) => {
                             _statusKey === 'visited'     ? '#1f2937' :
                             _statusKey === 'to return'   ? '#92400e' :
                             _statusKey === 'avoid'       ? '#b91c1c' :
-                                                           '#15803d'   // not visited - dark green
+                                                           '#15803d'
                         );
                         const _lblBorder = (isLandmark || isFavourite) ? '#d1d5db' : (
                             _statusKey === 'visited'     ? '#9ca3af' :
                             _statusKey === 'to return'   ? '#fbbf24' :
                             _statusKey === 'avoid'       ? '#fca5a5' :
-                                                           '#86efac'   // not visited - light green
+                                                           '#86efac'
                         );
-                        return `
-                    <span
-                        class="absolute whitespace-nowrap text-xs font-semibold bg-white pointer-events-none"
-                        style="
-                            left: 75%;
-                            top: 50%;
-                            transform: translate(4px, -50%) scale(${invZoom});
-                            transform-origin: left center;
-                            z-index: 12;
-                            color: ${_lblColor};
-                            padding: 1px 5px 1px 4px;
-                            border-radius: 3px;
-                            border: 1px solid ${_lblBorder};
-                            border-left: 3px solid ${_lblColor};
-                            box-shadow: 0 1px 2px rgba(0,0,0,0.12);
-                        "
-                    >${safe}</span>`;
+                        const _lStyle = 'left:75%;top:50%;transform:translate(4px,-50%) scale(' + invZoom + ');transform-origin:left center;z-index:12;color:' + _lblColor + ';padding:1px 5px 1px 4px;border-radius:3px;border:1px solid ' + _lblBorder + ';border-left:3px solid ' + _lblColor + ';box-shadow:0 1px 2px rgba(0,0,0,0.12);';
+                        return '<span class="absolute whitespace-nowrap text-xs font-semibold bg-white pointer-events-none" style="' + _lStyle + '">' + safe + '</span>';
                     })()}
                 </div>
             `;
