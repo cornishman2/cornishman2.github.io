@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.55
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.56
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -12995,21 +12995,17 @@ function renderPlacePlot(places, userCoordsOrNull = null) {
     // - Favourites: show Favourite Type
     // - Places: if description is 'STAKE' => no label; else if description present => use description; else fallback to Category
  const getMapPinLabelText = (t) => {
-    const isFavourite = (t && (t.isFavourite || String(t.type || '').toLowerCase() === 'find'));
+    const isFavourite = (t && (t.isFavourite || t.favourite || String(t.type || '').toLowerCase() === 'find'));
 
-    // Landmarks are controlled by their own toggle — check before the place labels guard
-    if (!isFavourite && isLandmarkPlace(t)) {
+    // Landmarks always show their description as label
+    if (isLandmarkPlace(t)) {
         if (!showMapLandmarkLabels) return '';
         const landmarkDesc = String(t.description || '').trim();
         return (landmarkDesc && landmarkDesc !== 'STAKE') ? landmarkDesc : 'Landmark';
     }
 
-    // Label toggles
-    if (isFavourite && !showMapFavouriteLabels) return '';
-    if (!isFavourite && !showMapPlaceLabels) return '';
-    if (isFavourite) {
-        return String(t.findType || t.type || 'Favourite');
-    }
+    // Label toggles — favourites use place label toggle
+    if (!showMapPlaceLabels) return '';
 
     const desc = String(t.description || '').trim();
 
@@ -13064,6 +13060,7 @@ function renderPlacePlot(places, userCoordsOrNull = null) {
             accuracy: parseFloat(t.accuracy) || 0,
             centerOnMap: !!t.centerOnMap,
             isFavourite: !!t.isFavourite || (String(t.type || '').toLowerCase() === 'find'),
+            favourite: !!t.favourite,
             isUser: false
         };
     }).filter(c => typeof c.lat === 'number' && typeof c.lon === 'number' && !isNaN(c.lat) && !isNaN(c.lon));
@@ -13257,21 +13254,8 @@ const toPercent = (x, y) => {
                 ? (_statusColorMap[String(t.status||'not visited').toLowerCase()] || '#22c55e')
                 : null;
 
-            // Favourites: colour by find type
-            const findTypeColors = {
-                'Historic':       'bg-yellow-500',
-                'Scenic':         'bg-green-500',
-                'Wildlife':       'bg-teal-500',
-                'Leisure':        'bg-blue-500',
-                'Refreshments':   'bg-orange-500',
-                'Infrastructure': 'bg-gray-400',
-                'Landmark':       'bg-purple-500',
-                'Other':          'bg-gray-500',
-            };
-            const findTypeName = t.findType || t.type || '';
-            let pinColor = isFavourite
-                ? (findTypeColors[findTypeName] || 'bg-teal-500')
-                : (_pinColors ? '' : 'bg-green-500');
+            // All pins use status colour — favourites shown with ♥ overlay
+            let pinColor = (_pinColors ? '' : 'bg-green-500');
             const pinSize = 'w-4 h-4';
 
             // Accuracy ring (optional)
@@ -13296,7 +13280,7 @@ const toPercent = (x, y) => {
                     <div class="relative">
                         ${extraRing}
                         <div
-                          class=" ${isLandmark ? 'w-2 h-2' : pinSize} ${isFavourite && !isLandmark ? pinColor : ''} rounded-full border-2 shadow-lg cursor-pointer ${navigationPlaceId && String(navigationPlaceId) === String(t.id) ? 'pin-blink' : ''}"
+                          class=" ${isLandmark ? 'w-2 h-2' : pinSize} rounded-full border-2 shadow-lg cursor-pointer ${navigationPlaceId && String(navigationPlaceId) === String(t.id) ? 'pin-blink' : ''}"
                           style="
                           transform: scale(${invZoom});
                           transform-origin: center;
@@ -13304,6 +13288,7 @@ const toPercent = (x, y) => {
                           "
                           title="${isLandmark ? (t.description || 'Landmark') : ''}"
                           ></div>
+                        ${(t.favourite || t.isFavourite) && !isLandmark ? '<span style="position:absolute;top:-4px;right:-4px;font-size:9px;line-height:1;transform:scale(' + invZoom + ');transform-origin:top right;">♥</span>' : ''}
                     </div>
 
                     <!-- Label: counter-scale so it stays the same size while zooming -->
@@ -14163,8 +14148,9 @@ if (!openMap) {
         t => t.coordinates && t.coordinates.includes(',') && t.coordinates !== 'No GPS logged'
     );
 
-    // ✅ FINDS with usable coordinates (because places may be deleted after copying to favourites)
-    const favouritesForMap = (Array.isArray(favourites) ? favourites : [])
+    // All places — favourites are just places with favourite:true
+    // Also include any legacy favourites from the global array for backwards compatibility
+    const legacyFavouritesForMap = (Array.isArray(favourites) ? favourites : [])
         .filter(f =>
             f &&
             String(f.mapId) === String(openMap.id) &&
@@ -14173,21 +14159,20 @@ if (!openMap) {
             String(f.coordinates) !== 'No GPS logged'
         )
         .map(f => ({
-            // Important: Keep the real find ID so navigationPlaceId can refer to favourites
             id: f.id,
             description: f.description || 'Favourite',
-            type: 'Favourite',
-            findType: f.type || 'Unknown',
-            category: f.category || '',
-            status: 'find',
+            type: f.type || 'Unknown',
+            category: '',
+            status: f.statusAtSave || 'Visited',
             accuracy: f.accuracy || '',
             coordinates: f.coordinates,
             centerOnMap: false,
+            favourite: true,
             isFavourite: true
         }));
 
     // ✅ Combined points for plotting
-    const pointsForPlot = [...places, ...favouritesForMap];
+    const pointsForPlot = [...places, ...legacyFavouritesForMap];
 
     // Recording status line (optional nice feedback)
     const activeRoute = Array.isArray(openMap.tracks)
@@ -14215,18 +14200,16 @@ if (!openMap) {
             ${(() => {
                 const _allPlaces = Array.isArray(openMap.targets) ? openMap.targets.filter(t => t && !t.deleted) : [];
                 const _isLandmark = t => isLandmarkPlace(t);
-                const _totalPlaces  = _allPlaces.filter(t => !_isLandmark(t)).length;
-                const _totalLandmarks   = _allPlaces.filter(t =>  _isLandmark(t)).length;
-                const _totalFavourites    = Array.isArray(favourites) ? favourites.filter(f => f && !f.deleted && String(f.mapId) === String(openMap.id)).length : 0;
-                const _totalRoutes   = Array.isArray(openMap.tracks) ? openMap.tracks.filter(t => t && t.deleted !== true).length : 0;
-                const _mappedPlaces = places.length;
-                const _mappedFavourites   = favouritesForMap.length;
+                const _totalPlaces     = _allPlaces.filter(t => !_isLandmark(t)).length;
+                const _totalLandmarks  = _allPlaces.filter(t =>  _isLandmark(t)).length;
+                const _totalFavourites = _allPlaces.filter(t => t.favourite).length;
+                const _totalRoutes     = Array.isArray(openMap.tracks) ? openMap.tracks.filter(t => t && t.deleted !== true).length : 0;
                 const _borderCls  = mapSummaryExpanded ? 'border-b border-gray-100' : '';
                 const _chevronCls = mapSummaryExpanded ? 'fa-chevron-up' : 'fa-chevron-down';
                 const _countsHtml = mapSummaryExpanded
                     ? '<div class="px-4 py-2 flex flex-wrap gap-x-4 gap-y-1">'
-                    + '<span class="text-xs text-gray-600 flex items-center gap-1"><i class="fas fa-map-marker-alt text-primary w-3"></i><span class="font-semibold">' + _totalPlaces + '</span> places' + (_mappedPlaces < _totalPlaces ? ' <span class="text-gray-400">('+_mappedPlaces+' mapped)</span>' : '') + '</span>'
-                    + '<span class="text-xs text-gray-600 flex items-center gap-1"><i class="fas fa-gem text-yellow-600 w-3"></i><span class="font-semibold">' + _totalFavourites + '</span> favourites' + (_mappedFavourites < _totalFavourites ? ' <span class="text-gray-400">('+_mappedFavourites+' mapped)</span>' : '') + '</span>'
+                    + '<span class="text-xs text-gray-600 flex items-center gap-1"><i class="fas fa-map-marker-alt text-primary w-3"></i><span class="font-semibold">' + _totalPlaces + '</span> places</span>'
+                    + '<span class="text-xs text-gray-600 flex items-center gap-1"><span class="text-red-500 font-bold w-3">♥</span><span class="font-semibold">' + _totalFavourites + '</span> favourites</span>'
                     + '<span class="text-xs text-gray-600 flex items-center gap-1"><i class="fas fa-map-marker-alt text-gray-500 w-3"></i><span class="font-semibold">' + _totalLandmarks + '</span> landmarks</span>'
                     + '<span class="text-xs text-gray-600 flex items-center gap-1"><i class="fas fa-route text-green-600 w-3"></i><span class="font-semibold">' + _totalRoutes + '</span> routes</span>'
                     + '</div>'
