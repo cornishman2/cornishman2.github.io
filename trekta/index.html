@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.10
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.22
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -582,7 +582,7 @@
            <!-- Description (now a textarea) -->
       <div>
         <label class="block text-xs font-semibold text-gray-600 mb-1" for="edit-find-description">
-          Description / Favourite Name
+          Description
         </label>
         <textarea
           id="edit-find-description"
@@ -635,13 +635,9 @@
 
       <!-- Type -->
       <div>
-        <label class="block text-xs font-semibold text-gray-600 mb-1" for="edit-find-type">
-          Type
-        </label>
-        <select
-          id="edit-find-type"
-          name="findType"
-          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary">
+        <label class="block text-xs font-semibold text-gray-600 mb-1" for="edit-find-type">Type</label>
+        <select id="edit-find-type" name="findType"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary">
           <option value="Unknown">— select type —</option>
           <option value="Historic">Historic</option>
           <option value="Scenic">Scenic</option>
@@ -654,144 +650,24 @@
         </select>
       </div>
 
-      <!-- Identification -->
+      <!-- Star Rating -->
       <div>
-        <label class="block text-xs font-semibold text-gray-600 mb-1" for="edit-find-notes">
-          Identification
-        </label>
-        <input
-          type="text"
-          id="edit-find-notes"
-          name="findIdentification"
-          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary"
-          placeholder="e.g. George III halfpenny">
-      </div>
-
-      <!-- Category + Rating -->
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1" for="edit-find-category">Category</label>
-          <select
-            id="edit-find-category"
-            name="findCategory"
-            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary">
-            <option value="">(blank)</option>
-            <option value="Copper alloy">Copper alloy</option>
-            <option value="Silver">Silver</option>
-            <option value="Gold">Gold</option>
-            <option value="Lead">Lead</option>
-            <option value="Iron">Iron</option>
-            <option value="Aluminium">Aluminium</option>
-            <option value="Mixed">Mixed</option>
-            <option value="Unknown">Unknown</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1" for="edit-find-rating">Rating</label>
-          <select
-            id="edit-find-rating"
-            name="findRating"
-            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary">
-            <option value="">(blank)</option>
-            <option value="Poor">Poor</option>
-            <option value="Fair">Fair</option>
-            <option value="Good">Good</option>
-            <option value="Excellent">Excellent</option>
-          </select>
+        <label class="block text-xs font-semibold text-gray-600 mb-2">Rating</label>
+        <div class="flex gap-2">
+          <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="1" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★</span></label>
+          <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="2" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★</span></label>
+          <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="3" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★★</span></label>
+          <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="4" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★★★</span></label>
+          <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="5" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★★★★</span></label>
         </div>
       </div>
 
-      <!-- Period/Date -->
+      <!-- Notes -->
       <div>
-        <label class="block text-xs font-semibold text-gray-600 mb-1" for="edit-find-theme">
-          Theme
-        </label>
-        <input
-          type="text"
-          id="edit-find-theme"
-          name="findPeriod"
-          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary"
-          placeholder="e.g. Roman / Medieval / Victorian">
-      </div>
-
-      <!-- Weight + Dimensions -->
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1" for="edit-find-weight">Distance (km)</label>
-          <input
-            type="number"
-            step="0.1"
-            inputmode="decimal"
-            id="edit-find-weight"
-            name="findWeightG"
-            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary"
-            placeholder="optional">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1" for="edit-find-dimensions">Duration</label>
-          <input
-            type="text"
-            id="edit-find-dimensions"
-            name="findDimensionsMm"
-            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary"
-            placeholder="e.g. Ø 18 mm or 22×19 mm">
-        </div>
-      </div>
-
-      <!-- Where kept + Status -->
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1" for="edit-find-where-kept">Where kept</label>
-          <input
-            type="text"
-            id="edit-find-where-kept"
-            name="findWhereKept"
-            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary"
-            placeholder="Favourites box / coin tray / returned...">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1" for="edit-find-visitStatus">Status</label>
-          <select
-            id="edit-find-visitStatus"
-            name="findStatus"
-            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary">
-            <option value="">(blank)</option>
-            <option value="Kept">Kept</option>
-            <option value="Returned">Returned</option>
-            <option value="Reported">Reported</option>
-            <option value="Discarded">Discarded</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Possible treasure -->
-      <div class="flex items-center gap-2">
-        <input type="checkbox" id="edit-find-possible-treasure" name="findPossibleTreasure" class="h-4 w-4">
-        <label class="text-sm text-gray-700 select-none" for="edit-find-possible-treasure">Possible treasure</label>
-      </div>
-
-      <!-- Category + Rating -->
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1" for="edit-find-category">
-            Category
-          </label>
-          <input
-            type="text"
-            id="edit-find-category"
-            name="findCategory"
-            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1" for="edit-find-rating">
-            Rating
-          </label>
-          <input
-            type="text"
-            id="edit-find-rating"
-            name="findRating"
-            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary">
-        </div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1" for="edit-find-notes">Notes</label>
+        <input type="text" id="edit-find-notes" name="findIdentification"
+               class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary"
+               placeholder="Any additional notes about this favourite">
       </div>
 
       <!-- Coordinates -->
@@ -5365,20 +5241,15 @@ async function openEditFavouriteModal(findId) {
     form['findId'].value          = find.id;
     form['findDescription'].value = find.description || '';
     form['findType'].value        = find.type || 'Unknown';
-    form['findCategory'].value         = find.category || '';
-    form['findRating'].value       = find.rating || '';
     form['findCoords'].value      = find.coordinates || '';
     form['findAccuracy'].value    = find.accuracy || '';
 
-    if (form['findIdentification'])   form['findIdentification'].value  = find.notes || '';
-    if (form['findCategory'])         form['findCategory'].value        = find.category || '';
-    if (form['findRating'])        form['findRating'].value       = find.rating || '';
-    if (form['findPeriod'])           form['findPeriod'].value          = find.theme || '';
-    if (form['findWeightG'])          form['findWeightG'].value         = (find.weightG ?? '') === 0 ? '0' : (find.weightG || '');
-    if (form['findDimensionsMm'])     form['findDimensionsMm'].value    = find.dimensionsMm || '';
-    if (form['findWhereKept'])        form['findWhereKept'].value       = find.notes || '';
-    if (form['findStatus'])      form['findStatus'].value     = find.visitStatus || '';
-    if (form['findPossibleTreasure']) form['findPossibleTreasure'].checked = !!find.isFavourite;
+    if (form['findIdentification'])   form['findIdentification'].value  = find.notes || find.identification || '';
+    // Set star rating
+    const _fRatingVal = find.rating ? String(find.rating) : '';
+    document.querySelectorAll('#edit-find-form input[name="findRating"]').forEach(r => {
+        r.checked = r.value === _fRatingVal;
+    });
 
     try {
         if (Array.isArray(find.photos) && find.photos.length > 0) {
@@ -5999,22 +5870,15 @@ importedMap.mapPhotoData = '';
     // Core fields
     find.description = desc;
     find.type        = form['findType'].value || 'Unknown';
-    find.category         = form['findCategory'].value.trim();
-    find.rating       = form['findRating'].value.trim();
+    // rating handled below via radio
     find.coordinates = form['findCoords'].value.trim();
     find.accuracy    = form['findAccuracy'].value.trim();
 
 
     // New optional fields (Favourite data model v1)
     if (form['findIdentification'])   find.notes = (form['findIdentification'].value || '').trim();
-    if (form['findCategory'])         find.category = (form['findCategory'].value || '').trim();
-    if (form['findRating'])        find.rating = (form['findRating'].value || '').trim();
-    if (form['findPeriod'])           find.theme = (form['findPeriod'].value || '').trim();
-    if (form['findWeightG'])          find.weightG = (form['findWeightG'].value || '').trim();
-    if (form['findDimensionsMm'])     find.dimensionsMm = (form['findDimensionsMm'].value || '').trim();
-    if (form['findWhereKept'])        find.notes = (form['findWhereKept'].value || '').trim();
-    if (form['findStatus'])      find.visitStatus = (form['findStatus'].value || '').trim();
-    if (form['findPossibleTreasure']) find.isFavourite = !!form['findPossibleTreasure'].checked;
+    const _fRatingChecked = form.querySelector('input[name="findRating"]:checked');
+    find.rating = _fRatingChecked ? _fRatingChecked.value : '';
     // --- Photos: read JSON array from hidden field, then save into IndexedDB ---
     let photosDataUrls = [];
     if (form['findPhotoData']) {
@@ -12071,7 +11935,7 @@ function renderFavouritesPage() {
         if (find.weightG) extraLines.push(`<div><span class="font-semibold">Weight:</span> ${escapeHtml(find.weightG)} g</div>`);
         if (find.dimensionsMm) extraLines.push(`<div><span class="font-semibold">Size:</span> ${escapeHtml(find.dimensionsMm)}</div>`);
         if (find.notes) extraLines.push(`<div><span class="font-semibold">Kept:</span> ${escapeHtml(find.notes)}</div>`);
-        if (find.isFavourite) extraLines.push(`<div><span class="font-semibold">Possible treasure:</span> Yes</div>`);
+
         if (find.visitStatus) extraLines.push(`<div><span class="font-semibold">Status:</span> ${escapeHtml(find.visitStatus)}</div>`);
         const extraHtml = extraLines.length ? `<div class="mt-3 text-xs text-gray-700 space-y-1">${extraLines.join('')}</div>` : '';
 
@@ -12200,83 +12064,19 @@ function renderFavouritesPage() {
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Identification</label>
-                                <input type="text" id="edit-find-notes" name="findIdentification"
-                                       class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" placeholder="e.g. George III halfpenny">
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Category</label>
-                                    <select id="edit-find-category" name="findCategory" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                                        <option value="">(blank)</option>
-                                        <option value="Copper alloy">Copper alloy</option>
-                                        <option value="Silver">Silver</option>
-                                        <option value="Gold">Gold</option>
-                                        <option value="Lead">Lead</option>
-                                        <option value="Iron">Iron</option>
-                                        <option value="Aluminium">Aluminium</option>
-                                        <option value="Mixed">Mixed</option>
-                                        <option value="Unknown">Unknown</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Rating</label>
-                                    <select id="edit-find-rating" name="findRating" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                                        <option value="">(blank)</option>
-                                        <option value="Poor">Poor</option>
-                                        <option value="Fair">Fair</option>
-                                        <option value="Good">Good</option>
-                                        <option value="Excellent">Excellent</option>
-                                    </select>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Rating</label>
+                                <div class="flex gap-2">
+                                    <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="1" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★</span></label>
+                                    <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="2" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★</span></label>
+                                    <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="3" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★★</span></label>
+                                    <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="4" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★★★</span></label>
+                                    <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="5" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★★★★</span></label>
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Theme</label>
-                                <input type="text" id="edit-find-theme" name="findPeriod"
-                                       class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" placeholder="e.g. Roman / Medieval / Victorian">
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Distance (km)</label>
-                                    <input type="number" step="0.1" inputmode="decimal" id="edit-find-weight" name="findWeightG"
-                                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" placeholder="optional">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Duration</label>
-                                    <input type="text" id="edit-find-dimensions" name="findDimensionsMm"
-                                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" placeholder="e.g. Ø 18 mm">
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Where kept</label>
-                                    <input type="text" id="edit-find-where-kept" name="findWhereKept"
-                                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" placeholder="Favourites box / coin tray...">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Status</label>
-                                    <select id="edit-find-visitStatus" name="findStatus" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                                        <option value="">(blank)</option>
-                                        <option value="Kept">Kept</option>
-                                        <option value="Returned">Returned</option>
-                                        <option value="Reported">Reported</option>
-                                        <option value="Discarded">Discarded</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <input type="checkbox" id="edit-find-possible-treasure" name="findPossibleTreasure" class="h-4 w-4">
-                                <label class="text-sm text-gray-700 select-none" for="edit-find-possible-treasure">Possible treasure</label>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Category</label>
-                                    <input type="text" id="edit-find-category" name="findCategory" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Rating</label>
-                                    <input type="text" id="edit-find-rating" name="findRating" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                                </div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Notes</label>
+                                <input type="text" id="edit-find-notes" name="findIdentification"
+                                       class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" placeholder="Any additional notes about this favourite">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-1">Coordinates</label>
@@ -13082,7 +12882,7 @@ function renderPlacePlot(places, userCoordsOrNull = null) {
     if (isFavourite && !showMapFavouriteLabels) return '';
     if (!isFavourite && !showMapPlaceLabels) return '';
     if (isFavourite) {
-        return String(t.findType || t.findCategory || t.type || 'Favourite');
+        return String(t.findType || t.type || 'Favourite');
     }
 
     const desc = String(t.description || '').trim();
@@ -13133,7 +12933,6 @@ function renderPlacePlot(places, userCoordsOrNull = null) {
             description: t.description,
             type: t.type,
             findType: t.findType,
-            findCategory: t.findCategory,
             category: t.category,
             status: t.status,
             accuracy: parseFloat(t.accuracy) || 0,
@@ -13556,7 +13355,7 @@ const toPercent = (x, y) => {
 }
         
     /** Toggles the map state and re-renders immediately. *${(t.isFavourite
-                        ? String(t.findType || t.findCategory || t.type || 'Favourite')
+                        ? String(t.findType || t.type || 'Favourite')
                         : String(
                             (t.category !== undefined && t.category !== null && String(t.category).trim() !== '')
                                 ? t.category
@@ -16190,7 +15989,6 @@ async function exportMapReportPdf() {
                 if (f.weightG) parts.push(`Weight: ${f.weightG} g`);
                 if (f.dimensionsMm) parts.push(`Size: ${f.dimensionsMm}`);
                 if (f.notes) parts.push(`Notes: ${f.notes}`);
-                if (f.isFavourite) parts.push(`Possible treasure: Yes`);
                 if (f.visitStatus) parts.push(`Status: ${f.visitStatus}`);
 
                 const descHtml = parts.map(p => String(p).replace(/</g,'&lt;')).join('<br>');
@@ -16316,11 +16114,9 @@ async function exportMapReportPdf() {
                 addLine('Category', f.category);
                 addLine('Rating', f.rating);
                 addLine('Theme', f.theme);
-                addLine('Distance (km)', f.weightG);
                 addLine('Duration', f.dimensionsMm);
                 addLine('Notes', f.notes);
                 if (f.isFavourite) {
-                    lines.push(`<div class="row"><strong>Possible treasure:</strong> Yes</div>`);
                 }
                 addLine('Status', f.visitStatus);
 
@@ -17838,7 +17634,6 @@ async function shareFavouriteAsHtml(findId) {
       ${row('Weight', find.weightG ? find.weightG + ' g' : '')}
       ${row('Dimensions', find.dimensionsMm)}
       ${row('Kept', find.notes)}
-      ${find.isFavourite ? row('Possible treasure', 'Yes') : ''}
       ${row('Status', find.visitStatus)}
     </table>
   </div>
