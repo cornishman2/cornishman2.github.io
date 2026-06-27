@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.52
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.53
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -1167,7 +1167,7 @@ let placeSortMode = 'id';
 let favouritesFilterExpanded = false;
 let favouritesFilter = { query: '', type: 'All', mapId: 'All', date: 'All', userChoseAll: true };
 let placesFilterExpanded = false;
-let placesFilter = { query: '', type: 'All', status: 'All', favourite: 'All' };
+let placesFilter = { type: 'All', status: 'All', favourite: 'All' };
 
 // Legacy route-state names retained as harmless aliases/fallbacks for older code paths.
 let isRecordingRoute = false;
@@ -11659,12 +11659,6 @@ const placeTypeOptions = Array.from(placeTypeSet).sort();
 
 // Apply filters
 let places = allActive.filter(t => {
-    // Text search
-    if (placesFilter.query) {
-        const q = placesFilter.query.toLowerCase();
-        const hay = [t.description, t.type, t.status].filter(Boolean).join(' ').toLowerCase();
-        if (!hay.includes(q)) return false;
-    }
     // Type filter
     if (placesFilter.type !== 'All' && (t.type || 'Unknown') !== placesFilter.type) return false;
     // Status filter
@@ -11683,7 +11677,7 @@ if (placeSortMode === 'id') {
 }
 
 const listHeading = `Places (${places.length} of ${allActive.length})`;
-const emptyMsg = placesFilter.query || placesFilter.type !== 'All' || placesFilter.status !== 'All' || placesFilter.favourite !== 'All'
+const emptyMsg = placesFilter.type !== 'All' || placesFilter.status !== 'All' || placesFilter.favourite !== 'All'
     ? 'No places match the current filter.'
     : 'No places logged in this map yet.';
 
@@ -11695,7 +11689,7 @@ const filterBarHtml = `
             <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
                 <i class="fas fa-filter text-primary"></i>
                 Search &amp; Filter
-                ${placesFilter.query || placesFilter.type !== 'All' || placesFilter.status !== 'All' || placesFilter.favourite !== 'All'
+                ${placesFilter.type !== 'All' || placesFilter.status !== 'All' || placesFilter.favourite !== 'All'
                     ? '<span class="text-xs bg-primary text-white px-2 py-0.5 rounded-full" style="background-color:rgb(var(--color-primary))">Active</span>'
                     : ''}
             </h3>
@@ -11703,12 +11697,7 @@ const filterBarHtml = `
         </div>
         ${placesFilterExpanded ? `
         <div class="px-4 pb-4 space-y-3 border-t border-gray-100">
-            <div class="pt-3">
-                <input type="text" placeholder="Search places…"
-                       value="${(placesFilter.query || '').replace(/"/g,'&quot;')}"
-                       oninput="placesFilter.query=this.value;debouncedRender()"
-                       class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary">
-            </div>
+
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Type</label>
@@ -11740,7 +11729,7 @@ const filterBarHtml = `
                         <option value="No"  ${placesFilter.favourite==='No'?'selected':''}>Non-favourites only</option>
                     </select>
                 </div>
-                <button onclick="placesFilter={query:'',type:'All',status:'All',favourite:'All'};render()"
+                <button onclick="placesFilter={type:'All',status:'All',favourite:'All'};render()"
                         class="mt-4 ml-4 px-3 py-2 text-xs font-semibold bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">
                     Clear filters
                 </button>
