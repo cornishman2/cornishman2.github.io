@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.3
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.4
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -2309,10 +2309,10 @@ function renderHelpPage() {
 
         <p class="text-sm font-bold text-gray-700 mb-1">Place &amp; Landmark pin colours (by visit status)</p>
         <div class="flex flex-wrap gap-1 text-xs mb-3">
-          <span class="inline-block px-2 py-1 rounded bg-blue-500 text-white font-semibold">Blue – Not visited</span>
-          <span class="inline-block px-2 py-1 rounded bg-green-500 text-white font-semibold">Green – Visited</span>
-          <span class="inline-block px-2 py-1 rounded bg-amber-500 text-white font-semibold">Amber – To return</span>
-          <span class="inline-block px-2 py-1 rounded bg-gray-400 text-white font-semibold">Grey – Skipped</span>
+          <span class="inline-block px-2 py-1 rounded bg-green-500 text-white font-semibold">Green – Not visited</span>
+          <span class="inline-block px-2 py-1 rounded bg-gray-900 text-white font-semibold">Black – Visited</span>
+          <span class="inline-block px-2 py-1 rounded bg-yellow-400 text-gray-900 font-semibold">Yellow – To return</span>
+          <span class="inline-block px-2 py-1 rounded bg-red-500 text-white font-semibold">Red – Avoid</span>
         </div>
 
         <p class="text-sm font-bold text-gray-700 mb-1">Favourite pin colours (by type)</p>
@@ -2369,7 +2369,7 @@ function renderHelpPage() {
 
         <p class="text-sm font-bold text-gray-700 mb-1">Place card actions</p>
         <div class="text-sm text-gray-700 space-y-1 mb-2">
-          <div><strong>Visit status</strong> — Not visited · Visited · To return · Skipped</div>
+          <div><strong>Visit status</strong> — Not visited · Visited · To return · Avoid</div>
           <div><strong>Navigate</strong> — draws a line from your position to the place on the map.</div>
           <div><strong>Centre Map</strong> — centres the map on this place.</div>
           <div><strong>Edit</strong> — update any field or add/remove photos.</div>
@@ -4659,12 +4659,12 @@ function getPlacePinColors(t, ranges) {
 
     // Fill from status — this is the main visual indicator
     const statusColors = {
-        'not visited': '#3b82f6',  // blue
-        'visited':     '#22c55e',  // green
-        'to return':   '#f59e0b',  // amber
-        'skipped':     '#9ca3af',  // grey
+        'not visited': '#22c55e',  // green (go there!)
+        'visited':     '#1f2937',  // black (done)
+        'to return':   '#eab308',  // yellow (nice experience)
+        'avoid':       '#ef4444',  // red (avoid)
     };
-    const fill = statusColors[status] || '#3b82f6';
+    const fill = statusColors[status] || '#22c55e';
 
     // Border is always white — makes pins stand out on the map
     const border = '#ffffff';
@@ -12658,7 +12658,7 @@ switch (s) {
           </svg>`;
         break;
 
-    case 'Skipped':
+    case 'Avoid':
         statusClass = 'bg-gray-100 text-gray-500';
         statusIcon  = `
           <svg class="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -12791,7 +12791,7 @@ switch (s) {
                             data-id="${place.id}"
                             data-map-id="${mapId}"
                             data-value="Not visited"
-                            class="w-full py-2 text-xs rounded font-bold shadow-sm transition-colors ${place.status === 'Not visited' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}">
+                            class="w-full py-2 text-xs rounded font-bold shadow-sm transition-colors ${place.status === 'Not visited' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}">
                             Not visited
                         </button>
                         <button
@@ -12800,7 +12800,7 @@ switch (s) {
                             data-id="${place.id}"
                             data-map-id="${mapId}"
                             data-value="Visited"
-                            class="w-full py-2 text-xs rounded font-bold shadow-sm transition-colors ${place.status === 'Visited' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}">
+                            class="w-full py-2 text-xs rounded font-bold shadow-sm transition-colors ${place.status === 'Visited' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}">
                             Visited
                         </button>
                         <button
@@ -12809,7 +12809,7 @@ switch (s) {
                             data-id="${place.id}"
                             data-map-id="${mapId}"
                             data-value="To return"
-                            class="w-full py-2 text-xs rounded font-bold shadow-sm transition-colors ${place.status === 'To return' ? 'bg-amber-500 text-white' : 'bg-gray-200 text-gray-700'}">
+                            class="w-full py-2 text-xs rounded font-bold shadow-sm transition-colors ${place.status === 'To return' ? 'bg-yellow-400 text-gray-900' : 'bg-gray-200 text-gray-700'}">
                             To return
                         </button>
                         <button
@@ -12817,9 +12817,9 @@ switch (s) {
                             data-action="setStatus"
                             data-id="${place.id}"
                             data-map-id="${mapId}"
-                            data-value="Skipped"
-                            class="w-full py-2 text-xs rounded font-bold shadow-sm transition-colors ${place.status === 'Skipped' ? 'bg-gray-500 text-white' : 'bg-gray-200 text-gray-700'}">
-                            Skipped
+                            data-value="Avoid"
+                            class="w-full py-2 text-xs rounded font-bold shadow-sm transition-colors ${place.status === 'Avoid' ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'}">
+                            Avoid
                         </button>
                     </div>
 
@@ -13451,13 +13451,13 @@ const toPercent = (x, y) => {
                     <div class="relative">
                         ${extraRing}
                         <div
-                          class=" ${isLandmark ? 'w-2 h-2' : pinSize} ${isFavourite && !isLandmark ? pinColor : ''} ${!isLandmark && !isFavourite && !_pinColors ? pinColor : ''} rounded-full border-2 shadow-lg cursor-pointer ${navigationPlaceId && String(navigationPlaceId) === String(t.id) ? 'pin-blink' : ''}"
+                          class=" ${isLandmark ? 'w-2 h-2' : pinSize} ${isFavourite && !isLandmark ? pinColor : ''} rounded-full border-2 shadow-lg cursor-pointer ${navigationPlaceId && String(navigationPlaceId) === String(t.id) ? 'pin-blink' : ''}"
                           style="
                           transform: scale(${invZoom});
                           transform-origin: center;
                           ${isLandmark
-                            ? 'background-color:' + ({'not visited':'#3b82f6','visited':'#22c55e','to return':'#f59e0b','skipped':'#9ca3af'}[String(t.status||'').toLowerCase()] || '#3b82f6') + '; border-color:#ffffff;'
-                            : (!isFavourite && _pinColors ? 'background-color:' + _pinColors.fill + '; border-color:' + _pinColors.border + ';' : '')}
+                            ? 'background-color:' + ({'not visited':'#22c55e','visited':'#1f2937','to return':'#eab308','avoid':'#ef4444'}[String(t.status||'').toLowerCase()] || '#3b82f6') + '; border-color:#ffffff;'
+                            : (!isFavourite && !isLandmark ? 'background-color:' + ({'not visited':'#22c55e','visited':'#1f2937','to return':'#eab308','avoid':'#ef4444'}[String(t.status||"").toLowerCase()] || '#3b82f6') + '; border-color:#ffffff;' : '')}
                           "
                           title="${isLandmark ? (t.description || 'Landmark') : ''}"
                           ></div>
@@ -13468,15 +13468,20 @@ const toPercent = (x, y) => {
                         const lbl = getMapPinLabelText(t);
                         if (!lbl) return '';
                         const safe = String(lbl).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                        const _lblColor = isLandmark || isFavourite
+                            ? '#1f2937'
+                            : ({'not visited':'#22c55e','visited':'#1f2937','to return':'#eab308','avoid':'#ef4444'}[String(t.status||'').toLowerCase()] || '#3b82f6');
                         return `
                     <span
-                        class="absolute whitespace-nowrap text-xs font-semibold text-gray-800 bg-white p-1 rounded-sm shadow border border-gray-300 pointer-events-none"
+                        class="absolute whitespace-nowrap text-xs font-semibold bg-white p-1 rounded-sm shadow border border-gray-300 pointer-events-none"
                         style="
                             left: 75%;
                             top: 50%;
                             transform: translate(4px, -50%) scale(${invZoom});
                             transform-origin: left center;
                             z-index: 12;
+                            color: ${_lblColor};
+                            border-color: ${_lblColor}22;
                         "
                     >${safe}</span>`;
                     })()}
