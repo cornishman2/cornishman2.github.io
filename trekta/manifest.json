@@ -1,0 +1,62 @@
+{
+  "name": "Trekta – Map Your World",
+  "short_name": "Trekta",
+  "id": "io.github.cornishman2.trekta",
+  "description": "Trekta is a personal mapping and journey-logging app. Record routes, log places of interest, save favourites, and build maps of anywhere you explore — walks, bike rides, holidays, heritage trails, and more. Works fully offline.",
+  "start_url": "/trekta/",
+  "scope": "/trekta/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f4f6",
+  "theme_color": "#16a34a",
+  "permissions": ["geolocation"],
+  "features": [
+    {
+      "name": "geolocation"
+    }
+  ],
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "assets/screenshot-home.jpg",
+      "sizes": "720x1557",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Home page — map dashboard showing your maps"
+    },
+    {
+      "src": "assets/screenshot-map.jpg",
+      "sizes": "720x1559",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Map page — live map showing places, routes and your GPS position"
+    },
+    {
+      "src": "assets/screenshot-places.jpg",
+      "sizes": "720x1557",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Places page — list of places of interest for the open map"
+    },
+    {
+      "src": "assets/screenshot-favourites.jpg",
+      "sizes": "720x1557",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Favourites page — your permanent catalogue of favourite places"
+    }
+  ]
+}
