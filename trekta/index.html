@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.23
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.24
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -11916,7 +11916,7 @@ function renderFavouritesPage() {
 
         const extraLines = [];
         if (find.notes) extraLines.push(`<div><span class="font-semibold">ID:</span> ${escapeHtml(find.notes)}</div>`);
-        if (find.category) extraLines.push(`<div><span class="font-semibold">Category:</span> ${escapeHtml(find.category)}</div>`);
+        if (find.type) extraLines.push(`<div><span class="font-semibold">Type:</span> ${escapeHtml(find.type)}</div>`);
         if (find.rating) extraLines.push(`<div><span class="font-semibold">Rating:</span> ${escapeHtml(find.rating)}</div>`);
         if (find.theme) extraLines.push(`<div><span class="font-semibold">Period:</span> ${escapeHtml(find.theme)}</div>`);
         if (find.weightG) extraLines.push(`<div><span class="font-semibold">Weight:</span> ${escapeHtml(find.weightG)} g</div>`);
@@ -11963,7 +11963,7 @@ function renderFavouritesPage() {
 
                     <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-700">
                         <div>
-                            <span class="font-semibold">Category:</span> ${find.category || '—'}
+                            <span class="font-semibold">Type:</span> ${find.type || '—'}
                         </div>
                         <div>
                             <span class="font-semibold">Rating:</span> ${find.rating || '—'}
