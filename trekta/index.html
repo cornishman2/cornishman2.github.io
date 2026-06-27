@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.7
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.8
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -7483,128 +7483,44 @@ function renderExportPage() {
 
         
 function startPlaceLocationWatch() {
-    // 1. Get references to the HTML elements
-    const coordsInput     = document.getElementById('place-coords');
-    const accuracyInput   = document.getElementById('place-accuracy');
-
+    const coordsInput      = document.getElementById('place-coords');
+    const accuracyInput    = document.getElementById('place-accuracy');
     const accuracyDisplayP = document.getElementById('gps-accuracy-display');
-    const accuracyValueSpan = accuracyDisplayP
-        ? accuracyDisplayP.querySelector('.font-semibold')
-        : null;
+    const accuracyValueSpan = accuracyDisplayP ? accuracyDisplayP.querySelector('.font-semibold') : null;
 
-    // This element is OPTIONAL – it may not exist
-    const loadingIndicator = document.getElementById('gps-loading-indicator');
+    // Use the live GPS already running for the map — no second watch needed
+    const gps = getBestLiveGpsCoordsOrNull() || smoothedUserCoords || currentUserCoords || lastKnownMapCoords;
+    const acc = (typeof currentUserAccuracy === 'number' && isFinite(currentUserAccuracy)) ? currentUserAccuracy : null;
 
-    // Local variable to route the best accuracy received so far
-    let bestAccuracy = Infinity;
-
-    // 2. Reset UI state for a new acquisition process
-    if (coordsInput) {
-        coordsInput.value = '';
-        coordsInput.placeholder = 'Waiting for GPS lock...';
-        coordsInput.disabled = true;
-    }
-    if (accuracyInput) {
-        accuracyInput.value = '';
-    }
-
-    if (accuracyValueSpan) {
-        accuracyValueSpan.textContent = 'N/A';
-        accuracyValueSpan.className = 'font-semibold text-red-600';
-    }
-    if (accuracyDisplayP) {
-        accuracyDisplayP.classList.add('hidden'); // Hide the visible P tag
-    }
-    if (loadingIndicator) {
-        loadingIndicator.classList.remove('hidden'); // Only if it exists
-    }
-
-    if (!navigator.geolocation) {
-        showMessage('Geolocation is not supported on this device.', 'error');
+    if (gps) {
         if (coordsInput) {
-            coordsInput.placeholder = 'Geolocation not supported';
+            coordsInput.value = gps.lat.toFixed(6) + ', ' + gps.lon.toFixed(6);
+            coordsInput.placeholder = 'GPS locked';
             coordsInput.disabled = false;
         }
-        return;
-    }
-
-    // 3. Start Watching (Stream)
-    placeWatchId = navigator.geolocation.watchPosition(
-        // Success Callback
-        (position) => {
-            const accuracy = Math.round(position.coords.accuracy*10) / 10;
-
-            // Only update if this reading is more accurate
-            if (accuracy < bestAccuracy) {
-                bestAccuracy = accuracy;
-
-                const lat = position.coords.latitude.toFixed(6);
-                const lon = position.coords.longitude.toFixed(6);
-
-                if (coordsInput) {
-                    coordsInput.value = `${lat}, ${lon}`;
-                    coordsInput.placeholder = 'GPS Locked';
-                    coordsInput.disabled = false;
-                }
-
-                if (accuracyInput) {
-                    accuracyInput.value = accuracy.toFixed(2);
-                }
-
-                if (accuracyValueSpan) {
-                    accuracyValueSpan.textContent = `${accuracy.toFixed(1)} meters`;
-
-                    if (accuracy < 5) {
-                        accuracyValueSpan.className = 'font-semibold text-green-600';
-                    } else if (accuracy < 15) {
-                        accuracyValueSpan.className = 'font-semibold text-yellow-600';
-                    } else {
-                        accuracyValueSpan.className = 'font-semibold text-red-600';
-                    }
-                }
-
-                console.log(`New Best Accuracy: ${accuracy.toFixed(1)}m`);
-            }
-
-            // Hide loading / show accuracy display
-            if (loadingIndicator) {
-                loadingIndicator.classList.add('hidden');
-            }
-            if (accuracyDisplayP) {
-                accuracyDisplayP.classList.remove('hidden');
-            }
-        },
-
-        // Error Callback
-  (error) => {
-    console.error('GPS Watch Error:', error);
-
-    if (loadingIndicator) {
-        loadingIndicator.classList.add('hidden');
-    }
-    if (accuracyDisplayP && accuracyValueSpan) {
-        accuracyDisplayP.classList.remove('hidden');
-        accuracyValueSpan.textContent = 'Error';
-        accuracyValueSpan.className = "font-semibold text-red-600";
-    }
-    if (coordsInput) {
-        coordsInput.placeholder = 'GPS Error (Type Manually)';
-        coordsInput.disabled = false;
-    }
-
-    // Quiet the UI: no toast, just console + placeholder guidance
-    // (User sees "GPS Error (Type Manually)" in the field itself.)
-},
-
-        // Options
-        {
-            enableHighAccuracy: true,
-            timeout: 30000,
-            maximumAge: 0
+        if (accuracyInput && acc !== null) {
+            accuracyInput.value = acc.toFixed(2);
         }
-    );
+        if (accuracyValueSpan && acc !== null) {
+            accuracyValueSpan.textContent = acc.toFixed(1) + ' meters';
+            accuracyValueSpan.className = 'font-semibold ' + (acc < 5 ? 'text-green-600' : acc < 15 ? 'text-yellow-600' : 'text-red-600');
+        }
+        if (accuracyDisplayP) accuracyDisplayP.classList.remove('hidden');
+    } else {
+        // No GPS yet — show waiting message but don't block saving
+        if (coordsInput) {
+            coordsInput.value = '';
+            coordsInput.placeholder = 'No GPS fix yet — you can still save';
+            coordsInput.disabled = false;
+        }
+        if (accuracyValueSpan) {
+            accuracyValueSpan.textContent = 'N/A';
+            accuracyValueSpan.className = 'font-semibold text-red-600';
+        }
+    }
 }
-        
+
+
         function stopPlaceLocationWatch() {
     if (placeWatchId !== null) {
         navigator.geolocation.clearWatch(placeWatchId);
