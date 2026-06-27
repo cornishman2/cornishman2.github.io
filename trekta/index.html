@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.62
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.63
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -6637,9 +6637,9 @@ function quickLogPlaceByCategory(raw, sourceLabel = '', opts = {}) {
         id: generateId(),
         description: (opts.description ?? ''),
         category: categoryStr,
-        rating: 'Unknown',
+        rating: opts.rating || '',
         type: opts.type || 'Unknown',
-        status: 'Not visited',
+        status: opts.status || 'Not visited',
         favourite: false,
         time: now,
         coordinates: coords,
@@ -17886,43 +17886,69 @@ function _quickRangeBtnClick(btn) {
 }
 
 function buildCompassPhotoBtnsHtml(ranges) {
-    const safe = Array.isArray(ranges) ? ranges.slice(0, 5) : [];
-    const cls = {
-        BLUE:  'bg-green-600 hover:bg-green-700',
-        SKY:   'bg-sky-500 hover:bg-sky-600',
-        GREEN: 'bg-emerald-600 hover:bg-emerald-700',
-        AMBER: 'bg-amber-500 hover:bg-amber-600',
-        RED:   'bg-red-600 hover:bg-red-700'
-    };
-
-    const btns = safe.map((r, idx) => {
-        const color = String(r?.color || '').toUpperCase();
-        const min = (r && isFinite(Number(r.min))) ? Number(r.min) : '';
-        const max = (r && isFinite(Number(r.max))) ? Number(r.max) : '';
-        const tid = (r && isFinite(Number(r.placeId))) ? Number(r.placeId) : '';
-        const classes = cls[color] || 'bg-gray-500 hover:bg-gray-600';
-
-        return `
-            <button type="button"
-                class="compass-photo-btn w-full py-3 rounded-lg text-white font-extrabold text-xs shadow ${classes}"
-                data-min="${min}" data-max="${max}" data-placeid="${tid}" data-color="${escapeHtml(color)}"
-                onclick="_quickPhotoPlacePending={min:'${min}',max:'${max}',placeId:'${tid}',color:'${escapeHtml(color)}'};document.getElementById('quick-photo-place-input').click();">
-                <i class="fas fa-camera"></i>
-            </button>
-        `;
-    }).join('');
-
     return `
-        <!-- Quick photo+place buttons -->
         <div class="bg-white px-3 pt-3 pb-1 rounded-t-xl shadow-lg border border-gray-100 border-b-0 mb-0">
             <div class="grid grid-cols-5 gap-2">
-                ${btns}
+            <button type="button"
+                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
+                style="background:#ef4444"
+                onclick="_quickPhotoStarPlace(1);document.getElementById('quick-photo-place-input').click();">
+                <i class="fas fa-camera"></i> ★
+            </button>
+            <button type="button"
+                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
+                style="background:#1f2937"
+                onclick="_quickPhotoStarPlace(2);document.getElementById('quick-photo-place-input').click();">
+                <i class="fas fa-camera"></i> ★★
+            </button>
+            <button type="button"
+                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
+                style="background:#1f2937"
+                onclick="_quickPhotoStarPlace(3);document.getElementById('quick-photo-place-input').click();">
+                <i class="fas fa-camera"></i> ★★★
+            </button>
+            <button type="button"
+                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
+                style="background:#eab308"
+                onclick="_quickPhotoStarPlace(4);document.getElementById('quick-photo-place-input').click();">
+                <i class="fas fa-camera"></i> ★★★★
+            </button>
+            <button type="button"
+                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
+                style="background:#eab308"
+                onclick="_quickPhotoStarPlace(5);document.getElementById('quick-photo-place-input').click();">
+                <i class="fas fa-camera"></i> ★★★★★
+            </button>
             </div>
         </div>
     `;
 }
 
+// Star-based quick log helpers
+const _STAR_CONFIG = [
+    null,
+    { status: 'Avoid',     label: 'Avoid',     rating: '1' },
+    { status: 'Visited',   label: 'Visited',   rating: '2' },
+    { status: 'Visited',   label: 'Visited',   rating: '3' },
+    { status: 'To return', label: 'To return', rating: '4' },
+    { status: 'To return', label: 'To return', rating: '5' },
+];
+
+function quickLogStarPlace(stars) {
+    const cfg = _STAR_CONFIG[stars];
+    if (!cfg) return;
+    const desc = cfg.label + ' ' + '★'.repeat(stars);
+    quickLogPlaceByCategory('', 'STAR', { description: desc, status: cfg.status, rating: cfg.rating, type: 'Unknown' });
+}
+
+function _quickPhotoStarPlace(stars) {
+    const cfg = _STAR_CONFIG[stars];
+    if (!cfg) return;
+    _quickPhotoPlacePending = { stars, status: cfg.status, label: cfg.label, rating: cfg.rating };
+}
+
 let _quickPhotoPlacePending = null;
+
 
 function triggerQuickPhotoPlace(btn) {
     const min   = btn.getAttribute('data-min');
@@ -18010,14 +18036,22 @@ async function handleQuickPhotoPlaceSelected(event) {
     } catch(err) {
         console.error('Failed to store photo in IDB:', err);
         // Fall back to storing in place as legacy data URL
-        quickLogPlaceByCategory(category, `${p.color} ${min}→${max}`, {
+        const _desc1 = (p.label || 'Place') + ' ' + '★'.repeat(p.stars || 1);
+        quickLogPlaceByCategory('', 'STAR', {
+            description: _desc1,
+            status: p.status || 'Visited',
+            rating: String(p.rating || p.stars || ''),
             type: 'Unknown',
             placePhotoData: photoData
         });
         return;
     }
 
-    quickLogPlaceByCategory(category, `${p.color} ${min}→${max}`, {
+    const _desc2 = (p.label || 'Place') + ' ' + '★'.repeat(p.stars || 1);
+    quickLogPlaceByCategory('', 'STAR', {
+        description: _desc2,
+        status: p.status || 'Visited',
+        rating: String(p.rating || p.stars || ''),
         type: 'Unknown',
         photos: photoRefs
     });
@@ -18026,42 +18060,40 @@ async function handleQuickPhotoPlaceSelected(event) {
 
 
 function buildCompassRangeButtonsHtml(ranges) {
-    const safe = Array.isArray(ranges) ? ranges.slice(0, 5) : [];
-    const cls = {
-        BLUE:  'bg-green-600 hover:bg-green-700',
-        SKY:   'bg-sky-500 hover:bg-sky-600',
-        GREEN: 'bg-emerald-600 hover:bg-emerald-700',
-        AMBER: 'bg-amber-500 hover:bg-amber-600',
-        RED:   'bg-red-600 hover:bg-red-700'
-    };
-
-    const btns = safe.map((r, idx) => {
-        const color = String(r?.color || '').toUpperCase();
-        const min = (r && isFinite(Number(r.min))) ? Number(r.min) : '';
-        const max = (r && isFinite(Number(r.max))) ? Number(r.max) : '';
-        const tid = (r && isFinite(Number(r.placeId))) ? Number(r.placeId) : '';
-        const rangeLabel = (min !== '' && max !== '') ? `${min}→${max}` : '—';
-        const classes = cls[color] || 'bg-gray-500 hover:bg-gray-600';
-
-        return `
-            <button type="button"
-                class="compass-range-btn w-full py-3 rounded-lg text-white font-extrabold text-xs shadow ${classes}"
-                data-min="${min}" data-max="${max}" data-placeid="${tid}" data-color="${escapeHtml(color)}"
-                onclick="_quickRangeBtnClick(this)">
-                ${rangeLabel}
-            </button>
-        `;
-    }).join('');
-
     return `
-        <!-- Quick range buttons (rainbow) -->
         <div class="bg-white px-3 pb-3 pt-2 rounded-b-xl shadow-lg border border-gray-100 border-t-0 mb-4">
             <div class="grid grid-cols-5 gap-2">
-                ${btns}
+            <button type="button"
+                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
+                style="background:#ef4444"
+                onclick="quickLogStarPlace(1);">
+                ★
+            </button>
+            <button type="button"
+                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
+                style="background:#1f2937"
+                onclick="quickLogStarPlace(2);">
+                ★★
+            </button>
+            <button type="button"
+                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
+                style="background:#1f2937"
+                onclick="quickLogStarPlace(3);">
+                ★★★
+            </button>
+            <button type="button"
+                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
+                style="background:#eab308"
+                onclick="quickLogStarPlace(4);">
+                ★★★★
+            </button>
+            <button type="button"
+                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
+                style="background:#eab308"
+                onclick="quickLogStarPlace(5);">
+                ★★★★★
+            </button>
             </div>
-            <p class="text-[11px] text-gray-500 mt-2">
-                Tap a colour to instantly log a place using the configured Saved Category (or a random value inside the range).
-            </p>
         </div>
     `;
 }
