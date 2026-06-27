@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.72
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.73
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13506,7 +13506,7 @@ const toPercent = (x, y) => {
             const isLandmark = (!isFavourite) && isLandmarkPlace(t);
 
             // Get fill and border colours from shared helper
-            const _ranges = (typeof getQuickPlaceRangesEffective === 'function') ? getQuickPlaceRangesEffective() : [];
+            const _ranges = [];
             const _pinColors = isFavourite ? null : (isLandmark ? null : getPlacePinColors(t, _ranges));
 
             // Compute dot colour once — reused for both pin and label
@@ -14630,8 +14630,8 @@ ${(() => {
                     ontouchstart="startMapPan('right',event)" ontouchend="stopMapPan()" ontouchcancel="stopMapPan()">▶</button>
             </div>
 
-                                ${buildCompassPhotoBtnsHtml(getQuickPlaceRangesEffective())}
-                    ${buildCompassRangeButtonsHtml(getQuickPlaceRangesEffective())}
+                                ${buildCompassPhotoBtnsHtml()}
+                    ${buildCompassRangeButtonsHtml()}
 
             </div>
             </div>
@@ -14822,26 +14822,7 @@ function renderSettingsPage() {
     
     // Quick Place button ranges (Step 1: editable table in Settings)
     const quickRanges = (typeof loadQuickPlaceRanges === 'function') ? loadQuickPlaceRanges() : [];
-    const quickPlaceRowsHtml = Array.isArray(quickRanges) ? quickRanges.map((r, idx) => {
-        const color = String(r.color || '').toUpperCase();
-        const min = Number(r.min);
-        const max = Number(r.max);
-        const tid = Number(r.placeId);
-        return `
-            <tr class="border-b last:border-b-0">
-                <td class="p-2 font-extrabold whitespace-nowrap"><span class="inline-block w-3 h-3 rounded-full mr-2 align-middle ${getQuickPlaceSwatchClass(color)}"></span>${color}</td>
-                <td class="p-2">
-                    <input type="number" id="qtr-min-${idx}" class="w-24 px-2 py-1 border rounded" value="${isFinite(min) ? min : ''}">
-                </td>
-                <td class="p-2">
-                    <input type="number" id="qtr-max-${idx}" class="w-24 px-2 py-1 border rounded" value="${isFinite(max) ? max : ''}">
-                </td>
-                <td class="p-2">
-                    <input type="number" id="qtr-id-${idx}" class="w-28 px-2 py-1 border rounded" value="${isFinite(tid) ? tid : ''}">
-                </td>
-            </tr>
-        `;
-    }).join('') : '';
+
 return `
         <div class="p-4">
             <h2 class="text-3xl font-bold text-primary mb-6">Settings &amp; Local Data Management</h2>
@@ -14890,63 +14871,6 @@ return `
                 </div>
             </div>
 
-            <!-- 2. QUICK TARGET BUTTONS -->
-<div class="bg-white p-4 rounded-xl shadow-lg mb-6 border-l-4 border-indigo-500">
-  <h4 class="text-lg font-bold text-gray-800 mb-2">Quick Place Buttons</h4>
-  <p class="text-sm text-gray-600 mb-3">
-    Configure the five rainbow buttons on the Map screen. Each row sets a Category range and a saved Category for that colour.
-  </p>
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="text-left p-2 border-b">Colour</th>
-          <th class="text-left p-2 border-b">Min Category</th>
-          <th class="text-left p-2 border-b">Max Category</th>
-          <th class="text-left p-2 border-b">Saved Category</th>
-        </tr>
-      </thead>
-      <tbody id="quick-place-ranges-tbody">
-        ${quickPlaceRowsHtml || ''}
-      </tbody>
-    </table>
-  </div>
-  <div class="mt-4 space-y-2">
-    <p class="text-xs font-semibold text-gray-500 uppercase routing-wide mb-1">Actions</p>
-    <div class="flex gap-2">
-      <button type="button" id="quick-place-save-btn" onclick="saveQuickPlaceSettingsFromUI()"
-              class="flex-1 bg-indigo-600 text-white font-bold py-2 px-3 rounded-lg shadow hover:bg-indigo-700 transition text-sm">
-        <i class="fas fa-save mr-1"></i> Save
-      </button>
-      <button type="button" id="quick-place-reset-btn" onclick="resetQuickPlaceSettingsToDefaults()"
-              class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 px-3 rounded-lg shadow hover:bg-gray-300 transition text-sm">
-        <i class="fas fa-undo mr-1"></i> Reset to defaults
-      </button>
-    </div>
-    <div class="border-t border-gray-100 pt-2">
-      <p class="text-xs text-gray-500 mb-2">Apply a Category scale preset to match your device:</p>
-      <div class="grid grid-cols-1 gap-2">
-        <button type="button" onclick="applyDevicePreset('minelab')"
-                class="w-full flex items-center justify-between bg-indigo-50 border border-indigo-200 text-indigo-800 font-semibold py-2 px-3 rounded-lg hover:bg-indigo-100 transition text-sm">
-          <span><i class="fas fa-sliders-h mr-2"></i>Low range (1–3)</span>
-          <span class="text-xs font-normal text-indigo-600">Star ratings 1–3</span>
-        </button>
-        <button type="button" onclick="applyDevicePreset('legend')"
-                class="w-full flex items-center justify-between bg-teal-50 border border-teal-200 text-teal-800 font-semibold py-2 px-3 rounded-lg hover:bg-teal-100 transition text-sm">
-          <span><i class="fas fa-sliders-h mr-2"></i>Mid range (3–4)</span>
-          <span class="text-xs font-normal text-teal-600">Star ratings 3–4</span>
-        </button>
-        <button type="button" onclick="applyDevicePreset('standard')"
-                class="w-full flex items-center justify-between bg-gray-50 border border-gray-200 text-gray-700 font-semibold py-2 px-3 rounded-lg hover:bg-gray-100 transition text-sm">
-          <span><i class="fas fa-sliders-h mr-2"></i>High range (4–5)</span>
-          <span class="text-xs font-normal text-gray-500">0 to 99 &nbsp;·&nbsp; For most categories</span>
-        </button>
-      </div>
-    </div>
-  </div>
-  <p id="quick-place-validation-msg" class="text-xs text-red-600 mt-2 hidden"></p>
-  <p class="text-xs text-gray-500 mt-2">Edits apply instantly to the Map rainbow buttons. Tap <b>Save</b> to keep them permanently.</p>
-</div>
 
             <!-- 3. PHOTO SETTINGS -->
 <div class="bg-white p-4 rounded-xl shadow-lg mb-6 border-l-4 border-sky-500">
@@ -17586,7 +17510,6 @@ if (saveNavOverlayBtn && navAboveInput && navBelowInput) {
     try { attachLiveQuickPlaceSettingsListeners(); } catch (e) {}
 
     // If Compass page is currently rendered, ensure the buttons reflect latest saved/draft values
-    try { applyQuickPlaceRangesToCompassButtons(getQuickPlaceRangesEffective()); } catch (e) {}
 
     // 8. Compass Page Quick Input
     const quickInput = document.getElementById('compass-quick-place-category');
@@ -17840,7 +17763,6 @@ function applyDevicePreset(deviceName, silent) {
     }
     saveQuickPlaceRanges(ranges);
     quickPlaceRangesDraft = null;
-    try { applyQuickPlaceRangesToCompassButtons(ranges); } catch (e) {}
     // Refresh the settings table if it's visible
     try {
         const tbody = document.getElementById('quick-place-ranges-tbody');
