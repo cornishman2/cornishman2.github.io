@@ -13412,6 +13412,12 @@ const toPercent = (x, y) => {
             const _ranges = (typeof getQuickPlaceRangesEffective === 'function') ? getQuickPlaceRangesEffective() : [];
             const _pinColors = isFavourite ? null : (isLandmark ? null : getPlacePinColors(t, _ranges));
 
+            // Compute dot colour once — reused for both pin and label
+            const _statusColorMap = {'not visited':'#22c55e','visited':'#1f2937','to return':'#eab308','avoid':'#ef4444'};
+            const _dotColor = (isLandmark || (!isFavourite && !isLandmark))
+                ? (_statusColorMap[String(t.status||'not visited').toLowerCase()] || '#22c55e')
+                : null;
+
             // Favourites: colour by find type
             const findTypeColors = {
                 'Coin':         'bg-yellow-500',
@@ -13455,9 +13461,7 @@ const toPercent = (x, y) => {
                           style="
                           transform: scale(${invZoom});
                           transform-origin: center;
-                          ${isLandmark
-                            ? 'background-color:' + ({'not visited':'#22c55e','visited':'#1f2937','to return':'#eab308','avoid':'#ef4444'}[String(t.status||'').toLowerCase()] || '#3b82f6') + '; border-color:#ffffff;'
-                            : (!isFavourite && !isLandmark ? 'background-color:' + ({'not visited':'#22c55e','visited':'#1f2937','to return':'#eab308','avoid':'#ef4444'}[String(t.status||"").toLowerCase()] || '#3b82f6') + '; border-color:#ffffff;' : '')}
+                          ${_dotColor ? 'background-color:' + _dotColor + '; border-color:#ffffff;' : ''}
                           "
                           title="${isLandmark ? (t.description || 'Landmark') : ''}"
                           ></div>
@@ -13468,21 +13472,9 @@ const toPercent = (x, y) => {
                         const lbl = getMapPinLabelText(t);
                         if (!lbl) return '';
                         const safe = String(lbl).replace(/</g,'&lt;').replace(/>/g,'&gt;');
-                        const _statusKey = String(t.status||'not visited').toLowerCase();
-                        const _lblColor = (isLandmark || isFavourite) ? '#1f2937' : (
-                            _statusKey === 'visited'     ? '#1f2937' :
-                            _statusKey === 'to return'   ? '#92400e' :
-                            _statusKey === 'avoid'       ? '#b91c1c' :
-                                                           '#15803d'
-                        );
-                        const _lblBorder = (isLandmark || isFavourite) ? '#d1d5db' : (
-                            _statusKey === 'visited'     ? '#9ca3af' :
-                            _statusKey === 'to return'   ? '#fbbf24' :
-                            _statusKey === 'avoid'       ? '#fca5a5' :
-                                                           '#86efac'
-                        );
-                        const _lStyle = 'left:75%;top:50%;transform:translate(4px,-50%) scale(' + invZoom + ');transform-origin:left center;z-index:12;color:' + _lblColor + ';padding:1px 5px 1px 4px;border-radius:3px;border:1px solid ' + _lblBorder + ';border-left:3px solid ' + _lblColor + ';box-shadow:0 1px 2px rgba(0,0,0,0.12);';
-                        return '<span class="absolute whitespace-nowrap text-xs font-semibold bg-white pointer-events-none" style="' + _lStyle + '">' + safe + '</span>';
+                        const _c = _dotColor || '#1f2937';
+                        const _lStyle = 'left:75%;top:50%;transform:translate(4px,-50%) scale(' + invZoom + ');transform-origin:left center;z-index:12;color:' + _c + ';padding:1px 5px 1px 4px;border-radius:3px;border:1px solid #e5e7eb;border-left:3px solid ' + _c + ';box-shadow:0 1px 2px rgba(0,0,0,0.12);background:white;';
+                        return '<span class="absolute whitespace-nowrap text-xs font-semibold pointer-events-none" style="' + _lStyle + '">' + safe + '</span>';
                     })()}
                 </div>
             `;
