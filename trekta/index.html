@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.53
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.54
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -1167,7 +1167,7 @@ let placeSortMode = 'id';
 let favouritesFilterExpanded = false;
 let favouritesFilter = { query: '', type: 'All', mapId: 'All', date: 'All', userChoseAll: true };
 let placesFilterExpanded = false;
-let placesFilter = { type: 'All', status: 'All', favourite: 'All' };
+let placesFilter = { mapId: 'open', type: 'All', status: 'All', favourite: 'All' };
 
 // Legacy route-state names retained as harmless aliases/fallbacks for older code paths.
 let isRecordingRoute = false;
@@ -11637,20 +11637,30 @@ function renderMapCard(map, isOpen = false) {
         function renderPlacesPage() {
             const openMap = maps.find(s => s.status === 'Open');
 
-            if (!openMap) {
-                return `
-                    <div class="p-4">
-                        <h2 class="text-3xl font-bold text-primary mb-6">Map Places</h2>
-                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-red-500">
-                            <h3 class="text-xl font-bold text-red-600 mb-3">No Open Map</h3>
-                            <p class="text-gray-700">Please open a map on the **Home** page to view or log places.</p>
-                        </div>
-                    </div>
-                `;
+            // Default to open map filter when opening the tab
+            if (openMap && placesFilter.mapId === 'open') {
+                // 'open' is a sentinel meaning "use current open map"
             }
 
-// All active places for this map
-const allActive = openMap.targets.filter(t => !t.deleted);
+// Determine which maps to show places from
+const mapsToShow = placesFilter.mapId === 'All'
+    ? maps.filter(s => !s.deleted)
+    : (openMap ? [openMap] : []);
+
+// All active places from selected maps
+const allActive = mapsToShow.flatMap(m =>
+    (Array.isArray(m.targets) ? m.targets : [])
+        .filter(t => !t.deleted)
+        .map(t => ({ ...t, _mapName: m.name, _mapId: m.id }))
+);
+
+if (!openMap && placesFilter.mapId !== 'All') {
+    return '<div class="p-4"><h2 class="text-3xl font-bold text-primary mb-6">Places</h2>'
+         + '<div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-red-500">'
+         + '<h3 class="text-xl font-bold text-red-600 mb-3">No Open Map</h3>'
+         + '<p class="text-gray-700">Please open a map on the Home page, or use the All Maps filter below.</p>'
+         + '</div></div>';
+}
 
 // Build type options from actual data
 const placeTypeSet = new Set();
@@ -11677,7 +11687,7 @@ if (placeSortMode === 'id') {
 }
 
 const listHeading = `Places (${places.length} of ${allActive.length})`;
-const emptyMsg = placesFilter.type !== 'All' || placesFilter.status !== 'All' || placesFilter.favourite !== 'All'
+const emptyMsg = placesFilter.mapId === 'All' || placesFilter.type !== 'All' || placesFilter.status !== 'All' || placesFilter.favourite !== 'All'
     ? 'No places match the current filter.'
     : 'No places logged in this map yet.';
 
@@ -11689,7 +11699,7 @@ const filterBarHtml = `
             <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
                 <i class="fas fa-filter text-primary"></i>
                 Search &amp; Filter
-                ${placesFilter.type !== 'All' || placesFilter.status !== 'All' || placesFilter.favourite !== 'All'
+                ${placesFilter.mapId === 'All' || placesFilter.type !== 'All' || placesFilter.status !== 'All' || placesFilter.favourite !== 'All'
                     ? '<span class="text-xs bg-primary text-white px-2 py-0.5 rounded-full" style="background-color:rgb(var(--color-primary))">Active</span>'
                     : ''}
             </h3>
@@ -11729,17 +11739,30 @@ const filterBarHtml = `
                         <option value="No"  ${placesFilter.favourite==='No'?'selected':''}>Non-favourites only</option>
                     </select>
                 </div>
-                <button onclick="placesFilter={type:'All',status:'All',favourite:'All'};render()"
+                <button onclick="placesFilter={mapId:placesFilter.mapId,type:'All',status:'All',favourite:'All'};render()"
                         class="mt-4 ml-4 px-3 py-2 text-xs font-semibold bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">
                     Clear filters
                 </button>
+            </div>
+            <div class="mt-3">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Map</label>
+                <select onchange="placesFilter.mapId=this.value;render()"
+                        class="w-full border border-gray-300 rounded-md p-2 text-sm">
+                    <option value="open" ${placesFilter.mapId==='open'?'selected':''}>
+                        ${openMap ? openMap.name + ' (open)' : 'Open map'}
+                    </option>
+                    <option value="All" ${placesFilter.mapId==='All'?'selected':''}>All maps</option>
+                    ${maps.filter(m=>!m.deleted&&m.id!==openMap?.id).map(m =>
+                        '<option value="' + m.id + '" ' + (placesFilter.mapId===m.id?'selected':'') + '>' + (m.name||'Unnamed') + '</option>'
+                    ).join('')}
+                </select>
             </div>
         </div>` : ''}
     </div>`;
 
             return `
                 <div class="p-4">
-                    <h2 class="text-3xl font-bold text-primary mb-4">Places: ${openMap.name}</h2>
+                    <h2 class="text-3xl font-bold text-primary mb-4">${placesFilter.mapId === 'All' ? 'Places: All Maps' : 'Places: ' + (openMap ? openMap.name : '')}</h2>
 
                     ${filterBarHtml}
 
@@ -12571,6 +12594,7 @@ switch (s) {
                         </h3>
                         <p class="text-xs text-gray-500">
                             ${place.type || 'Unknown'} · ${place.rating ? '★'.repeat(Number(place.rating)) : 'No rating'}
+                            ${placesFilter.mapId === 'All' && place._mapName ? ' · <span class="text-primary">' + place._mapName + '</span>' : ''}
                         </p>
                     </div>
                 </div>
