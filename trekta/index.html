@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.68
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.69
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -645,15 +645,72 @@
         <label class="block text-xs font-semibold text-gray-600 mb-1" for="edit-find-type">Type</label>
         <select id="edit-find-type" name="findType"
                 class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary">
-          <option value="Unknown">— select type —</option>
-          <option value="Historic">Historic</option>
-          <option value="Scenic">Scenic</option>
-          <option value="Wildlife">Wildlife</option>
-          <option value="Leisure">Leisure</option>
-          <option value="Refreshments">Refreshments</option>
-          <option value="Infrastructure">Infrastructure</option>
-          <option value="Landmark">Landmark</option>
-          <option value="Other">Other</option>
+          <option value="">— select type —</option>
+          <optgroup label="Transport">
+          <option value="Airport">Airport</option>
+          <option value="Bus Stop">Bus Stop</option>
+          <option value="Ferry Terminal">Ferry Terminal</option>
+          <option value="Free Parking">Free Parking</option>
+          <option value="Long Stay Parking">Long Stay Parking</option>
+          <option value="Petrol Station">Petrol Station</option>
+          <option value="Short Stay Parking">Short Stay Parking</option>
+          <option value="Train Station">Train Station</option>
+          </optgroup>
+          <optgroup label="Food &amp; Drink">
+          <option value="Bakery">Bakery</option>
+          <option value="Bar">Bar</option>
+          <option value="Café">Café</option>
+          <option value="Fast Food">Fast Food</option>
+          <option value="Pub">Pub</option>
+          <option value="Restaurant">Restaurant</option>
+          <option value="Shop">Shop</option>
+          <option value="Supermarket">Supermarket</option>
+          </optgroup>
+          <optgroup label="Accommodation">
+          <option value="Camping Barn">Camping Barn</option>
+          <option value="Campsite">Campsite</option>
+          <option value="Hostel">Hostel</option>
+          <option value="Hotel">Hotel</option>
+          </optgroup>
+          <optgroup label="Services">
+          <option value="ATM">ATM</option>
+          <option value="Bank">Bank</option>
+          <option value="Emergency Department">Emergency Department</option>
+          <option value="Hospital">Hospital</option>
+          <option value="Information Point">Information Point</option>
+          <option value="Minor Injuries Unit">Minor Injuries Unit</option>
+          <option value="Pharmacy">Pharmacy</option>
+          <option value="Police Station">Police Station</option>
+          <option value="Public Toilet">Public Toilet</option>
+          </optgroup>
+          <optgroup label="Places of Interest">
+          <option value="Castle / Ruins">Castle / Ruins</option>
+          <option value="Church / Chapel">Church / Chapel</option>
+          <option value="Historic Site">Historic Site</option>
+          <option value="Museum">Museum</option>
+          </optgroup>
+          <optgroup label="Nature &amp; Landscape">
+          <option value="Beach">Beach</option>
+          <option value="Forest / Wood">Forest / Wood</option>
+          <option value="Hill / Summit">Hill / Summit</option>
+          <option value="Lake / Reservoir">Lake / Reservoir</option>
+          <option value="Moorland">Moorland</option>
+          <option value="River">River</option>
+          <option value="Stream">Stream</option>
+          <option value="Trig Point">Trig Point</option>
+          <option value="Valley">Valley</option>
+          <option value="Viewpoint">Viewpoint</option>
+          </optgroup>
+          <optgroup label="Access &amp; Navigation">
+          <option value="Bridge">Bridge</option>
+          <option value="Dead End">Dead End</option>
+          <option value="Gate">Gate</option>
+          <option value="One Way">One Way</option>
+          <option value="Stile">Stile</option>
+          </optgroup>
+          <optgroup label="Other">
+          <option value="Something else">Something else</option>
+          </optgroup>
         </select>
       </div>
 
@@ -760,15 +817,72 @@
                     name="placeType"
                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2
                            focus:ring-primary focus:border-primary">
-                <option value="Unknown" selected>— select type —</option>
-                <option value="Historic">Historic</option>
-                <option value="Scenic">Scenic</option>
-                <option value="Wildlife">Wildlife</option>
-                <option value="Leisure">Leisure</option>
-                <option value="Refreshments">Refreshments</option>
-                <option value="Infrastructure">Infrastructure</option>
-                <option value="Landmark">Landmark</option>
-                <option value="Other">Other</option>
+                <option value="">— select type —</option>
+                <optgroup label="Transport">
+                <option value="Airport">Airport</option>
+                <option value="Bus Stop">Bus Stop</option>
+                <option value="Ferry Terminal">Ferry Terminal</option>
+                <option value="Free Parking">Free Parking</option>
+                <option value="Long Stay Parking">Long Stay Parking</option>
+                <option value="Petrol Station">Petrol Station</option>
+                <option value="Short Stay Parking">Short Stay Parking</option>
+                <option value="Train Station">Train Station</option>
+                </optgroup>
+                <optgroup label="Food &amp; Drink">
+                <option value="Bakery">Bakery</option>
+                <option value="Bar">Bar</option>
+                <option value="Café">Café</option>
+                <option value="Fast Food">Fast Food</option>
+                <option value="Pub">Pub</option>
+                <option value="Restaurant">Restaurant</option>
+                <option value="Shop">Shop</option>
+                <option value="Supermarket">Supermarket</option>
+                </optgroup>
+                <optgroup label="Accommodation">
+                <option value="Camping Barn">Camping Barn</option>
+                <option value="Campsite">Campsite</option>
+                <option value="Hostel">Hostel</option>
+                <option value="Hotel">Hotel</option>
+                </optgroup>
+                <optgroup label="Services">
+                <option value="ATM">ATM</option>
+                <option value="Bank">Bank</option>
+                <option value="Emergency Department">Emergency Department</option>
+                <option value="Hospital">Hospital</option>
+                <option value="Information Point">Information Point</option>
+                <option value="Minor Injuries Unit">Minor Injuries Unit</option>
+                <option value="Pharmacy">Pharmacy</option>
+                <option value="Police Station">Police Station</option>
+                <option value="Public Toilet">Public Toilet</option>
+                </optgroup>
+                <optgroup label="Places of Interest">
+                <option value="Castle / Ruins">Castle / Ruins</option>
+                <option value="Church / Chapel">Church / Chapel</option>
+                <option value="Historic Site">Historic Site</option>
+                <option value="Museum">Museum</option>
+                </optgroup>
+                <optgroup label="Nature &amp; Landscape">
+                <option value="Beach">Beach</option>
+                <option value="Forest / Wood">Forest / Wood</option>
+                <option value="Hill / Summit">Hill / Summit</option>
+                <option value="Lake / Reservoir">Lake / Reservoir</option>
+                <option value="Moorland">Moorland</option>
+                <option value="River">River</option>
+                <option value="Stream">Stream</option>
+                <option value="Trig Point">Trig Point</option>
+                <option value="Valley">Valley</option>
+                <option value="Viewpoint">Viewpoint</option>
+                </optgroup>
+                <optgroup label="Access &amp; Navigation">
+                <option value="Bridge">Bridge</option>
+                <option value="Dead End">Dead End</option>
+                <option value="Gate">Gate</option>
+                <option value="One Way">One Way</option>
+                <option value="Stile">Stile</option>
+                </optgroup>
+                <optgroup label="Other">
+                <option value="Something else">Something else</option>
+                </optgroup>
             </select>
         </div>
 
@@ -929,15 +1043,72 @@
                         <label for="edit-place-type" class="block text-sm font-medium text-gray-700">Type</label>
                         <select id="edit-place-type" name="placeType"
                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary bg-white">
-                            <option value="Unknown">— select type —</option>
-                <option value="Historic">Historic</option>
-                <option value="Scenic">Scenic</option>
-                <option value="Wildlife">Wildlife</option>
-                <option value="Leisure">Leisure</option>
-                <option value="Refreshments">Refreshments</option>
-                <option value="Infrastructure">Infrastructure</option>
-                <option value="Landmark">Landmark</option>
-                <option value="Other">Other</option>
+                            <option value="">— select type —</option>
+                <optgroup label="Transport">
+                    <option value="Airport">Airport</option>
+                    <option value="Bus Stop">Bus Stop</option>
+                    <option value="Ferry Terminal">Ferry Terminal</option>
+                    <option value="Free Parking">Free Parking</option>
+                    <option value="Long Stay Parking">Long Stay Parking</option>
+                    <option value="Petrol Station">Petrol Station</option>
+                    <option value="Short Stay Parking">Short Stay Parking</option>
+                    <option value="Train Station">Train Station</option>
+                </optgroup>
+                <optgroup label="Food &amp; Drink">
+                    <option value="Bakery">Bakery</option>
+                    <option value="Bar">Bar</option>
+                    <option value="Café">Café</option>
+                    <option value="Fast Food">Fast Food</option>
+                    <option value="Pub">Pub</option>
+                    <option value="Restaurant">Restaurant</option>
+                    <option value="Shop">Shop</option>
+                    <option value="Supermarket">Supermarket</option>
+                </optgroup>
+                <optgroup label="Accommodation">
+                    <option value="Camping Barn">Camping Barn</option>
+                    <option value="Campsite">Campsite</option>
+                    <option value="Hostel">Hostel</option>
+                    <option value="Hotel">Hotel</option>
+                </optgroup>
+                <optgroup label="Services">
+                    <option value="ATM">ATM</option>
+                    <option value="Bank">Bank</option>
+                    <option value="Emergency Department">Emergency Department</option>
+                    <option value="Hospital">Hospital</option>
+                    <option value="Information Point">Information Point</option>
+                    <option value="Minor Injuries Unit">Minor Injuries Unit</option>
+                    <option value="Pharmacy">Pharmacy</option>
+                    <option value="Police Station">Police Station</option>
+                    <option value="Public Toilet">Public Toilet</option>
+                </optgroup>
+                <optgroup label="Places of Interest">
+                    <option value="Castle / Ruins">Castle / Ruins</option>
+                    <option value="Church / Chapel">Church / Chapel</option>
+                    <option value="Historic Site">Historic Site</option>
+                    <option value="Museum">Museum</option>
+                </optgroup>
+                <optgroup label="Nature &amp; Landscape">
+                    <option value="Beach">Beach</option>
+                    <option value="Forest / Wood">Forest / Wood</option>
+                    <option value="Hill / Summit">Hill / Summit</option>
+                    <option value="Lake / Reservoir">Lake / Reservoir</option>
+                    <option value="Moorland">Moorland</option>
+                    <option value="River">River</option>
+                    <option value="Stream">Stream</option>
+                    <option value="Trig Point">Trig Point</option>
+                    <option value="Valley">Valley</option>
+                    <option value="Viewpoint">Viewpoint</option>
+                </optgroup>
+                <optgroup label="Access &amp; Navigation">
+                    <option value="Bridge">Bridge</option>
+                    <option value="Dead End">Dead End</option>
+                    <option value="Gate">Gate</option>
+                    <option value="One Way">One Way</option>
+                    <option value="Stile">Stile</option>
+                </optgroup>
+                <optgroup label="Other">
+                    <option value="Something else">Something else</option>
+                </optgroup>
                         </select>
                     </div>
                     <div class="mb-4 col-span-2">
@@ -1237,7 +1408,8 @@ let routesPanelExpanded = true;
 let gpsInfoExpanded   = true;
 
 // A "Landmark" is a place pin whose Category is -100 (used as a ground marker).
-// Landmark types — places that render with a smaller pin and always show their name label
+// Landmark types — all specific place types render with a smaller pin and name label
+// Generic types (Unknown, Something else, empty) render as normal status pins
 const LANDMARK_TYPES = new Set([
     // Transport
     'Airport', 'Bus Stop', 'Ferry Terminal', 'Free Parking',
@@ -1256,8 +1428,8 @@ const LANDMARK_TYPES = new Set([
     'Moorland', 'River', 'Stream', 'Trig Point', 'Valley', 'Viewpoint',
     // Access & Navigation
     'Bridge', 'Dead End', 'Gate', 'One Way', 'Stile',
-    // Something else
-    'Something else',
+    // Old place types (for backwards compatibility)
+    'Historic', 'Scenic', 'Wildlife', 'Leisure', 'Refreshments', 'Infrastructure', 'Landmark',
 ]);
 
 function isLandmarkPlace(t) {
@@ -11669,15 +11841,72 @@ const filterBarHtml = `
                                         <label for="place-type" class="block text-sm font-medium text-gray-700">Type</label>
                                         <select id="place-type" name="placeType"
                                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
-                                            <option value="Unknown">— select type —</option>
-                                            <option value="Historic">Historic</option>
-                                            <option value="Scenic">Scenic</option>
-                                            <option value="Wildlife">Wildlife</option>
-                                            <option value="Leisure">Leisure</option>
-                                            <option value="Refreshments">Refreshments</option>
-                                            <option value="Infrastructure">Infrastructure</option>
-                                            <option value="Landmark">Landmark</option>
-                                            <option value="Other">Other</option>
+                                            <option value="">— select type —</option>
+                                            <optgroup label="Transport">
+                                            <option value="Airport">Airport</option>
+                                            <option value="Bus Stop">Bus Stop</option>
+                                            <option value="Ferry Terminal">Ferry Terminal</option>
+                                            <option value="Free Parking">Free Parking</option>
+                                            <option value="Long Stay Parking">Long Stay Parking</option>
+                                            <option value="Petrol Station">Petrol Station</option>
+                                            <option value="Short Stay Parking">Short Stay Parking</option>
+                                            <option value="Train Station">Train Station</option>
+                                            </optgroup>
+                                            <optgroup label="Food &amp; Drink">
+                                            <option value="Bakery">Bakery</option>
+                                            <option value="Bar">Bar</option>
+                                            <option value="Café">Café</option>
+                                            <option value="Fast Food">Fast Food</option>
+                                            <option value="Pub">Pub</option>
+                                            <option value="Restaurant">Restaurant</option>
+                                            <option value="Shop">Shop</option>
+                                            <option value="Supermarket">Supermarket</option>
+                                            </optgroup>
+                                            <optgroup label="Accommodation">
+                                            <option value="Camping Barn">Camping Barn</option>
+                                            <option value="Campsite">Campsite</option>
+                                            <option value="Hostel">Hostel</option>
+                                            <option value="Hotel">Hotel</option>
+                                            </optgroup>
+                                            <optgroup label="Services">
+                                            <option value="ATM">ATM</option>
+                                            <option value="Bank">Bank</option>
+                                            <option value="Emergency Department">Emergency Department</option>
+                                            <option value="Hospital">Hospital</option>
+                                            <option value="Information Point">Information Point</option>
+                                            <option value="Minor Injuries Unit">Minor Injuries Unit</option>
+                                            <option value="Pharmacy">Pharmacy</option>
+                                            <option value="Police Station">Police Station</option>
+                                            <option value="Public Toilet">Public Toilet</option>
+                                            </optgroup>
+                                            <optgroup label="Places of Interest">
+                                            <option value="Castle / Ruins">Castle / Ruins</option>
+                                            <option value="Church / Chapel">Church / Chapel</option>
+                                            <option value="Historic Site">Historic Site</option>
+                                            <option value="Museum">Museum</option>
+                                            </optgroup>
+                                            <optgroup label="Nature &amp; Landscape">
+                                            <option value="Beach">Beach</option>
+                                            <option value="Forest / Wood">Forest / Wood</option>
+                                            <option value="Hill / Summit">Hill / Summit</option>
+                                            <option value="Lake / Reservoir">Lake / Reservoir</option>
+                                            <option value="Moorland">Moorland</option>
+                                            <option value="River">River</option>
+                                            <option value="Stream">Stream</option>
+                                            <option value="Trig Point">Trig Point</option>
+                                            <option value="Valley">Valley</option>
+                                            <option value="Viewpoint">Viewpoint</option>
+                                            </optgroup>
+                                            <optgroup label="Access &amp; Navigation">
+                                            <option value="Bridge">Bridge</option>
+                                            <option value="Dead End">Dead End</option>
+                                            <option value="Gate">Gate</option>
+                                            <option value="One Way">One Way</option>
+                                            <option value="Stile">Stile</option>
+                                            </optgroup>
+                                            <optgroup label="Other">
+                                            <option value="Something else">Something else</option>
+                                            </optgroup>
                                         </select>
                                     </div>
                                     <div class="mb-4 col-span-2">
@@ -12050,15 +12279,72 @@ function renderFavouritesPage() {
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-1">Type</label>
                                 <select id="edit-find-type" name="findType" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                                    <option value="Unknown">— select type —</option>
-                                    <option value="Historic">Historic</option>
-                                    <option value="Scenic">Scenic</option>
-                                    <option value="Wildlife">Wildlife</option>
-                                    <option value="Leisure">Leisure</option>
-                                    <option value="Refreshments">Refreshments</option>
-                                    <option value="Infrastructure">Infrastructure</option>
-                                    <option value="Landmark">Landmark</option>
-                                    <option value="Other">Other</option>
+                                    <option value="">— select type —</option>
+                <optgroup label="Transport">
+                    <option value="Airport">Airport</option>
+                    <option value="Bus Stop">Bus Stop</option>
+                    <option value="Ferry Terminal">Ferry Terminal</option>
+                    <option value="Free Parking">Free Parking</option>
+                    <option value="Long Stay Parking">Long Stay Parking</option>
+                    <option value="Petrol Station">Petrol Station</option>
+                    <option value="Short Stay Parking">Short Stay Parking</option>
+                    <option value="Train Station">Train Station</option>
+                </optgroup>
+                <optgroup label="Food &amp; Drink">
+                    <option value="Bakery">Bakery</option>
+                    <option value="Bar">Bar</option>
+                    <option value="Café">Café</option>
+                    <option value="Fast Food">Fast Food</option>
+                    <option value="Pub">Pub</option>
+                    <option value="Restaurant">Restaurant</option>
+                    <option value="Shop">Shop</option>
+                    <option value="Supermarket">Supermarket</option>
+                </optgroup>
+                <optgroup label="Accommodation">
+                    <option value="Camping Barn">Camping Barn</option>
+                    <option value="Campsite">Campsite</option>
+                    <option value="Hostel">Hostel</option>
+                    <option value="Hotel">Hotel</option>
+                </optgroup>
+                <optgroup label="Services">
+                    <option value="ATM">ATM</option>
+                    <option value="Bank">Bank</option>
+                    <option value="Emergency Department">Emergency Department</option>
+                    <option value="Hospital">Hospital</option>
+                    <option value="Information Point">Information Point</option>
+                    <option value="Minor Injuries Unit">Minor Injuries Unit</option>
+                    <option value="Pharmacy">Pharmacy</option>
+                    <option value="Police Station">Police Station</option>
+                    <option value="Public Toilet">Public Toilet</option>
+                </optgroup>
+                <optgroup label="Places of Interest">
+                    <option value="Castle / Ruins">Castle / Ruins</option>
+                    <option value="Church / Chapel">Church / Chapel</option>
+                    <option value="Historic Site">Historic Site</option>
+                    <option value="Museum">Museum</option>
+                </optgroup>
+                <optgroup label="Nature &amp; Landscape">
+                    <option value="Beach">Beach</option>
+                    <option value="Forest / Wood">Forest / Wood</option>
+                    <option value="Hill / Summit">Hill / Summit</option>
+                    <option value="Lake / Reservoir">Lake / Reservoir</option>
+                    <option value="Moorland">Moorland</option>
+                    <option value="River">River</option>
+                    <option value="Stream">Stream</option>
+                    <option value="Trig Point">Trig Point</option>
+                    <option value="Valley">Valley</option>
+                    <option value="Viewpoint">Viewpoint</option>
+                </optgroup>
+                <optgroup label="Access &amp; Navigation">
+                    <option value="Bridge">Bridge</option>
+                    <option value="Dead End">Dead End</option>
+                    <option value="Gate">Gate</option>
+                    <option value="One Way">One Way</option>
+                    <option value="Stile">Stile</option>
+                </optgroup>
+                <optgroup label="Other">
+                    <option value="Something else">Something else</option>
+                </optgroup>
                                 </select>
                             </div>
                             <div>
@@ -12647,15 +12933,72 @@ switch (s) {
                                     <label for="edit-place-type" class="block text-sm font-medium text-gray-700">Type</label>
                                     <select id="edit-place-type" name="placeType"
                                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary bg-white">
-                                        <option value="Unknown">— select type —</option>
-                                        <option value="Historic">Historic</option>
-                                        <option value="Scenic">Scenic</option>
-                                        <option value="Wildlife">Wildlife</option>
-                                        <option value="Leisure">Leisure</option>
-                                        <option value="Refreshments">Refreshments</option>
-                                        <option value="Infrastructure">Infrastructure</option>
-                                        <option value="Landmark">Landmark</option>
-                                        <option value="Other">Other</option>
+                                        <option value="">— select type —</option>
+                <optgroup label="Transport">
+                    <option value="Airport">Airport</option>
+                    <option value="Bus Stop">Bus Stop</option>
+                    <option value="Ferry Terminal">Ferry Terminal</option>
+                    <option value="Free Parking">Free Parking</option>
+                    <option value="Long Stay Parking">Long Stay Parking</option>
+                    <option value="Petrol Station">Petrol Station</option>
+                    <option value="Short Stay Parking">Short Stay Parking</option>
+                    <option value="Train Station">Train Station</option>
+                </optgroup>
+                <optgroup label="Food &amp; Drink">
+                    <option value="Bakery">Bakery</option>
+                    <option value="Bar">Bar</option>
+                    <option value="Café">Café</option>
+                    <option value="Fast Food">Fast Food</option>
+                    <option value="Pub">Pub</option>
+                    <option value="Restaurant">Restaurant</option>
+                    <option value="Shop">Shop</option>
+                    <option value="Supermarket">Supermarket</option>
+                </optgroup>
+                <optgroup label="Accommodation">
+                    <option value="Camping Barn">Camping Barn</option>
+                    <option value="Campsite">Campsite</option>
+                    <option value="Hostel">Hostel</option>
+                    <option value="Hotel">Hotel</option>
+                </optgroup>
+                <optgroup label="Services">
+                    <option value="ATM">ATM</option>
+                    <option value="Bank">Bank</option>
+                    <option value="Emergency Department">Emergency Department</option>
+                    <option value="Hospital">Hospital</option>
+                    <option value="Information Point">Information Point</option>
+                    <option value="Minor Injuries Unit">Minor Injuries Unit</option>
+                    <option value="Pharmacy">Pharmacy</option>
+                    <option value="Police Station">Police Station</option>
+                    <option value="Public Toilet">Public Toilet</option>
+                </optgroup>
+                <optgroup label="Places of Interest">
+                    <option value="Castle / Ruins">Castle / Ruins</option>
+                    <option value="Church / Chapel">Church / Chapel</option>
+                    <option value="Historic Site">Historic Site</option>
+                    <option value="Museum">Museum</option>
+                </optgroup>
+                <optgroup label="Nature &amp; Landscape">
+                    <option value="Beach">Beach</option>
+                    <option value="Forest / Wood">Forest / Wood</option>
+                    <option value="Hill / Summit">Hill / Summit</option>
+                    <option value="Lake / Reservoir">Lake / Reservoir</option>
+                    <option value="Moorland">Moorland</option>
+                    <option value="River">River</option>
+                    <option value="Stream">Stream</option>
+                    <option value="Trig Point">Trig Point</option>
+                    <option value="Valley">Valley</option>
+                    <option value="Viewpoint">Viewpoint</option>
+                </optgroup>
+                <optgroup label="Access &amp; Navigation">
+                    <option value="Bridge">Bridge</option>
+                    <option value="Dead End">Dead End</option>
+                    <option value="Gate">Gate</option>
+                    <option value="One Way">One Way</option>
+                    <option value="Stile">Stile</option>
+                </optgroup>
+                <optgroup label="Other">
+                    <option value="Something else">Something else</option>
+                </optgroup>
                                     </select>
                                 </div>
                                 <div class="mb-4 col-span-2">
