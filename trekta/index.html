@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.6
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.7
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -642,14 +642,15 @@
           id="edit-find-type"
           name="findType"
           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary">
-          <option value="Unknown">Unknown</option>
-          <option value="Minor">Minor</option>
-          <option value="Infrastructure">Infrastructure</option>        
-          <option value="Button">Button</option>
-          <option value="Coin">Coin</option>
-          <option value="Jewellery">Jewellery</option>
-          <option value="Relic">Relic</option>
-          <option value="Something else">Something else</option>
+          <option value="Unknown">— select type —</option>
+          <option value="Historic">Historic</option>
+          <option value="Scenic">Scenic</option>
+          <option value="Wildlife">Wildlife</option>
+          <option value="Leisure">Leisure</option>
+          <option value="Refreshments">Refreshments</option>
+          <option value="Infrastructure">Infrastructure</option>
+          <option value="Landmark">Landmark</option>
+          <option value="Other">Other</option>
         </select>
       </div>
 
@@ -846,7 +847,7 @@
 
     <div id="place-map-display"
          class="bg-gray-100 p-2 rounded-md mb-4 text-sm font-semibold text-gray-700">
-        Logging for: 
+        Logging for:
         <span id="current-place-map-name" class="text-primary">Loading...</span>
     </div>
 
@@ -855,46 +856,19 @@
         <div class="mb-4 col-span-2">
             <label for="place-description"
                    class="block text-sm font-medium text-gray-700">
-                Description / Favourite Name *
+                Description *
             </label>
             <input type="text"
                    id="place-description"
                    name="placeDescription"
                    required
-                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2
-                          focus:ring-primary focus:border-primary">
-        </div>
-
-        <!-- Category -->
-        <div class="mb-4">
-            <label for="place-category"
-                   class="block text-sm font-medium text-gray-700">
-                Category
-            </label>
-            <input type="text"
-                   id="place-category"
-                   name="placeCategory"
-                   placeholder="e.g., 28"
-                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2
-                          focus:ring-primary focus:border-primary">
-        </div>
-
-        <!-- Rating -->
-        <div class="mb-4">
-            <label for="place-rating"
-                   class="block text-sm font-medium text-gray-700">
-                Rating
-            </label>
-            <input type="text"
-                   id="place-rating"
-                   name="placeRating"
-                   placeholder="e.g., 4 inches"
+                   placeholder="e.g. The Red Lion, Ancient Oak, War Memorial"
                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2
                           focus:ring-primary focus:border-primary">
         </div>
 
         <!-- Type -->
-        <div class="mb-4">
+        <div class="mb-4 col-span-2">
             <label for="place-type"
                    class="block text-sm font-medium text-gray-700">
                 Type
@@ -903,16 +877,32 @@
                     name="placeType"
                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2
                            focus:ring-primary focus:border-primary">
-        <option value="Unidentified" selected>Unidentified</option>
-        <option value="Minor">Minor</option>
-        <option value="Infrastructure">Infrastructure</option>
-         <option value="Button">Button</option>
-         <option value="Coin">Coin</option>
-        <option value="Ring">Ring</option>
-        <option value="Jewelry">Jewelry</option>
-        <option value="Relic">Relic</option>
-        <option value="Something else">Something else</option>
+                <option value="Unknown" selected>— select type —</option>
+                <option value="Historic">Historic</option>
+                <option value="Scenic">Scenic</option>
+                <option value="Wildlife">Wildlife</option>
+                <option value="Leisure">Leisure</option>
+                <option value="Refreshments">Refreshments</option>
+                <option value="Infrastructure">Infrastructure</option>
+                <option value="Landmark">Landmark</option>
+                <option value="Other">Other</option>
             </select>
+        </div>
+
+        <!-- Star Rating -->
+        <div class="mb-4 col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                Rating
+            </label>
+            <div class="flex gap-2">
+                ${[1,2,3,4,5].map(n => `
+                <label class="flex-1 text-center cursor-pointer">
+                    <input type="radio" name="placeRating" value="${n}" class="sr-only peer">
+                    <span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">
+                        ${'★'.repeat(n)}
+                    </span>
+                </label>`).join('')}
+            </div>
         </div>
 
         <!-- GPS + accuracy -->
@@ -1012,7 +1002,7 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="mb-4 col-span-2">
-                        <label for="edit-place-description" class="block text-sm font-medium text-gray-700">Description / Favourite Name *</label>
+                        <label for="edit-place-description" class="block text-sm font-medium text-gray-700">Description *</label>
                         <input type="text" id="edit-place-description" name="placeDescription" required 
                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
                     </div>
@@ -1052,32 +1042,31 @@
     <!-- Thumbnails (stacked, nearly full width) -->
     <div id="edit-place-photo-preview-wrapper" class="mt-2 hidden w-full"></div>
 </div>
-                    <div class="mb-4">
-                        <label for="edit-place-category" class="block text-sm font-medium text-gray-700">Category</label>
-                        <input type="text" id="edit-place-category" name="placeCategory" placeholder="e.g., 28" 
-                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
+                    <div class="mb-4 col-span-2">
+                        <label for="edit-place-type" class="block text-sm font-medium text-gray-700">Type</label>
+                        <select id="edit-place-type" name="placeType"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary bg-white">
+                            <option value="Unknown">— select type —</option>
+                <option value="Historic">Historic</option>
+                <option value="Scenic">Scenic</option>
+                <option value="Wildlife">Wildlife</option>
+                <option value="Leisure">Leisure</option>
+                <option value="Refreshments">Refreshments</option>
+                <option value="Infrastructure">Infrastructure</option>
+                <option value="Landmark">Landmark</option>
+                <option value="Other">Other</option>
+                        </select>
                     </div>
-                    <div class="mb-4">
-                        <label for="edit-place-rating" class="block text-sm font-medium text-gray-700">Rating</label>
-                        <input type="text" id="edit-place-rating" name="placeRating" placeholder="e.g., 6 inches"
-                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
-                    </div>
- <div class="mb-4 col-span-2">
-    <label for="edit-place-type" class="block text-sm font-medium text-gray-700">Type of Favourite *</label>
-    <select id="edit-place-type" name="placeType" required
-            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary bg-white">
-      <option value="Unidentified" selected>Unidentified</option>
-        <option value="Minor">Minor</option>
-        <option value="Infrastructure">Infrastructure</option>
-         <option value="Button">Button</option>
-         <option value="Coin">Coin</option>
-        <option value="Ring">Ring</option>
-        <option value="Jewelry">Jewelry</option>
-        <option value="Relic">Relic</option>
-        <option value="Something else">Something else</option>
-            </select>
-     
-</div>
+                    <div class="mb-4 col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                            <div class="flex gap-2">
+                                <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="1" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★</span></label>
+                                <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="2" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★</span></label>
+                                <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="3" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★★</span></label>
+                                <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="4" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★★★</span></label>
+                                <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="5" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★★★★</span></label>
+                            </div>
+                        </div>
                     
 <div class="mb-4 col-span-2">
                         <label for="edit-place-coords" class="block text-sm font-medium text-gray-700">GPS Coordinates</label>
@@ -9009,14 +8998,15 @@ async function handleNewPlaceSubmit(event) {
 
 
     const newDescription = form['placeDescription'].value.trim();
-    const newCategory         = form['placeCategory'].value.trim() || 'N/A';
-    const newRating       = form['placeRating'].value.trim() || 'Unknown';
+    const newCategory    = '';
+    const ratingEl       = form.querySelector('input[name="placeRating"]:checked');
+    const newRating      = ratingEl ? ratingEl.value : '';
     const newType        = form['placeType'].value;
     const newCoords      = form['placeCoords'].value.trim() || 'No GPS logged';
     const newAccuracy    = form['placeAccuracy'].value.trim() || 'N/A';
 
     if (!newDescription) {
-        showMessage('Description / Favourite Name is required.', 'error');
+        showMessage('Description is required.', 'error');
         return;
     }
 
@@ -9946,9 +9936,13 @@ async function showEditPlaceModal(placeId, mapId) {
     } catch(e) {}
 
     document.getElementById('edit-place-description').value = typeof place.description === 'string' ? place.description : '';
-    document.getElementById('edit-place-category').value = place.category === 'N/A' || place.category == null ? '' : String(place.category);
-    document.getElementById('edit-place-rating').value = place.rating === 'Unknown' || place.rating == null ? '' : String(place.rating);
-    document.getElementById('edit-place-type').value = place.type || 'Coin';
+    const typeEl = document.getElementById('edit-place-type');
+    if (typeEl) typeEl.value = place.type || 'Unknown';
+    // Set star rating radio
+    const ratingVal = place.rating ? String(place.rating) : '';
+    document.querySelectorAll('#edit-place-form input[name="placeRating"]').forEach(r => {
+        r.checked = r.value === ratingVal;
+    });
     document.getElementById('edit-place-coords').value = place.coordinates === 'No GPS logged' || !place.coordinates ? '' : String(place.coordinates);
     document.getElementById('edit-place-accuracy').value = place.accuracy === 'N/A' || place.accuracy == null ? '' : String(place.accuracy);
 
@@ -10097,15 +10091,16 @@ async function handleEditPlaceSubmit(event) {
 
     const newDescription = form['placeDescription'].value.trim();
     if (!newDescription) {
-        showMessage('Description / Favourite Name is required.', 'error');
+        showMessage('Description is required.', 'error');
         return;
     }
 
-    const newCategory      = form['placeCategory'].value.trim() || 'N/A';
-    const newRating    = form['placeRating'].value.trim() || 'Unknown';
-    const newType     = form['placeType'].value;
-    const newCoords   = form['placeCoords'].value.trim() || 'No GPS logged';
-    const newAccuracy = form['placeAccuracy'].value.trim() || 'N/A';
+    const newCategory    = '';
+    const ratingEl3      = form.querySelector('input[name="placeRating"]:checked');
+    const newRating      = ratingEl3 ? ratingEl3.value : '';
+    const newType        = form['placeType'].value;
+    const newCoords      = form['placeCoords'].value.trim() || 'No GPS logged';
+    const newAccuracy    = form['placeAccuracy'].value.trim() || 'N/A';
 
     // --- Photos: parse JSON array (or single string) from hidden field ---
     let photosDataUrls = [];
@@ -11861,34 +11856,35 @@ const emptyMsg = placesViewMode === 'landmarks'
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div class="mb-4 col-span-2">
-                                        <label for="place-description" class="block text-sm font-medium text-gray-700">Description / Favourite Name *</label>
+                                        <label for="place-description" class="block text-sm font-medium text-gray-700">Description *</label>
                                         <input type="text" id="place-description" name="placeDescription" required
+                                               placeholder="e.g. The Red Lion, Ancient Oak, War Memorial"
                                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
                                     </div>
-                                    <div class="mb-4">
-                                        <label for="place-category" class="block text-sm font-medium text-gray-700">Category</label>
-                                        <input type="text" id="place-category" name="placeCategory" placeholder="e.g., 28"
-                                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
-                                    </div>
-                                    <div class="mb-4">
-                                        <label for="place-rating" class="block text-sm font-medium text-gray-700">Rating</label>
-                                        <input type="text" id="place-rating" name="placeRating" placeholder="e.g., 4 inches"
-                                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
-                                    </div>
-                                    <div class="mb-4">
+                                    <div class="mb-4 col-span-2">
                                         <label for="place-type" class="block text-sm font-medium text-gray-700">Type</label>
                                         <select id="place-type" name="placeType"
                                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
-                                            <option value="Unidentified" selected>Unidentified</option>
-                                            <option value="Minor">Minor</option>
+                                            <option value="Unknown">— select type —</option>
+                                            <option value="Historic">Historic</option>
+                                            <option value="Scenic">Scenic</option>
+                                            <option value="Wildlife">Wildlife</option>
+                                            <option value="Leisure">Leisure</option>
+                                            <option value="Refreshments">Refreshments</option>
                                             <option value="Infrastructure">Infrastructure</option>
-                                            <option value="Button">Button</option>
-                                            <option value="Coin">Coin</option>
-                                            <option value="Ring">Ring</option>
-                                            <option value="Jewelry">Jewelry</option>
-                                            <option value="Relic">Relic</option>
-                                            <option value="Something else">Something else</option>
+                                            <option value="Landmark">Landmark</option>
+                                            <option value="Other">Other</option>
                                         </select>
+                                    </div>
+                                    <div class="mb-4 col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                                        <div class="flex gap-2">
+                                            <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="1" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★</span></label>
+                                            <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="2" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★</span></label>
+                                            <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="3" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★★</span></label>
+                                            <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="4" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★★★</span></label>
+                                            <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="5" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★★★★</span></label>
+                                        </div>
                                     </div>
                                     <div class="mb-4 col-span-2">
                                         <label for="place-coords" class="block text-sm font-medium text-gray-700">GPS Location</label>
@@ -12275,14 +12271,15 @@ function renderFavouritesPage() {
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-1">Type</label>
                                 <select id="edit-find-type" name="findType" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                                    <option value="Unknown">Unknown</option>
-                                    <option value="Minor">Minor</option>
+                                    <option value="Unknown">— select type —</option>
+                                    <option value="Historic">Historic</option>
+                                    <option value="Scenic">Scenic</option>
+                                    <option value="Wildlife">Wildlife</option>
+                                    <option value="Leisure">Leisure</option>
+                                    <option value="Refreshments">Refreshments</option>
                                     <option value="Infrastructure">Infrastructure</option>
-                                    <option value="Button">Button</option>
-                                    <option value="Coin">Coin</option>
-                                    <option value="Jewellery">Jewellery</option>
-                                    <option value="Relic">Relic</option>
-                                    <option value="Something else">Something else</option>
+                                    <option value="Landmark">Landmark</option>
+                                    <option value="Other">Other</option>
                                 </select>
                             </div>
                             <div>
@@ -12591,19 +12588,19 @@ function renderPlaceCard(place, mapId) {
     let typeIcon  = 'fas fa-gem';
 
  switch (place.type) {
-    case 'Button':
+    case 'Historic':
         typeColor = 'bg-amber-500';
         typeIcon  = 'fas fa-dot-circle';
         break;
-    case 'Coin':
+    case 'Scenic':
         typeColor = 'bg-yellow-500';
         typeIcon  = 'fas fa-coins';
         break;
-    case 'Relic':
+    case 'Wildlife':
         typeColor = 'bg-red-500';
         typeIcon  = 'fas fa-shield-alt';
         break;
-    case 'Jewelry':
+    case 'Leisure':
         typeColor = 'bg-pink-500';
         typeIcon  = 'fas fa-ring';
         break;
@@ -12615,7 +12612,7 @@ function renderPlaceCard(place, mapId) {
         typeColor = 'bg-gray-700';
         typeIcon  = 'fas fa-magnet';
         break;
-    case 'Unidentified':
+    case 'Unknown':
         typeColor = 'bg-purple-500';
         typeIcon  = 'fas fa-question';
         break;
@@ -12915,7 +12912,7 @@ switch (s) {
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div class="mb-4 col-span-2">
-                                    <label for="edit-place-description" class="block text-sm font-medium text-gray-700">Description / Favourite Name *</label>
+                                    <label for="edit-place-description" class="block text-sm font-medium text-gray-700">Description *</label>
                                     <input type="text" id="edit-place-description" name="placeDescription" required
                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
                                 </div>
@@ -12934,30 +12931,30 @@ switch (s) {
                                     </div>
                                     <div id="edit-place-photo-preview-wrapper" class="mt-2 hidden w-full"></div>
                                 </div>
-                                <div class="mb-4">
-                                    <label for="edit-place-category" class="block text-sm font-medium text-gray-700">Category</label>
-                                    <input type="text" id="edit-place-category" name="placeCategory" placeholder="e.g., 28"
-                                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
-                                </div>
-                                <div class="mb-4">
-                                    <label for="edit-place-rating" class="block text-sm font-medium text-gray-700">Rating</label>
-                                    <input type="text" id="edit-place-rating" name="placeRating" placeholder="e.g., 6 inches"
-                                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
+                                <div class="mb-4 col-span-2">
+                                    <label for="edit-place-type" class="block text-sm font-medium text-gray-700">Type</label>
+                                    <select id="edit-place-type" name="placeType"
+                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary bg-white">
+                                        <option value="Unknown">— select type —</option>
+                                        <option value="Historic">Historic</option>
+                                        <option value="Scenic">Scenic</option>
+                                        <option value="Wildlife">Wildlife</option>
+                                        <option value="Leisure">Leisure</option>
+                                        <option value="Refreshments">Refreshments</option>
+                                        <option value="Infrastructure">Infrastructure</option>
+                                        <option value="Landmark">Landmark</option>
+                                        <option value="Other">Other</option>
+                                    </select>
                                 </div>
                                 <div class="mb-4 col-span-2">
-                                    <label for="edit-place-type" class="block text-sm font-medium text-gray-700">Type of Favourite *</label>
-                                    <select id="edit-place-type" name="placeType" required
-                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary bg-white">
-                                        <option value="Unknown">Unknown</option>
-                                        <option value="Minor">Minor</option>
-                                        <option value="Infrastructure">Infrastructure</option>
-                                        <option value="Button">Button</option>
-                                        <option value="Coin">Coin</option>
-                                        <option value="Ring">Ring</option>
-                                        <option value="Jewelry">Jewelry</option>
-                                        <option value="Relic">Relic</option>
-                                        <option value="Something else">Something else</option>
-                                    </select>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                                    <div class="flex gap-2">
+                                        <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="1" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★</span></label>
+                                        <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="2" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★</span></label>
+                                        <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="3" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★★</span></label>
+                                        <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="4" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★★★</span></label>
+                                        <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="5" class="sr-only peer"><span class="block py-2 rounded-lg border-2 border-gray-200 text-gray-400 text-lg peer-checked:border-primary peer-checked:text-primary font-bold transition-colors">★★★★★</span></label>
+                                    </div>
                                 </div>
                                 <div class="mb-4 col-span-2">
                                     <label for="edit-place-coords" class="block text-sm font-medium text-gray-700">GPS Coordinates</label>
@@ -13420,14 +13417,14 @@ const toPercent = (x, y) => {
 
             // Favourites: colour by find type
             const findTypeColors = {
-                'Coin':         'bg-yellow-500',
-                'Button':       'bg-amber-600',
-                'Relic':        'bg-red-500',
-                'Jewelry':      'bg-pink-500',
-                'Jewellery':    'bg-pink-500',
-                'Minor':        'bg-gray-600',
+                'Historic':       'bg-yellow-500',
+                'Scenic':         'bg-green-500',
+                'Wildlife':       'bg-teal-500',
+                'Leisure':        'bg-blue-500',
+                'Refreshments':   'bg-orange-500',
                 'Infrastructure': 'bg-gray-400',
-                'Unidentified': 'bg-purple-500',
+                'Landmark':       'bg-purple-500',
+                'Other':          'bg-gray-500',
             };
             const findTypeName = t.findType || t.type || '';
             let pinColor = isFavourite
@@ -18142,7 +18139,7 @@ function _quickRangeBtnClick(btn) {
         if (category > max) category = max;
     }
     const color = btn.getAttribute('data-color') || '';
-    quickLogPlaceByCategory(category, `${color} ${min}→${max}`, { type: 'Unidentified' });
+    quickLogPlaceByCategory(category, `${color} ${min}→${max}`, { type: 'Unknown' });
 }
 
 function buildCompassPhotoBtnsHtml(ranges) {
@@ -18271,14 +18268,14 @@ async function handleQuickPhotoPlaceSelected(event) {
         console.error('Failed to store photo in IDB:', err);
         // Fall back to storing in place as legacy data URL
         quickLogPlaceByCategory(category, `${p.color} ${min}→${max}`, {
-            type: 'Unidentified',
+            type: 'Unknown',
             placePhotoData: photoData
         });
         return;
     }
 
     quickLogPlaceByCategory(category, `${p.color} ${min}→${max}`, {
-        type: 'Unidentified',
+        type: 'Unknown',
         photos: photoRefs
     });
 }
