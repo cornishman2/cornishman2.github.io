@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.74
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.75
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -6579,27 +6579,27 @@ function createDemoMapIfNeeded() {
 
     const placeDefs = [
         // --- Village Walk places ---
-        { id:'p1',  description:'Village church — 13th century',         category:'Historic',     rating:'5', type:'Historic',     status:'Visited',     dx: 10, dy: 15,  placePhoto:'scene0', favPhoto:'fav1'  },
-        { id:'p2',  description:'Scenic viewpoint — great panorama',     category:'Scenic',       rating:'5', type:'Scenic',       status:'Visited',     dx:  5, dy: 70,  placePhoto:'scene1', favPhoto:'fav2'  },
-        { id:'p3',  description:'Ancient oak tree — 300 years old',      category:'Wildlife',     rating:'4', type:'Wildlife',     status:'Visited',     dx:-30, dy: 75,  placePhoto:'scene2', favPhoto:'fav3'  },
-        { id:'p4',  description:'Old mill pond — wildlife rich',         category:'Historic',     rating:'4', type:'Historic',     status:'Visited',     dx:-55, dy: 20,  placePhoto:'scene3', favPhoto:'fav4'  },
-        { id:'p5',  description:'Possible footpath — not yet explored',  category:'Unknown',      rating:'',  type:'Unknown',     status:'Not visited', dx:-10, dy:-15,  placePhoto:null,     favPhoto:null    },
+        { id:'p1',  description:'Village Church — 13th century',         category:'', rating:'5', type:'Church / Chapel',  status:'Visited',     dx: 10, dy: 15,  placePhoto:'scene0', favPhoto:'fav1'  },
+        { id:'p2',  description:'Scenic Viewpoint — great panorama',     category:'', rating:'5', type:'Viewpoint',         status:'Visited',     dx:  5, dy: 70,  placePhoto:'scene1', favPhoto:'fav2'  },
+        { id:'p3',  description:'Ancient Oak Tree — 300 years old',      category:'', rating:'4', type:'Historic Site',     status:'Visited',     dx:-30, dy: 75,  placePhoto:'scene2', favPhoto:'fav3'  },
+        { id:'p4',  description:'Old Mill Pond — wildlife rich',         category:'', rating:'4', type:'Lake / Reservoir',  status:'Visited',     dx:-55, dy: 20,  placePhoto:'scene3', favPhoto:'fav4'  },
+        { id:'p5',  description:'Possible footpath — not yet explored',  category:'', rating:'',  type:'Something else',   status:'Not visited', dx:-10, dy:-15,  placePhoto:null,     favPhoto:null    },
         // --- Heritage Trail places ---
-        { id:'p6',  description:'Roman milestone — still in situ',       category:'Historic',     rating:'5', type:'Historic',     status:'Visited',     dx:-40, dy:-15,  placePhoto:'scene4', favPhoto:'fav5'  },
-        { id:'p7',  description:'Medieval market cross',                 category:'Historic',     rating:'5', type:'Historic',     status:'Visited',     dx:-10, dy:-10,  placePhoto:'scene5', favPhoto:'fav6'  },
-        { id:'p8',  description:'Listed farmhouse — Grade II',           category:'Historic',     rating:'3', type:'Historic',     status:'Visited',     dx: 20, dy:-10,  placePhoto:'scene6', favPhoto:'fav7'  },
-        { id:'p9',  description:'Bronze age barrow — scheduled monument',category:'Historic',     rating:'4', type:'Historic',     status:'Visited',     dx: 50, dy:-10,  placePhoto:'scene7', favPhoto:'fav8'  },
-        { id:'p10', description:'Interesting feature ahead — unvisited', category:'Unknown',      rating:'',  type:'Unknown',     status:'Not visited', dx: 75, dy: -5,  placePhoto:null,     favPhoto:null    },
+        { id:'p6',  description:'Roman Milestone — still in situ',       category:'', rating:'5', type:'Historic Site',     status:'Visited',     dx:-40, dy:-15,  placePhoto:'scene4', favPhoto:'fav5'  },
+        { id:'p7',  description:'Medieval Market Cross',                 category:'', rating:'5', type:'Historic Site',     status:'Visited',     dx:-10, dy:-10,  placePhoto:'scene5', favPhoto:'fav6'  },
+        { id:'p8',  description:'Listed Farmhouse — Grade II',           category:'', rating:'3', type:'Historic Site',     status:'Visited',     dx: 20, dy:-10,  placePhoto:'scene6', favPhoto:'fav7'  },
+        { id:'p9',  description:'Bronze Age Barrow — scheduled monument',category:'', rating:'4', type:'Historic Site',     status:'Visited',     dx: 50, dy:-10,  placePhoto:'scene7', favPhoto:'fav8'  },
+        { id:'p10', description:'Interesting feature — unvisited',       category:'', rating:'',  type:'Something else',   status:'Not visited', dx: 75, dy: -5,  placePhoto:null,     favPhoto:null    },
         // --- Bike Ride places ---
-        { id:'p11', description:'Picnic area — great stopping point',    category:'Leisure',      rating:'4', type:'Leisure',     status:'Visited',     dx: 40, dy:-20,  placePhoto:'scene8', favPhoto:'fav9'  },
-        { id:'p12', description:'Wildlife hide — excellent bird watching',category:'Wildlife',    rating:'5', type:'Wildlife',     status:'Visited',     dx: 65, dy:-55,  placePhoto:'scene9', favPhoto:'fav10' },
-        { id:'p13', description:'Riverside café — great coffee!',        category:'Refreshments', rating:'5', type:'Refreshments',status:'Visited',     dx: 10, dy:-72,  placePhoto:'scene10',favPhoto:'fav11' },
-        { id:'p14', description:'River crossing — stepping stones',      category:'Scenic',       rating:'4', type:'Scenic',      status:'Visited',     dx:-50, dy:-40,  placePhoto:'scene11',favPhoto:'fav12' },
+        { id:'p11', description:'Picnic Area — great stopping point',    category:'', rating:'4', type:'Forest / Wood',     status:'Visited',     dx: 40, dy:-20,  placePhoto:'scene8', favPhoto:'fav9'  },
+        { id:'p12', description:'Wildlife Hide — excellent bird watching',category:'',rating:'5', type:'Viewpoint',         status:'Visited',     dx: 65, dy:-55,  placePhoto:'scene9', favPhoto:'fav10' },
+        { id:'p13', description:'Riverside Café — great coffee!',        category:'', rating:'5', type:'Café',              status:'Visited',     dx: 10, dy:-72,  placePhoto:'scene10',favPhoto:'fav11' },
+        { id:'p14', description:'River Crossing — stepping stones',      category:'', rating:'4', type:'Bridge',            status:'Visited',     dx:-50, dy:-40,  placePhoto:'scene11',favPhoto:'fav12' },
         // --- Landmarks ---
-        { id:'l1',  description:'Car Park',                              category:'',             rating:'',  type:'Free Parking',    status:'Not visited', dx: -5, dy: -5,  placePhoto:null,     favPhoto:null    },
-        { id:'l2',  description:'Public Toilet',                         category:'',             rating:'',  type:'Public Toilet',    status:'Not visited', dx:  8, dy: 12,  placePhoto:null,     favPhoto:null    },
-        { id:'l3',  description:'The Crown Inn',                         category:'',             rating:'',  type:'Pub',    status:'Not visited', dx:-28, dy:  5,  placePhoto:null,     favPhoto:null    },
-        { id:'l4',  description:'Train Station',                         category:'',             rating:'',  type:'Train Station',    status:'Not visited', dx: 68, dy: -8,  placePhoto:null,     favPhoto:null    },
+        { id:'l1',  description:'Free Car Park',                         category:'', rating:'',  type:'Free Parking',     status:'Not visited', dx: -5, dy: -5,  placePhoto:null,     favPhoto:null    },
+        { id:'l2',  description:'Public Toilets',                        category:'', rating:'',  type:'Public Toilet',    status:'Not visited', dx:  8, dy: 12,  placePhoto:null,     favPhoto:null    },
+        { id:'l3',  description:'The Crown Inn',                         category:'', rating:'',  type:'Pub',              status:'Not visited', dx:-28, dy:  5,  placePhoto:null,     favPhoto:null    },
+        { id:'l4',  description:'Nettlecombe Station',                   category:'', rating:'',  type:'Train Station',    status:'Not visited', dx: 68, dy: -8,  placePhoto:null,     favPhoto:null    },
     ];
 
     const findDefs = [
