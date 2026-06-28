@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.77
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.78
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -677,8 +677,13 @@
           <optgroup label="Places of Interest">
           <option value="Castle / Ruins">Castle / Ruins</option>
           <option value="Church / Chapel">Church / Chapel</option>
-          <option value="Historic Site">Historic Site</option>
+          <option value="City Centre">City Centre</option>
+<option value="Historic Site">Historic Site</option>
           <option value="Museum">Museum</option>
+<option value="Old Town">Old Town</option>
+<option value="Shopping Centre / Mall">Shopping Centre / Mall</option>
+<option value="Town Centre">Town Centre</option>
+<option value="Town Square">Town Square</option>
           </optgroup>
           <optgroup label="Services">
           <option value="ATM">ATM</option>
@@ -690,6 +695,7 @@
           <option value="Pharmacy">Pharmacy</option>
           <option value="Police Station">Police Station</option>
           <option value="Public Toilet">Public Toilet</option>
+<option value="Town Hall">Town Hall</option>
           </optgroup>
           <optgroup label="Transport">
           <option value="Airport">Airport</option>
@@ -697,6 +703,7 @@
           <option value="Ferry Terminal">Ferry Terminal</option>
           <option value="Free Parking">Free Parking</option>
           <option value="Long Stay Parking">Long Stay Parking</option>
+<option value="Metro / Underground">Metro / Underground</option>
           <option value="Petrol Station">Petrol Station</option>
           <option value="Short Stay Parking">Short Stay Parking</option>
           <option value="Train Station">Train Station</option>
@@ -849,8 +856,13 @@
                 <optgroup label="Places of Interest">
                 <option value="Castle / Ruins">Castle / Ruins</option>
                 <option value="Church / Chapel">Church / Chapel</option>
-                <option value="Historic Site">Historic Site</option>
+                <option value="City Centre">City Centre</option>
+<option value="Historic Site">Historic Site</option>
                 <option value="Museum">Museum</option>
+<option value="Old Town">Old Town</option>
+<option value="Shopping Centre / Mall">Shopping Centre / Mall</option>
+<option value="Town Centre">Town Centre</option>
+<option value="Town Square">Town Square</option>
                 </optgroup>
                 <optgroup label="Services">
                 <option value="ATM">ATM</option>
@@ -862,6 +874,7 @@
                 <option value="Pharmacy">Pharmacy</option>
                 <option value="Police Station">Police Station</option>
                 <option value="Public Toilet">Public Toilet</option>
+<option value="Town Hall">Town Hall</option>
                 </optgroup>
                 <optgroup label="Transport">
                 <option value="Airport">Airport</option>
@@ -869,6 +882,7 @@
                 <option value="Ferry Terminal">Ferry Terminal</option>
                 <option value="Free Parking">Free Parking</option>
                 <option value="Long Stay Parking">Long Stay Parking</option>
+<option value="Metro / Underground">Metro / Underground</option>
                 <option value="Petrol Station">Petrol Station</option>
                 <option value="Short Stay Parking">Short Stay Parking</option>
                 <option value="Train Station">Train Station</option>
@@ -1075,8 +1089,13 @@
                 <optgroup label="Places of Interest">
                 <option value="Castle / Ruins">Castle / Ruins</option>
                 <option value="Church / Chapel">Church / Chapel</option>
-                <option value="Historic Site">Historic Site</option>
+                <option value="City Centre">City Centre</option>
+<option value="Historic Site">Historic Site</option>
                 <option value="Museum">Museum</option>
+<option value="Old Town">Old Town</option>
+<option value="Shopping Centre / Mall">Shopping Centre / Mall</option>
+<option value="Town Centre">Town Centre</option>
+<option value="Town Square">Town Square</option>
                 </optgroup>
                 <optgroup label="Services">
                 <option value="ATM">ATM</option>
@@ -1088,6 +1107,7 @@
                 <option value="Pharmacy">Pharmacy</option>
                 <option value="Police Station">Police Station</option>
                 <option value="Public Toilet">Public Toilet</option>
+<option value="Town Hall">Town Hall</option>
                 </optgroup>
                 <optgroup label="Transport">
                 <option value="Airport">Airport</option>
@@ -1095,6 +1115,7 @@
                 <option value="Ferry Terminal">Ferry Terminal</option>
                 <option value="Free Parking">Free Parking</option>
                 <option value="Long Stay Parking">Long Stay Parking</option>
+<option value="Metro / Underground">Metro / Underground</option>
                 <option value="Petrol Station">Petrol Station</option>
                 <option value="Short Stay Parking">Short Stay Parking</option>
                 <option value="Train Station">Train Station</option>
@@ -1435,6 +1456,12 @@ const LANDMARK_TYPES = new Set([
     'Moorland', 'River', 'Stream', 'Trig Point', 'Valley', 'Viewpoint',
     // Access & Navigation
     'Bridge', 'Dead End', 'Gate', 'One Way', 'Stile',
+    // New places of interest
+    'City Centre', 'Old Town', 'Shopping Centre / Mall', 'Town Centre', 'Town Square',
+    // New services
+    'Town Hall',
+    // New transport
+    'Metro / Underground',
     // Old place types (for backwards compatibility)
     'Historic', 'Scenic', 'Wildlife', 'Leisure', 'Refreshments', 'Infrastructure', 'Landmark',
 ]);
@@ -11913,8 +11940,13 @@ const filterBarHtml = `
                                             <optgroup label="Places of Interest">
                                             <option value="Castle / Ruins">Castle / Ruins</option>
                                             <option value="Church / Chapel">Church / Chapel</option>
-                                            <option value="Historic Site">Historic Site</option>
+                                            <option value="City Centre">City Centre</option>
+<option value="Historic Site">Historic Site</option>
                                             <option value="Museum">Museum</option>
+<option value="Old Town">Old Town</option>
+<option value="Shopping Centre / Mall">Shopping Centre / Mall</option>
+<option value="Town Centre">Town Centre</option>
+<option value="Town Square">Town Square</option>
                                             </optgroup>
                                             <optgroup label="Services">
                                             <option value="ATM">ATM</option>
@@ -11926,6 +11958,7 @@ const filterBarHtml = `
                                             <option value="Pharmacy">Pharmacy</option>
                                             <option value="Police Station">Police Station</option>
                                             <option value="Public Toilet">Public Toilet</option>
+<option value="Town Hall">Town Hall</option>
                                             </optgroup>
                                             <optgroup label="Transport">
                                             <option value="Airport">Airport</option>
@@ -11933,6 +11966,7 @@ const filterBarHtml = `
                                             <option value="Ferry Terminal">Ferry Terminal</option>
                                             <option value="Free Parking">Free Parking</option>
                                             <option value="Long Stay Parking">Long Stay Parking</option>
+<option value="Metro / Underground">Metro / Underground</option>
                                             <option value="Petrol Station">Petrol Station</option>
                                             <option value="Short Stay Parking">Short Stay Parking</option>
                                             <option value="Train Station">Train Station</option>
@@ -12351,8 +12385,13 @@ function renderFavouritesPage() {
                 <optgroup label="Places of Interest">
                 <option value="Castle / Ruins">Castle / Ruins</option>
                 <option value="Church / Chapel">Church / Chapel</option>
-                <option value="Historic Site">Historic Site</option>
+                <option value="City Centre">City Centre</option>
+<option value="Historic Site">Historic Site</option>
                 <option value="Museum">Museum</option>
+<option value="Old Town">Old Town</option>
+<option value="Shopping Centre / Mall">Shopping Centre / Mall</option>
+<option value="Town Centre">Town Centre</option>
+<option value="Town Square">Town Square</option>
                 </optgroup>
                 <optgroup label="Services">
                 <option value="ATM">ATM</option>
@@ -12364,6 +12403,7 @@ function renderFavouritesPage() {
                 <option value="Pharmacy">Pharmacy</option>
                 <option value="Police Station">Police Station</option>
                 <option value="Public Toilet">Public Toilet</option>
+<option value="Town Hall">Town Hall</option>
                 </optgroup>
                 <optgroup label="Transport">
                 <option value="Airport">Airport</option>
@@ -12371,6 +12411,7 @@ function renderFavouritesPage() {
                 <option value="Ferry Terminal">Ferry Terminal</option>
                 <option value="Free Parking">Free Parking</option>
                 <option value="Long Stay Parking">Long Stay Parking</option>
+<option value="Metro / Underground">Metro / Underground</option>
                 <option value="Petrol Station">Petrol Station</option>
                 <option value="Short Stay Parking">Short Stay Parking</option>
                 <option value="Train Station">Train Station</option>
@@ -13013,8 +13054,13 @@ switch (s) {
                 <optgroup label="Places of Interest">
                 <option value="Castle / Ruins">Castle / Ruins</option>
                 <option value="Church / Chapel">Church / Chapel</option>
-                <option value="Historic Site">Historic Site</option>
+                <option value="City Centre">City Centre</option>
+<option value="Historic Site">Historic Site</option>
                 <option value="Museum">Museum</option>
+<option value="Old Town">Old Town</option>
+<option value="Shopping Centre / Mall">Shopping Centre / Mall</option>
+<option value="Town Centre">Town Centre</option>
+<option value="Town Square">Town Square</option>
                 </optgroup>
                 <optgroup label="Services">
                 <option value="ATM">ATM</option>
@@ -13026,6 +13072,7 @@ switch (s) {
                 <option value="Pharmacy">Pharmacy</option>
                 <option value="Police Station">Police Station</option>
                 <option value="Public Toilet">Public Toilet</option>
+<option value="Town Hall">Town Hall</option>
                 </optgroup>
                 <optgroup label="Transport">
                 <option value="Airport">Airport</option>
@@ -13033,6 +13080,7 @@ switch (s) {
                 <option value="Ferry Terminal">Ferry Terminal</option>
                 <option value="Free Parking">Free Parking</option>
                 <option value="Long Stay Parking">Long Stay Parking</option>
+<option value="Metro / Underground">Metro / Underground</option>
                 <option value="Petrol Station">Petrol Station</option>
                 <option value="Short Stay Parking">Short Stay Parking</option>
                 <option value="Train Station">Train Station</option>
