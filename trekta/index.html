@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.96
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.97
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -4428,6 +4428,17 @@ function ensureRoutingThen(fn) {
 }
 
         
+// Route types per map type — used to filter dropdowns
+const ROUTE_TYPE_SETS = {
+    'Town / City':     ['Any','A Road','B Road','Cycleway','Footpath','Lane','Path','Private Property','Street','Unclassified Road'],
+    'Countryside':     ['Any','A Road','B Road','Beach','Bridle Path','Coastal Path','Cycleway','Field','Footpath','Lane','Path','Private Property','Towpath','Unclassified Road'],
+    'Road Trip':       ['Any','A Road','B Road','Motorway','Unclassified Road'],
+    'Flight':          ['Any','Flight Path'],
+    'Train / Rail':    ['Any','Railway'],
+    'Water':           ['Any','Canal','Coastal Path','River','Sea Route','Towpath'],
+    'Coastal / Beach': ['Any','Beach','Coastal Path','Footpath','Path','Private Property','Sea Route'],
+};
+
 // Route type colours — based on standard OS map conventions
 const ROUTE_TYPE_COLOURS = {
     'Any':                '#000000',  // black
@@ -4452,6 +4463,13 @@ const ROUTE_TYPE_COLOURS = {
     'Towpath':            '#008080',  // teal
     'Unclassified Road':  '#FFFF00',  // yellow
 };
+
+function getFilteredRouteTypes(mapType) {
+    if (!mapType || mapType === 'General' || !ROUTE_TYPE_SETS[mapType]) {
+        return Object.keys(ROUTE_TYPE_COLOURS);
+    }
+    return ROUTE_TYPE_SETS[mapType];
+}
 
 function getRouteTypeColour(type) {
     return ROUTE_TYPE_COLOURS[type] || null;
@@ -5664,6 +5682,16 @@ function openEditRouteModal(routeId, options = {}) {
     if (idEl)   idEl.value = route.id;
     if (nameEl) nameEl.value = String(route.name || 'Route');
     if (descEl) descEl.value = String(route.description || '');
+
+    // Filter route type dropdown by map type
+    const typeSelect = document.getElementById('edit-route-type');
+    if (typeSelect) {
+        const allowedTypes = getFilteredRouteTypes(found.map.mapType || 'General');
+        typeSelect.innerHTML = '<option value="">(select type)</option>'
+            + allowedTypes.map(function(t) {
+                return '<option value="' + t + '"' + (route.type === t ? ' selected' : '') + '>' + t + '</option>';
+            }).join('');
+    }
 
     // Colour swatches
     const colourInput = document.getElementById('edit-route-colour');
@@ -11807,8 +11835,6 @@ function renderMapCard(map, isOpen = false) {
             ${isExpanded ? `
             <div class="px-4 pb-4 border-t border-gray-100">
 
-                <p class="text-sm text-gray-700 mt-3">${map.description || ''}</p>
-
                 ${photoHtml}
 
                 ${detailsHtml}
@@ -14700,9 +14726,8 @@ ${(() => {
     const _nextIndex  = (openMap && Array.isArray(openMap.tracks)) ? openMap.tracks.length + 1 : 1;
     const _defName    = _nextIndex === 1 ? 'Perimeter' : `Route ${_nextIndex}`;
 
-    // Colour swatches (shared by both states)
-    // OS map colours for route type swatches
-    const _routeTypes = [
+    // Colour swatches — filtered by map type
+    const _allRouteTypes = [
         { type: 'Any',               color: '#000000' },
         { type: 'A Road',            color: '#FFA500' },
         { type: 'B Road',            color: '#FFD700' },
@@ -14725,6 +14750,8 @@ ${(() => {
         { type: 'Towpath',           color: '#008080' },
         { type: 'Unclassified Road', color: '#FFFF00' },
     ];
+    const _allowedTypes = getFilteredRouteTypes(openMap ? openMap.mapType : 'General');
+    const _routeTypes = _allRouteTypes.filter(rt => _allowedTypes.includes(rt.type));
 
 
     // Default colour = first route type colour (Footpath pink)
@@ -14756,7 +14783,7 @@ ${(() => {
     const _bodyOff = '<div class="p-4">'        + '<div class="mb-3">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">New Route Name</label>'        +   '<input id="inline-route-name" type="text" value="' + _defName.replace(/"/g, '&quot;') + '" class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm" placeholder="e.g. Perimeter">'        + '</div>'        + '<div class="mb-3">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">New Route Type</label>'        +   _startTypeSelect        + '</div>'        + '<div class="mb-4">'        +   '<label class="block text-sm font-medium text-gray-700 mb-2">New Route Colour</label>'        +   '<div class="flex gap-2 flex-wrap">' + _startSwatchHtml + '</div>'        +   '<input type="hidden" id="inline-route-colour" value="' + _defColor + '">'        + '</div>'        + '<div class="flex gap-3">'        +   '<button type="button" onclick="mapRoutingExpanded=false;rerenderCompassIfActive()" class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>'        +   '<button id="start-route-btn" type="button" onclick="handleStartRouteClick()" class="flex-1 py-3 rounded-xl font-bold text-white shadow bg-green-600 hover:bg-green-700">\uD83D\uDFE2 Start Routing</button>'        + '</div>'        + '</div>';
 
     // Body shown when ROUTING IS ON — status + stop
-    const _bodyOn = '<div class="p-4">'        + '<p class="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">'        +   '<i class="fas fa-circle text-green-500"></i>'        +   (activeRoute ? ('<span class="text-gray-800">' + (activeRoute.name || 'Route') + '</span>') : 'Recording…')        + '</p>'        + '<div class="mb-4">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">Change Route Type</label>'        +   '<select id="switch-route-type" class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm" onchange="switchRouteType(this.value);this.value=\'\'">'        +   '<option value="">— change route type —</option><option value="Any">Any</option><option value="A Road">A Road</option><option value="B Road">B Road</option><option value="Beach">Beach</option><option value="Bridle Path">Bridle Path</option><option value="Canal">Canal</option><option value="Coastal Path">Coastal Path</option><option value="Cycleway">Cycleway</option><option value="Field">Field</option><option value="Flight Path">Flight Path</option><option value="Footpath">Footpath</option><option value="Lane">Lane</option><option value="Motorway">Motorway</option><option value="Path">Path</option><option value="Private Property">Private Property</option><option value="Railway">Railway</option><option value="River">River</option><option value="Sea Route">Sea Route</option><option value="Street">Street</option><option value="Towpath">Towpath</option><option value="Unclassified Road">Unclassified Road</option>'        +   '</select>'        + '</div>'        + '<div class="flex gap-3">'        +   '<button type="button" onclick="mapRoutingExpanded=false;rerenderCompassIfActive()" class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>'        +   '<button id="stop-route-btn" type="button" onclick="handleStopRouteClick()" class="flex-1 py-3 rounded-xl font-bold text-white shadow bg-red-600 hover:bg-red-700">🔴 Stop Routing</button>'        + '</div>'        + '</div>';
+    const _bodyOn = '<div class="p-4">'        + '<p class="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">'        +   '<i class="fas fa-circle text-green-500"></i>'        +   (activeRoute ? ('<span class="text-gray-800">' + (activeRoute.name || 'Route') + '</span>') : 'Recording…')        + '</p>'        + '<div class="mb-4">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">Change Route Type</label>'        +   '<select id="switch-route-type" class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm" onchange="switchRouteType(this.value);this.value=\'\'">'        +   '<option value="">— change route type —</option>'        + getFilteredRouteTypes(openMap ? openMap.mapType : 'General').map(function(t){ return '<option value="' + t + '">' + t + '</option>'; }).join('')        +   '</select>'        + '</div>'        + '<div class="flex gap-3">'        +   '<button type="button" onclick="mapRoutingExpanded=false;rerenderCompassIfActive()" class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>'        +   '<button id="stop-route-btn" type="button" onclick="handleStopRouteClick()" class="flex-1 py-3 rounded-xl font-bold text-white shadow bg-red-600 hover:bg-red-700">🔴 Stop Routing</button>'        + '</div>'        + '</div>';
 
     const _bodyHtml = mapRoutingExpanded ? (isOn ? _bodyOn : _bodyOff) : '';
 
