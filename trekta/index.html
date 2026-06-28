@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.488
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.449
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -11591,6 +11591,23 @@ function renderMapCard(map, isOpen = false) {
         statusBadge = `<span class="inline-block mr-2 px-2 py-1 rounded-lg text-xs font-bold bg-red-100 text-red-800">CLOSED</span>`;
     }
 
+    // Map type badge
+    const _mapTypeEmoji = {
+        'Town / City':     '🏙️',
+        'Countryside':     '🌄',
+        'Road Trip':       '🚗',
+        'Flight':          '✈️',
+        'Train / Rail':    '🚂',
+        'Water':           '⛵',
+        'Coastal / Beach': '🏖️',
+        'General':         '🗺️',
+    };
+    const _mapType = map.mapType || 'General';
+    const _mapTypeEmojiBadge = _mapTypeEmoji[_mapType] || '🗺️';
+    const mapTypeBadge = '<span class="inline-block px-2 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 mr-1">'
+        + _mapTypeEmojiBadge + ' ' + _mapType
+        + '</span>';
+
     // Pre-compute merge panel HTML (must be outside template literal to avoid syntax errors)
     let _mergePanelHtml = '';
     if (mergeMapsOpen) {
@@ -11899,7 +11916,7 @@ function renderMapCard(map, isOpen = false) {
                  onclick="toggleMapCard('${map.id}')">
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
-                        ${statusBadge}
+                        ${statusBadge}${mapTypeBadge}
                         <h3 class="text-xl font-bold text-primary truncate">${map.name || 'Unnamed Map'}</h3>
                     </div>
                     ${!isExpanded ? summaryBadges : ''}
