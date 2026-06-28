@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.90
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.91
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -14102,11 +14102,17 @@ function logPointToActiveRoute(lat, lon, accuracy) {
     saveMapsToLocalStorage();
 }
 
+let _startRouteInProgress = false;
 function handleStartRouteClick() {
+    if (_startRouteInProgress) return;
+    _startRouteInProgress = true;
+    setTimeout(function() { _startRouteInProgress = false; }, 1000);
+
     const openMap = maps.find(s => s.status === 'Open');
 
     if (!openMap) {
         showMessage('You must have an open map to record a route.', 'error');
+        _startRouteInProgress = false;
         return;
     }
 
@@ -17452,16 +17458,9 @@ if (routeVisibilityToggles && routeVisibilityToggles.length > 0) {
 
 
 
-// --- Route Start/Stop buttons (Compass/Map page) ---
-    const startRouteBtn = document.getElementById('start-route-btn');
-    if (startRouteBtn) {
-        startRouteBtn.addEventListener('click', handleStartRouteClick);
-    }
+// --- Route Start/Stop buttons handled via onclick attribute ---
 
-    const stopRouteBtn = document.getElementById('stop-route-btn');
-    if (stopRouteBtn) {
-        stopRouteBtn.addEventListener('click', handleStopRouteClick);
-    }
+    // stop-route-btn handled via onclick attribute
 
 // 2b. Route Edit Buttons — handled via inline onclick, no delegation needed
 
