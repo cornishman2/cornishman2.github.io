@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.88
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.89
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -4354,19 +4354,7 @@ async function fileToResizedDataUrl(file) {
         const TRACK_POINT_MIN_DISTANCE_METERS = 1; // only log a point if you've moved at least this far
 
 function isAnyRouteRecording() {
-    if (!activeRouteId || !activeRouteMapId) return false;
-    // Also verify the route object itself is still recording
-    const _map = maps.find(function(s) { return s.id === activeRouteMapId; });
-    if (!_map || !Array.isArray(_map.tracks)) return false;
-    const _route = _map.tracks.find(function(t) { return t && t.id === activeRouteId; });
-    if (!_route || !_route.isRecording) {
-        // Stale state — clean up
-        activeRouteMapId = null;
-        activeRouteId = null;
-        isRoutingActive = false;
-        return false;
-    }
-    return true;
+    return Boolean(activeRouteId && activeRouteMapId);
 }
         
 
@@ -14122,6 +14110,7 @@ function handleStartRouteClick() {
         return;
     }
 
+    console.log('[START] activeRouteId=', activeRouteId, 'activeRouteMapId=', activeRouteMapId, 'isRoutingActive=', isRoutingActive);
     if (isAnyRouteRecording()) {
         showMessage('A route is already being recorded. Stop it before starting a new one.', 'warning');
         return;
@@ -14174,6 +14163,7 @@ function handleStartRouteClick() {
  * Stop recording the active route (if any).
  */
 function handleStopRouteClick() {
+    console.log('[STOP] activeRouteId=', activeRouteId, 'activeRouteMapId=', activeRouteMapId, 'isRoutingActive=', isRoutingActive);
     // Try getActiveRoute first, fall back to scanning all maps for isRecording:true
     let active = getActiveRoute();
     if (!active) {
