@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.82
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.83
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -17871,6 +17871,57 @@ function triggerFavouritePhotoCapture(findId) {
     _findCardPhotoPending = findId;
     const inp = document.getElementById('find-card-photo-input');
     if (inp) { inp.value = ''; inp.click(); }
+}
+
+async function executeMergeMaps(targetMapId) {
+    const targetMap = maps.find(function(m) { return m.id === targetMapId; });
+    if (!targetMap) { showMessage('Target map not found.', 'error'); return; }
+
+    const checkboxes = document.querySelectorAll('.merge-map-checkbox:checked');
+    const selectedIds = Array.from(checkboxes).map(function(cb) { return cb.dataset.mapId; });
+    if (!selectedIds.length) { showMessage('No maps selected.', 'error'); return; }
+
+    const existingPlaceIds = new Set((targetMap.targets || []).map(function(t) { return t.id; }));
+    const existingRouteIds = new Set((targetMap.tracks  || []).map(function(r) { return r.id; }));
+
+    var placesAdded = 0, routesAdded = 0;
+
+    for (var i = 0; i < selectedIds.length; i++) {
+        const srcMap = maps.find(function(m) { return m.id === selectedIds[i]; });
+        if (!srcMap) continue;
+
+        // Merge places
+        if (Array.isArray(srcMap.targets)) {
+            for (var j = 0; j < srcMap.targets.length; j++) {
+                const place = srcMap.targets[j];
+                if (!place || place.deleted) continue;
+                if (existingPlaceIds.has(place.id)) continue;
+                if (!Array.isArray(targetMap.targets)) targetMap.targets = [];
+                targetMap.targets.push(Object.assign({}, place));
+                existingPlaceIds.add(place.id);
+                placesAdded++;
+            }
+        }
+
+        // Merge routes
+        if (Array.isArray(srcMap.tracks)) {
+            for (var k = 0; k < srcMap.tracks.length; k++) {
+                const route = srcMap.tracks[k];
+                if (!route || route.deleted) continue;
+                if (existingRouteIds.has(route.id)) continue;
+                if (!Array.isArray(targetMap.tracks)) targetMap.tracks = [];
+                targetMap.tracks.push(Object.assign({}, route));
+                existingRouteIds.add(route.id);
+                routesAdded++;
+            }
+        }
+    }
+
+    targetMap.dateLastChanged = Date.now();
+    saveMapsToLocalStorage();
+    mergeMapsOpen = false;
+    showMessage('Merged: ' + placesAdded + ' places and ' + routesAdded + ' routes added.', 'success');
+    render();
 }
 
 async function sharePlaceAsHtml(placeId, mapId) {
