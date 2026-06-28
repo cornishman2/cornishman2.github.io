@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.107
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.488
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -4428,6 +4428,51 @@ function ensureRoutingThen(fn) {
 }
 
         
+// Place types per map type — used to filter dropdowns
+const PLACE_TYPE_SETS = {
+    'Town / City': [
+        'ATM','Bank','Bar','Bus Stop','Café','Castle / Ruins','Church / Chapel',
+        'City Centre','Dead End','Emergency Department','Fast Food','Historic Site',
+        'Hospital','Information Point','Metro / Underground','Minor Injuries Unit',
+        'Museum','Old Town','One Way','Pharmacy','Police Station','Pub','Public Toilet',
+        'Restaurant','Shop','Shopping Centre / Mall','Supermarket','Town Centre',
+        'Town Hall','Town Square','Train Station'
+    ],
+    'Countryside': [
+        'ATM','Bakery','Bar','Beach','Bridge','Bus Stop','Camping Barn','Campsite',
+        'Castle / Ruins','Church / Chapel','Dead End','Ferry Terminal','Forest / Wood',
+        'Gate','Hill / Summit','Historic Site','Information Point','Lake / Reservoir',
+        'Moorland','Museum','Old Town','Petrol Station','Pharmacy','Pub','Public Toilet',
+        'Restaurant','Shop','Stile','Stream','Trig Point','Valley','Viewpoint'
+    ],
+    'Road Trip': [
+        'ATM','Bank','Bus Stop','Café','Fast Food','Ferry Terminal','Free Parking',
+        'Hotel','Long Stay Parking','Petrol Station','Police Station','Restaurant',
+        'Short Stay Parking','Train Station'
+    ],
+    'Flight': [
+        'Airport','Hotel','Information Point'
+    ],
+    'Train / Rail': [
+        'Bus Stop','Hotel','Information Point','Metro / Underground','Train Station'
+    ],
+    'Water': [
+        'Bridge','Campsite','Ferry Terminal','Hotel','Information Point',
+        'Lake / Reservoir','Pub','Public Toilet','Restaurant','River','Stream'
+    ],
+    'Coastal / Beach': [
+        'Bar','Beach','Café','Camping Barn','Campsite','Ferry Terminal','Hotel',
+        'Information Point','Pub','Public Toilet','Restaurant','Shop','Viewpoint'
+    ],
+};
+
+function getFilteredPlaceTypes(mapType) {
+    if (!mapType || mapType === 'General' || !PLACE_TYPE_SETS[mapType]) {
+        return null; // null means show all types
+    }
+    return PLACE_TYPE_SETS[mapType];
+}
+
 // Route types per map type — used to filter dropdowns
 const ROUTE_TYPE_SETS = {
     'Town / City':     ['Any','A Road','B Road','Cycleway','Footpath','Lane','Path','Private Property','Street','Unclassified Road'],
@@ -4463,6 +4508,20 @@ const ROUTE_TYPE_COLOURS = {
     'Towpath':            '#008080',  // teal
     'Unclassified Road':  '#FFFF00',  // yellow
 };
+
+function buildPlaceTypeOptionsHtml(mapType, selectedValue) {
+    const allowed = getFilteredPlaceTypes(mapType);
+    if (!allowed) {
+        // General — return full optgroup list (already in the HTML forms)
+        return null;
+    }
+    // Filtered — flat list sorted alphabetically
+    const sel = selectedValue || '';
+    return '<option value="">— select type —</option>'
+        + allowed.map(function(t) {
+            return '<option value="' + t + '"' + (sel === t ? ' selected' : '') + '>' + t + '</option>';
+        }).join('');
+}
 
 function getFilteredRouteTypes(mapType) {
     if (!mapType || mapType === 'General' || !ROUTE_TYPE_SETS[mapType]) {
@@ -9003,6 +9062,15 @@ function showNewPlaceModal() {
     const form = document.getElementById('new-place-form');
     if (form) form.reset();
 
+    // Filter place type dropdown by map type
+    setTimeout(function() {
+        const typeEl = document.getElementById('place-type');
+        if (typeEl) {
+            const opts = buildPlaceTypeOptionsHtml(openMap.mapType, '');
+            if (opts) typeEl.innerHTML = opts;
+        }
+    }, 150);
+
     currentNewPlacePhotos = [];
 
     const statusSpan  = document.getElementById('new-place-photo-status');
@@ -10076,7 +10144,15 @@ async function showEditPlaceModal(placeId, mapId) {
 
     document.getElementById('edit-place-description').value = typeof place.description === 'string' ? place.description : '';
     const typeEl = document.getElementById('edit-place-type');
-    if (typeEl) typeEl.value = place.type || 'Unknown';
+    if (typeEl) {
+        const openMap = maps.find(s => s.status === 'Open');
+        const filteredOpts = buildPlaceTypeOptionsHtml(openMap ? openMap.mapType : 'General', place.type || '');
+        if (filteredOpts) {
+            typeEl.innerHTML = filteredOpts;
+        } else {
+            typeEl.value = place.type || 'Unknown';
+        }
+    }
     // Set star rating radio and highlight
     const ratingVal = place.rating ? String(place.rating) : '';
     document.querySelectorAll('#edit-place-form input[name="placeRating"]').forEach(r => {
@@ -14236,7 +14312,7 @@ function handleStartRouteClick() {
     const colourEl = document.getElementById('inline-route-colour');
 
     const nextIndex = openMap.tracks ? openMap.tracks.length + 1 : 1;
-    const defName   = nextIndex === 1 ? 'Perimeter' : `Route ${nextIndex}`;
+    const defName   = nextIndex === 1 ? 'Route 1' : `Route ${nextIndex}`;
     const name  = (nameEl  && nameEl.value.trim())  ? nameEl.value.trim()  : defName;
     const type  = (typeEl  && typeEl.value)          ? typeEl.value         : '';
     const desc  = '';
@@ -14704,7 +14780,7 @@ ${(() => {
 
     // Compute defaults for the "ready to start" form
     const _nextIndex  = (openMap && Array.isArray(openMap.tracks)) ? openMap.tracks.length + 1 : 1;
-    const _defName    = _nextIndex === 1 ? 'Perimeter' : `Route ${_nextIndex}`;
+    const _defName    = _nextIndex === 1 ? 'Route 1' : `Route ${_nextIndex}`;
 
     // Colour swatches — filtered by map type
     const _allRouteTypes = [
