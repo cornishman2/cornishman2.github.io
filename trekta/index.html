@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.93
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.94
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -404,19 +404,25 @@
           <option value="">(select type)</option>
           <option value="Any">Any</option>
           <option value="A Road">A Road</option>
+          <option value="B Road">B Road</option>
           <option value="Beach">Beach</option>
           <option value="Bridle Path">Bridle Path</option>
           <option value="Canal">Canal</option>
           <option value="Coastal Path">Coastal Path</option>
           <option value="Cycleway">Cycleway</option>
+          <option value="Field">Field</option>
           <option value="Flight Path">Flight Path</option>
           <option value="Footpath">Footpath</option>
-          <option value="Minor Road">Minor Road</option>
+          <option value="Lane">Lane</option>
           <option value="Motorway">Motorway</option>
+          <option value="Path">Path</option>
+          <option value="Private Property">Private Property</option>
           <option value="Railway">Railway</option>
           <option value="River">River</option>
           <option value="Sea Route">Sea Route</option>
+          <option value="Street">Street</option>
           <option value="Towpath">Towpath</option>
+          <option value="Unclassified Road">Unclassified Road</option>
         </select>
       </div>
 
@@ -425,19 +431,25 @@
         <div class="flex gap-2 flex-wrap" id="edit-route-colour-swatches">
           <button type="button" data-color="#000000" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#000000" title="Any (black)"></button>
           <button type="button" data-color="#FFA500" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#FFA500" title="A Road (amber)"></button>
+          <button type="button" data-color="#FFD700" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#FFD700;border-color:#ccc" title="B Road (dark yellow)"></button>
           <button type="button" data-color="#B8860B" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#B8860B" title="Beach (dark goldenrod)"></button>
           <button type="button" data-color="#FF8C00" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#FF8C00" title="Bridle Path (orange)"></button>
           <button type="button" data-color="#4169E1" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#4169E1" title="Canal (mid blue)"></button>
           <button type="button" data-color="#228B22" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#228B22" title="Coastal Path (green)"></button>
           <button type="button" data-color="#9400D3" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#9400D3" title="Cycleway (purple)"></button>
+          <button type="button" data-color="#8B7355" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#8B7355" title="Field (brown)"></button>
           <button type="button" data-color="#87CEEB" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#87CEEB" title="Flight Path (sky blue)"></button>
           <button type="button" data-color="#FF69B4" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#FF69B4" title="Footpath (pink)"></button>
-          <button type="button" data-color="#FFFF00" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#FFFF00;border-color:#ccc" title="Minor Road (yellow)"></button>
+          <button type="button" data-color="#6B8E23" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#6B8E23" title="Lane (olive)"></button>
           <button type="button" data-color="#0000CD" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#0000CD" title="Motorway (blue)"></button>
+          <button type="button" data-color="#2E8B57" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#2E8B57" title="Path (sea green)"></button>
+          <button type="button" data-color="#DC143C" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#DC143C" title="Private Property (crimson)"></button>
           <button type="button" data-color="#444444" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#444444" title="Railway (dark grey)"></button>
           <button type="button" data-color="#00BFFF" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#00BFFF" title="River (cyan)"></button>
           <button type="button" data-color="#006994" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#006994" title="Sea Route (ocean blue)"></button>
+          <button type="button" data-color="#808080" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#808080" title="Street (grey)"></button>
           <button type="button" data-color="#008080" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#008080" title="Towpath (teal)"></button>
+          <button type="button" data-color="#FFFF00" class="route-colour-swatch w-8 h-8 rounded-full border-2 border-transparent" style="background:#FFFF00;border-color:#ccc" title="Unclassified Road (yellow)"></button>
         </div>
         <input type="hidden" id="edit-route-colour" name="routeColour" />
       </div>
@@ -4390,21 +4402,27 @@ function ensureRoutingThen(fn) {
         
 // Route type colours — based on standard OS map conventions
 const ROUTE_TYPE_COLOURS = {
-    'Any':           '#000000',  // black
-    'A Road':        '#FFA500',  // amber (OS A road)
-    'Beach':         '#B8860B',  // dark goldenrod
-    'Bridle Path':   '#FF8C00',  // orange (OS bridle path)
-    'Canal':         '#4169E1',  // mid blue (OS canal)
-    'Coastal Path':  '#228B22',  // green (OS coastal path)
-    'Cycleway':      '#9400D3',  // purple (OS cycleway)
-    'Flight Path':   '#87CEEB',  // sky blue
-    'Footpath':      '#FF69B4',  // pink-red (OS footpath)
-    'Minor Road':    '#FFFF00',  // yellow (OS minor road)
-    'Motorway':      '#0000CD',  // blue (OS motorway)
-    'Railway':       '#444444',  // dark grey (OS railway)
-    'River':         '#00BFFF',  // cyan (OS river)
-    'Sea Route':     '#006994',  // dark ocean blue
-    'Towpath':       '#008080',  // teal (OS towpath)
+    'Any':                '#000000',  // black
+    'A Road':             '#FFA500',  // amber
+    'B Road':             '#FFD700',  // dark yellow
+    'Beach':              '#B8860B',  // dark goldenrod
+    'Bridle Path':        '#FF8C00',  // orange
+    'Canal':              '#4169E1',  // mid blue
+    'Coastal Path':       '#228B22',  // green
+    'Cycleway':           '#9400D3',  // purple
+    'Field':              '#8B7355',  // light brown
+    'Flight Path':        '#87CEEB',  // sky blue
+    'Footpath':           '#FF69B4',  // pink-red
+    'Lane':               '#6B8E23',  // olive
+    'Motorway':           '#0000CD',  // blue
+    'Path':               '#2E8B57',  // sea green
+    'Private Property':   '#DC143C',  // crimson
+    'Railway':            '#444444',  // dark grey
+    'River':              '#00BFFF',  // cyan
+    'Sea Route':          '#006994',  // dark ocean blue
+    'Street':             '#808080',  // grey
+    'Towpath':            '#008080',  // teal
+    'Unclassified Road':  '#FFFF00',  // yellow
 };
 
 function getRouteTypeColour(type) {
@@ -4479,7 +4497,6 @@ function applyRouteTypeColour(type) {
 }
 
 function pickRouteColor(index) {
-    // Default palette uses OS-convention colours
     const palette = [
         '#FF69B4',  // footpath pink
         '#FF8C00',  // bridle path orange
@@ -4489,6 +4506,10 @@ function pickRouteColor(index) {
         '#00BFFF',  // river cyan
         '#008080',  // towpath teal
         '#444444',  // railway grey
+        '#2E8B57',  // path sea green
+        '#6B8E23',  // lane olive
+        '#808080',  // street grey
+        '#8B7355',  // field brown
     ];
     return palette[Math.abs(index) % palette.length];
 }
@@ -14116,9 +14137,7 @@ function handleStartRouteClick() {
         return;
     }
 
-    console.log('[START] activeRouteId=', activeRouteId, 'activeRouteMapId=', activeRouteMapId, 'isRoutingActive=', isRoutingActive);
     if (isAnyRouteRecording()) {
-        console.trace('[ALREADY RECORDING] called from:');
         showMessage('A route is already being recorded. Stop it before starting a new one.', 'warning');
         return;
     }
@@ -14170,7 +14189,6 @@ function handleStartRouteClick() {
  * Stop recording the active route (if any).
  */
 function handleStopRouteClick() {
-    console.log('[STOP] activeRouteId=', activeRouteId, 'activeRouteMapId=', activeRouteMapId, 'isRoutingActive=', isRoutingActive);
     // Try getActiveRoute first, fall back to scanning all maps for isRecording:true
     let active = getActiveRoute();
     if (!active) {
@@ -14277,39 +14295,52 @@ function renderRoutesPanel(openMap) {
                               <option value=""${!route.type ? ' selected' : ''}>(select type)</option>
                               <option value="Any"${route.type==='Any'?' selected':''}>Any</option>
                               <option value="A Road"${route.type==='A Road'?' selected':''}>A Road</option>
+                              <option value="B Road"${route.type==='B Road'?' selected':''}>B Road</option>
                               <option value="Beach"${route.type==='Beach'?' selected':''}>Beach</option>
                               <option value="Bridle Path"${route.type==='Bridle Path'?' selected':''}>Bridle Path</option>
                               <option value="Canal"${route.type==='Canal'?' selected':''}>Canal</option>
                               <option value="Coastal Path"${route.type==='Coastal Path'?' selected':''}>Coastal Path</option>
                               <option value="Cycleway"${route.type==='Cycleway'?' selected':''}>Cycleway</option>
+                              <option value="Field"${route.type==='Field'?' selected':''}>Field</option>
                               <option value="Flight Path"${route.type==='Flight Path'?' selected':''}>Flight Path</option>
                               <option value="Footpath"${route.type==='Footpath'?' selected':''}>Footpath</option>
-                              <option value="Minor Road"${route.type==='Minor Road'?' selected':''}>Minor Road</option>
+                              <option value="Lane"${route.type==='Lane'?' selected':''}>Lane</option>
                               <option value="Motorway"${route.type==='Motorway'?' selected':''}>Motorway</option>
+                              <option value="Path"${route.type==='Path'?' selected':''}>Path</option>
+                              <option value="Private Property"${route.type==='Private Property'?' selected':''}>Private Property</option>
                               <option value="Railway"${route.type==='Railway'?' selected':''}>Railway</option>
                               <option value="River"${route.type==='River'?' selected':''}>River</option>
                               <option value="Sea Route"${route.type==='Sea Route'?' selected':''}>Sea Route</option>
+                              <option value="Street"${route.type==='Street'?' selected':''}>Street</option>
                               <option value="Towpath"${route.type==='Towpath'?' selected':''}>Towpath</option>
+                              <option value="Unclassified Road"${route.type==='Unclassified Road'?' selected':''}>Unclassified Road</option>
                             </select>
                         </div>
                         <div class="mb-3">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Route Colour</label>
                             <div class="flex gap-2 flex-wrap" id="inline-edit-route-swatches-${route.id}">
                                 ${[
-                                    { c: '#FF69B4', label: 'Footpath'      },
-                                    { c: '#FF8C00', label: 'Bridle Path'   },
-                                    { c: '#9400D3', label: 'Cycleway'      },
-                                    { c: '#FFFF00', label: 'Minor Road'    },
-                                    { c: '#FFA500', label: 'A Road'        },
-                                    { c: '#0000CD', label: 'Motorway'      },
-                                    { c: '#444444', label: 'Railway'       },
-                                    { c: '#4169E1', label: 'Canal'         },
-                                    { c: '#00BFFF', label: 'River'         },
-                                    { c: '#228B22', label: 'Coastal Path'  },
-                                    { c: '#008080', label: 'Towpath'       },
-                                    { c: '#006994', label: 'Sea Route'     },
-                                    { c: '#87CEEB', label: 'Flight Path'   },
-                                    { c: '#888888', label: 'Something else'},
+                                    { c: '#000000', label: 'Any'              },
+                                    { c: '#FFA500', label: 'A Road'           },
+                                    { c: '#FFD700', label: 'B Road'           },
+                                    { c: '#B8860B', label: 'Beach'            },
+                                    { c: '#FF8C00', label: 'Bridle Path'      },
+                                    { c: '#4169E1', label: 'Canal'            },
+                                    { c: '#228B22', label: 'Coastal Path'     },
+                                    { c: '#9400D3', label: 'Cycleway'         },
+                                    { c: '#8B7355', label: 'Field'            },
+                                    { c: '#87CEEB', label: 'Flight Path'      },
+                                    { c: '#FF69B4', label: 'Footpath'         },
+                                    { c: '#6B8E23', label: 'Lane'             },
+                                    { c: '#0000CD', label: 'Motorway'         },
+                                    { c: '#2E8B57', label: 'Path'             },
+                                    { c: '#DC143C', label: 'Private Property' },
+                                    { c: '#444444', label: 'Railway'          },
+                                    { c: '#00BFFF', label: 'River'            },
+                                    { c: '#006994', label: 'Sea Route'        },
+                                    { c: '#808080', label: 'Street'           },
+                                    { c: '#008080', label: 'Towpath'          },
+                                    { c: '#FFFF00', label: 'Unclassified Road'},
                                 ].map(s => {
                                     const sel = s.c === (route.color || '#FF69B4');
                                     return `<button type="button"
@@ -14610,21 +14641,27 @@ ${(() => {
     // Colour swatches (shared by both states)
     // OS map colours for route type swatches
     const _routeTypes = [
-        { type: 'Any',           color: '#000000' },
-        { type: 'A Road',        color: '#FFA500' },
-        { type: 'Beach',         color: '#B8860B' },
-        { type: 'Bridle Path',   color: '#FF8C00' },
-        { type: 'Canal',         color: '#4169E1' },
-        { type: 'Coastal Path',  color: '#228B22' },
-        { type: 'Cycleway',      color: '#9400D3' },
-        { type: 'Flight Path',   color: '#87CEEB' },
-        { type: 'Footpath',      color: '#FF69B4' },
-        { type: 'Minor Road',    color: '#FFFF00' },
-        { type: 'Motorway',      color: '#0000CD' },
-        { type: 'Railway',       color: '#444444' },
-        { type: 'River',         color: '#00BFFF' },
-        { type: 'Sea Route',     color: '#006994' },
-        { type: 'Towpath',       color: '#008080' },
+        { type: 'Any',               color: '#000000' },
+        { type: 'A Road',            color: '#FFA500' },
+        { type: 'B Road',            color: '#FFD700' },
+        { type: 'Beach',             color: '#B8860B' },
+        { type: 'Bridle Path',       color: '#FF8C00' },
+        { type: 'Canal',             color: '#4169E1' },
+        { type: 'Coastal Path',      color: '#228B22' },
+        { type: 'Cycleway',          color: '#9400D3' },
+        { type: 'Field',             color: '#8B7355' },
+        { type: 'Flight Path',       color: '#87CEEB' },
+        { type: 'Footpath',          color: '#FF69B4' },
+        { type: 'Lane',              color: '#6B8E23' },
+        { type: 'Motorway',          color: '#0000CD' },
+        { type: 'Path',              color: '#2E8B57' },
+        { type: 'Private Property',  color: '#DC143C' },
+        { type: 'Railway',           color: '#444444' },
+        { type: 'River',             color: '#00BFFF' },
+        { type: 'Sea Route',         color: '#006994' },
+        { type: 'Street',            color: '#808080' },
+        { type: 'Towpath',           color: '#008080' },
+        { type: 'Unclassified Road', color: '#FFFF00' },
     ];
 
 
@@ -14657,7 +14694,7 @@ ${(() => {
     const _bodyOff = '<div class="p-4">'        + '<div class="mb-3">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">New Route Name</label>'        +   '<input id="inline-route-name" type="text" value="' + _defName.replace(/"/g, '&quot;') + '" class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm" placeholder="e.g. Perimeter">'        + '</div>'        + '<div class="mb-3">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">New Route Type</label>'        +   _startTypeSelect        + '</div>'        + '<div class="mb-4">'        +   '<label class="block text-sm font-medium text-gray-700 mb-2">New Route Colour</label>'        +   '<div class="flex gap-2 flex-wrap">' + _startSwatchHtml + '</div>'        +   '<input type="hidden" id="inline-route-colour" value="' + _defColor + '">'        + '</div>'        + '<div class="flex gap-3">'        +   '<button type="button" onclick="mapRoutingExpanded=false;rerenderCompassIfActive()" class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>'        +   '<button id="start-route-btn" type="button" onclick="handleStartRouteClick()" class="flex-1 py-3 rounded-xl font-bold text-white shadow bg-green-600 hover:bg-green-700">\uD83D\uDFE2 Start Routing</button>'        + '</div>'        + '</div>';
 
     // Body shown when ROUTING IS ON — status + stop
-    const _bodyOn = '<div class="p-4">'        + '<p class="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">'        +   '<i class="fas fa-circle text-green-500"></i>'        +   (activeRoute ? ('<span class="text-gray-800">' + (activeRoute.name || 'Route') + '</span>') : 'Recording…')        + '</p>'        + '<div class="mb-4">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">Change Route Type</label>'        +   '<select id="switch-route-type" class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm" onchange="switchRouteType(this.value);this.value=\'\'">'        +   '<option value="">— change route type —</option><option value="Any">Any</option><option value="A Road">A Road</option><option value="Beach">Beach</option><option value="Bridle Path">Bridle Path</option><option value="Canal">Canal</option><option value="Coastal Path">Coastal Path</option><option value="Cycleway">Cycleway</option><option value="Flight Path">Flight Path</option><option value="Footpath">Footpath</option><option value="Minor Road">Minor Road</option><option value="Motorway">Motorway</option><option value="Railway">Railway</option><option value="River">River</option><option value="Sea Route">Sea Route</option><option value="Towpath">Towpath</option>'        +   '</select>'        + '</div>'        + '<div class="flex gap-3">'        +   '<button type="button" onclick="mapRoutingExpanded=false;rerenderCompassIfActive()" class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>'        +   '<button id="stop-route-btn" type="button" onclick="handleStopRouteClick()" class="flex-1 py-3 rounded-xl font-bold text-white shadow bg-red-600 hover:bg-red-700">🔴 Stop Routing</button>'        + '</div>'        + '</div>';
+    const _bodyOn = '<div class="p-4">'        + '<p class="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">'        +   '<i class="fas fa-circle text-green-500"></i>'        +   (activeRoute ? ('<span class="text-gray-800">' + (activeRoute.name || 'Route') + '</span>') : 'Recording…')        + '</p>'        + '<div class="mb-4">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">Change Route Type</label>'        +   '<select id="switch-route-type" class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm" onchange="switchRouteType(this.value);this.value=\'\'">'        +   '<option value="">— change route type —</option><option value="Any">Any</option><option value="A Road">A Road</option><option value="B Road">B Road</option><option value="Beach">Beach</option><option value="Bridle Path">Bridle Path</option><option value="Canal">Canal</option><option value="Coastal Path">Coastal Path</option><option value="Cycleway">Cycleway</option><option value="Field">Field</option><option value="Flight Path">Flight Path</option><option value="Footpath">Footpath</option><option value="Lane">Lane</option><option value="Motorway">Motorway</option><option value="Path">Path</option><option value="Private Property">Private Property</option><option value="Railway">Railway</option><option value="River">River</option><option value="Sea Route">Sea Route</option><option value="Street">Street</option><option value="Towpath">Towpath</option><option value="Unclassified Road">Unclassified Road</option>'        +   '</select>'        + '</div>'        + '<div class="flex gap-3">'        +   '<button type="button" onclick="mapRoutingExpanded=false;rerenderCompassIfActive()" class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>'        +   '<button id="stop-route-btn" type="button" onclick="handleStopRouteClick()" class="flex-1 py-3 rounded-xl font-bold text-white shadow bg-red-600 hover:bg-red-700">🔴 Stop Routing</button>'        + '</div>'        + '</div>';
 
     const _bodyHtml = mapRoutingExpanded ? (isOn ? _bodyOn : _bodyOff) : '';
 
