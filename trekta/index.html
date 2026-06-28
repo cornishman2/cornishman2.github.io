@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.83
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.84
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -14176,7 +14176,8 @@ function handleStopRouteClick() {
 
     // Clear "active recording" pointers (this is the real source of truth)
     activeRouteMapId = null;
-    activeRouteId = null;
+    activeRouteId    = null;
+    isRoutingActive  = false;
 
     // Keep GPS running if user position is shown OR navigation place exists
     // (Requires you to have needsGpsNow() as discussed, or inline the rating)
@@ -14574,9 +14575,7 @@ ${(() => {
         ? openMap.tracks.find(t => t && t.isRecording)
         : null;
 
-    const statusText = isOn
-        ? `Routing ON${activeRoute ? ` \u00b7 Recording: ${activeRoute.name || 'Route'}` : ''}`
-        : 'Routing OFF';
+    const statusText = isOn ? 'Recording' : 'Off';
 
     const _borderCls  = mapRoutingExpanded ? 'border-b border-gray-100' : '';
     const _chevronCls = mapRoutingExpanded ? 'fa-chevron-up' : 'fa-chevron-down';
