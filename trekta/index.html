@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.100
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.107
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -4465,7 +4465,6 @@ const ROUTE_TYPE_COLOURS = {
 };
 
 function getFilteredRouteTypes(mapType) {
-    console.log('[FILTER] mapType=', JSON.stringify(mapType), 'has key=', !!(ROUTE_TYPE_SETS && ROUTE_TYPE_SETS[mapType]));
     if (!mapType || mapType === 'General' || !ROUTE_TYPE_SETS[mapType]) {
         return Object.keys(ROUTE_TYPE_COLOURS);
     }
@@ -14382,27 +14381,7 @@ function renderRoutesPanel(openMap) {
                                     class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
                                     onchange="(function(v){const c=getRouteTypeColour(v);if(c){document.querySelectorAll('#inline-edit-route-swatches-${route.id} .et-swatch').forEach(x=>{x.style.borderColor='transparent';x.style.transform='scale(1)'});document.getElementById('inline-edit-route-colour-${route.id}').value=c;}})(this.value)">
                               <option value=""${!route.type ? ' selected' : ''}>(select type)</option>
-                              <option value="Any"${route.type==='Any'?' selected':''}>Any</option>
-                              <option value="A Road"${route.type==='A Road'?' selected':''}>A Road</option>
-                              <option value="B Road"${route.type==='B Road'?' selected':''}>B Road</option>
-                              <option value="Beach"${route.type==='Beach'?' selected':''}>Beach</option>
-                              <option value="Bridle Path"${route.type==='Bridle Path'?' selected':''}>Bridle Path</option>
-                              <option value="Canal"${route.type==='Canal'?' selected':''}>Canal</option>
-                              <option value="Coastal Path"${route.type==='Coastal Path'?' selected':''}>Coastal Path</option>
-                              <option value="Cycleway"${route.type==='Cycleway'?' selected':''}>Cycleway</option>
-                              <option value="Field"${route.type==='Field'?' selected':''}>Field</option>
-                              <option value="Flight Path"${route.type==='Flight Path'?' selected':''}>Flight Path</option>
-                              <option value="Footpath"${route.type==='Footpath'?' selected':''}>Footpath</option>
-                              <option value="Lane"${route.type==='Lane'?' selected':''}>Lane</option>
-                              <option value="Motorway"${route.type==='Motorway'?' selected':''}>Motorway</option>
-                              <option value="Path"${route.type==='Path'?' selected':''}>Path</option>
-                              <option value="Private Property"${route.type==='Private Property'?' selected':''}>Private Property</option>
-                              <option value="Railway"${route.type==='Railway'?' selected':''}>Railway</option>
-                              <option value="River"${route.type==='River'?' selected':''}>River</option>
-                              <option value="Sea Route"${route.type==='Sea Route'?' selected':''}>Sea Route</option>
-                              <option value="Street"${route.type==='Street'?' selected':''}>Street</option>
-                              <option value="Towpath"${route.type==='Towpath'?' selected':''}>Towpath</option>
-                              <option value="Unclassified Road"${route.type==='Unclassified Road'?' selected':''}>Unclassified Road</option>
+                              ${getFilteredRouteTypes(openMap ? openMap.mapType : 'General').map(t => '<option value="' + t + '"' + (route.type === t ? ' selected' : '') + '>' + t + '</option>').join('')}
                             </select>
                         </div>
                         <div class="mb-3">
