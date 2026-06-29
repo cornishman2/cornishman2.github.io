@@ -144,7 +144,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.160
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.893
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13885,7 +13885,6 @@ const toPercent = (x, y) => {
     const gridTileHtml = '';
 
     if (drawRoutes.length) {
-        const routeStrokeWidth = 0.2; // thin stroke matching tile grid visual weight
         const polylines = drawRoutes.map(route => {
             const pts = route.points
                 .filter(p => p && typeof p.lat === 'number' && typeof p.lon === 'number')
@@ -13896,7 +13895,9 @@ const toPercent = (x, y) => {
                 })
                 .join(' ');
 
-            const stroke = route.color || '#2563eb';
+            const stroke = getRouteTypeColor(route.type) || route.color || '#2563eb';
+            const _rtWidth = getRouteTypeWidth(route.type) || 1;
+            const routeStrokeWidth = 0.2 * _rtWidth;
             let routeLabelHtml = '';
             if (showMapRouteLabels && route.name && !route.isRecording) {
                 const midPts = route.points.filter(p => p && isFinite(p.lat) && isFinite(p.lon));
@@ -14055,8 +14056,6 @@ const toPercent = (x, y) => {
     // 6. Route SVG (if any)
     let routeSvgHtml = '';
     if (drawRoutes.length) {
-        const routeStrokeWidth = 0.2; // thin stroke matching tile grid visual weight
-        const polylines = drawRoutes.map(route => {
             const pts = route.points
                 .filter(p => p && typeof p.lat === 'number' && typeof p.lon === 'number')
                 .map(p => {
@@ -14066,7 +14065,9 @@ const toPercent = (x, y) => {
                 })
                 .join(' ');
 
-            const stroke = route.color || '#2563eb';
+            const stroke = getRouteTypeColor(route.type) || route.color || '#2563eb';
+            const _rtW = getRouteTypeWidth(route.type) || 1;
+            const routeStrokeWidth = 0.2 * _rtW;
             let routeLabelHtml = '';
             if (showMapRouteLabels && route.name && !route.isRecording) {
                 const midPts = route.points.filter(p => p && isFinite(p.lat) && isFinite(p.lon));
