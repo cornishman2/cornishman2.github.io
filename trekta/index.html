@@ -144,7 +144,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.014
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.160
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -15050,6 +15050,19 @@ ${(() => {
 /** Renders the content for the Settings page. */
 function renderSettingsPage() {
     const secondaryColor = 'rgb(var(--color-secondary))';
+
+    // Pre-compute route type settings rows
+    const _rtRows = ROUTE_TYPE_NAMES.map(function(name) {
+        const s = routeTypeSettings[name] || { color: '#000000', width: 1 };
+        const border = (s.color === '#FFFF00' || s.color === '#FFD700' || s.color === '#87CEEB')
+            ? 'border:1px solid #ccc;' : '';
+        return '<tr>'
+            + '<td class="py-2 px-3 text-sm font-medium text-gray-700">' + name + '</td>'
+            + '<td class="py-2 px-3"><div class="w-6 h-6 rounded-full inline-block" style="background:' + s.color + ';' + border + '"></div></td>'
+            + '<td class="py-2 px-3 text-sm text-gray-700 text-center">' + s.width + '</td>'
+            + '<td class="py-2 px-3"><button type="button" onclick="openRouteTypeEdit(&quot;' + name + '&quot;)" class="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"><i class="fas fa-pencil-alt"></i></button></td>'
+            + '</tr>';
+    }).join('');
     // Calculate totals for display
     const allMaps = Array.isArray(maps) ? maps : [];
     const settingsTotals = (typeof getAppTotals === 'function') ? getAppTotals() : {};
@@ -15528,22 +15541,7 @@ async function exportAllMapsPhotoGalleries_ToFolder(rootPick) {
             </div>
         `;
 
-        // Pre-compute route type settings rows
-    const _rtRows = (function() {
-        return ROUTE_TYPE_NAMES.map(function(name) {
-            const s = routeTypeSettings[name] || { color: '#000000', width: 1 };
-            const border = s.color === '#FFFF00' || s.color === '#FFD700' || s.color === '#87CEEB'
-                ? 'border:1px solid #ccc;' : '';
-            return '<tr>'
-                + '<td class="py-2 px-3 text-sm font-medium text-gray-700">' + name + '</td>'
-                + '<td class="py-2 px-3"><div class="w-6 h-6 rounded-full inline-block" style="background:' + s.color + ';' + border + '"></div></td>'
-                + '<td class="py-2 px-3 text-sm text-gray-700 text-center">' + s.width + '</td>'
-                + '<td class="py-2 px-3"><button type="button" onclick="openRouteTypeEdit(&quot;' + name + '&quot;)" class="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"><i class="fas fa-pencil-alt"></i></button></td>'
-                + '</tr>';
-        }).join('');
-    })();
-
-    return `
+        return `
           <section class="mapSection" id="map-${safeId(map?.id)}">
             ${info}
 
