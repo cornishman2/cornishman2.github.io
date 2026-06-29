@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.449
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.084
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -9336,6 +9336,42 @@ function openPhotoGallery(photos, startIndex) {
     openModal('photo-gallery-modal');
 }
 
+function toggleInlinePlaceRating(placeId, stars) {
+    // Find the place and toggle the rating (click same star = clear rating)
+    const map = maps.find(s => s.status === 'Open');
+    if (!map) return;
+    const place = Array.isArray(map.targets) ? map.targets.find(t => t.id === placeId) : null;
+    if (!place) return;
+    place.rating = String(place.rating) === String(stars) ? '' : String(stars);
+    saveMapsToLocalStorage();
+    rerenderPlaceCard(placeId);
+}
+
+function setInlinePlaceStatus(placeId, status) {
+    const map = maps.find(s => s.status === 'Open');
+    if (!map) return;
+    const place = Array.isArray(map.targets) ? map.targets.find(t => t.id === placeId) : null;
+    if (!place) return;
+    place.status = status;
+    saveMapsToLocalStorage();
+    rerenderPlaceCard(placeId);
+}
+
+function rerenderPlaceCard(placeId) {
+    // Re-render just this place card without full page render
+    const map = maps.find(s => s.status === 'Open');
+    if (!map) return;
+    const place = map.targets ? map.targets.find(t => t.id === placeId) : null;
+    if (!place) return;
+    const el = document.querySelector('[data-place-card-id="' + placeId + '"]');
+    if (el) {
+        el.outerHTML = renderPlaceCard(place, map.id);
+        resolvePhotoRefs();
+    } else {
+        render();
+    }
+}
+
 async function deletePlacePhoto(placeId, mapId, index) {
     const map = maps.find(s => s.id === mapId);
     const place = map && Array.isArray(map.targets) ? map.targets.find(t => t.id === placeId) : null;
@@ -12897,6 +12933,27 @@ function renderPlaceCard(place, mapId) {
     // Logged date/time (read-only display on card)
     const loggedText = formatPlaceLoggedDateTime(place);
 
+    // Pre-compute filtered place type options (avoids nested template literal issues)
+    const openMap = maps.find(s => s.status === 'Open');
+    const _placeTypeOpts = (function() {
+        const allowed = getFilteredPlaceTypes(openMap ? openMap.mapType : 'General');
+        const cur = place.type || '';
+        if (!allowed) {
+            // General — build full optgroup list
+            return '<option value="">— select type —</option>'
+                + '<optgroup label="Access &amp; Navigation"><option value="Bridge"' + (cur==='Bridge'?' selected':'') + '>Bridge</option><option value="Dead End"' + (cur==='Dead End'?' selected':'') + '>Dead End</option><option value="Gate"' + (cur==='Gate'?' selected':'') + '>Gate</option><option value="One Way"' + (cur==='One Way'?' selected':'') + '>One Way</option><option value="Stile"' + (cur==='Stile'?' selected':'') + '>Stile</option></optgroup>'
+                + '<optgroup label="Accommodation"><option value="Camping Barn"' + (cur==='Camping Barn'?' selected':'') + '>Camping Barn</option><option value="Campsite"' + (cur==='Campsite'?' selected':'') + '>Campsite</option><option value="Hostel"' + (cur==='Hostel'?' selected':'') + '>Hostel</option><option value="Hotel"' + (cur==='Hotel'?' selected':'') + '>Hotel</option></optgroup>'
+                + '<optgroup label="Food &amp; Drink"><option value="Bakery"' + (cur==='Bakery'?' selected':'') + '>Bakery</option><option value="Bar"' + (cur==='Bar'?' selected':'') + '>Bar</option><option value="Café"' + (cur==='Café'?' selected':'') + '>Café</option><option value="Fast Food"' + (cur==='Fast Food'?' selected':'') + '>Fast Food</option><option value="Pub"' + (cur==='Pub'?' selected':'') + '>Pub</option><option value="Restaurant"' + (cur==='Restaurant'?' selected':'') + '>Restaurant</option><option value="Shop"' + (cur==='Shop'?' selected':'') + '>Shop</option><option value="Supermarket"' + (cur==='Supermarket'?' selected':'') + '>Supermarket</option></optgroup>'
+                + '<optgroup label="Nature &amp; Landscape"><option value="Beach"' + (cur==='Beach'?' selected':'') + '>Beach</option><option value="Forest / Wood"' + (cur==='Forest / Wood'?' selected':'') + '>Forest / Wood</option><option value="Hill / Summit"' + (cur==='Hill / Summit'?' selected':'') + '>Hill / Summit</option><option value="Lake / Reservoir"' + (cur==='Lake / Reservoir'?' selected':'') + '>Lake / Reservoir</option><option value="Moorland"' + (cur==='Moorland'?' selected':'') + '>Moorland</option><option value="River"' + (cur==='River'?' selected':'') + '>River</option><option value="Stream"' + (cur==='Stream'?' selected':'') + '>Stream</option><option value="Trig Point"' + (cur==='Trig Point'?' selected':'') + '>Trig Point</option><option value="Valley"' + (cur==='Valley'?' selected':'') + '>Valley</option><option value="Viewpoint"' + (cur==='Viewpoint'?' selected':'') + '>Viewpoint</option></optgroup>'
+                + '<optgroup label="Places of Interest"><option value="Castle / Ruins"' + (cur==='Castle / Ruins'?' selected':'') + '>Castle / Ruins</option><option value="Church / Chapel"' + (cur==='Church / Chapel'?' selected':'') + '>Church / Chapel</option><option value="City Centre"' + (cur==='City Centre'?' selected':'') + '>City Centre</option><option value="Historic Site"' + (cur==='Historic Site'?' selected':'') + '>Historic Site</option><option value="Museum"' + (cur==='Museum'?' selected':'') + '>Museum</option><option value="Old Town"' + (cur==='Old Town'?' selected':'') + '>Old Town</option><option value="Shopping Centre / Mall"' + (cur==='Shopping Centre / Mall'?' selected':'') + '>Shopping Centre / Mall</option><option value="Town Centre"' + (cur==='Town Centre'?' selected':'') + '>Town Centre</option><option value="Town Square"' + (cur==='Town Square'?' selected':'') + '>Town Square</option></optgroup>'
+                + '<optgroup label="Services"><option value="ATM"' + (cur==='ATM'?' selected':'') + '>ATM</option><option value="Bank"' + (cur==='Bank'?' selected':'') + '>Bank</option><option value="Emergency Department"' + (cur==='Emergency Department'?' selected':'') + '>Emergency Department</option><option value="Hospital"' + (cur==='Hospital'?' selected':'') + '>Hospital</option><option value="Information Point"' + (cur==='Information Point'?' selected':'') + '>Information Point</option><option value="Minor Injuries Unit"' + (cur==='Minor Injuries Unit'?' selected':'') + '>Minor Injuries Unit</option><option value="Pharmacy"' + (cur==='Pharmacy'?' selected':'') + '>Pharmacy</option><option value="Police Station"' + (cur==='Police Station'?' selected':'') + '>Police Station</option><option value="Public Toilet"' + (cur==='Public Toilet'?' selected':'') + '>Public Toilet</option><option value="Town Hall"' + (cur==='Town Hall'?' selected':'') + '>Town Hall</option></optgroup>'
+                + '<optgroup label="Transport"><option value="Airport"' + (cur==='Airport'?' selected':'') + '>Airport</option><option value="Bus Stop"' + (cur==='Bus Stop'?' selected':'') + '>Bus Stop</option><option value="Ferry Terminal"' + (cur==='Ferry Terminal'?' selected':'') + '>Ferry Terminal</option><option value="Free Parking"' + (cur==='Free Parking'?' selected':'') + '>Free Parking</option><option value="Long Stay Parking"' + (cur==='Long Stay Parking'?' selected':'') + '>Long Stay Parking</option><option value="Metro / Underground"' + (cur==='Metro / Underground'?' selected':'') + '>Metro / Underground</option><option value="Petrol Station"' + (cur==='Petrol Station'?' selected':'') + '>Petrol Station</option><option value="Short Stay Parking"' + (cur==='Short Stay Parking'?' selected':'') + '>Short Stay Parking</option><option value="Train Station"' + (cur==='Train Station'?' selected':'') + '>Train Station</option></optgroup>'
+                + '<optgroup label="Other"><option value="Something else"' + (cur==='Something else'?' selected':'') + '>Something else</option></optgroup>';
+        }
+        return '<option value="">— select type —</option>'
+            + allowed.map(function(t) { return '<option value="' + t + '"' + (cur===t?' selected':'') + '>' + t + '</option>'; }).join('');
+    })();
+
     // --- Type icon & colour chip ---
     let typeColor = 'bg-primary';
     let typeIcon  = 'fas fa-gem';
@@ -13050,7 +13107,7 @@ switch (s) {
         : `<i class="fas fa-chevron-down text-gray-400"></i>`;
 
     return `
-        <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden" data-place-card-id="${place.id}">
 
             <!-- Always-visible header — tap to expand/collapse -->
             <div class="flex items-center justify-between p-4 cursor-pointer select-none"
@@ -13084,18 +13141,71 @@ switch (s) {
 
                 ${photoHtml}
 
-                <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-600">
+                <!-- Inline edit fields -->
+                <div class="mt-3 space-y-3">
+
+                    <!-- Description -->
                     <div>
-                        <p class="font-semibold">Coordinates</p>
-                        <p class="break-words">${coordsText}</p>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Description</label>
+                        <input type="text" id="inline-desc-${place.id}"
+                               value="${(place.description || '').replace(/"/g, '&quot;')}"
+                               class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary">
                     </div>
+
+                    <!-- Type -->
                     <div>
-                        <p class="font-semibold">Accuracy</p>
-                        <p>${accuracyText}</p>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Type</label>
+                        <select id="inline-type-${place.id}"
+                                class="w-full border border-gray-300 rounded-md p-2 text-sm bg-white focus:ring-primary focus:border-primary">
+                            ${_placeTypeOpts}
+                        </select>
                     </div>
+
+                    <!-- Rating -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Rating</label>
+                        <div class="flex gap-2">
+                            ${['1','2','3','4','5'].map(function(v) {
+                                const sel = String(place.rating || '') === v;
+                                return '<button type="button" onclick="toggleInlinePlaceRating(&quot;' + place.id + '&quot;,' + v + ')" '
+                                    + 'class="px-3 py-1 rounded text-sm font-bold border ' + (sel ? 'bg-yellow-400 text-gray-900 border-yellow-500' : 'bg-white text-gray-400 border-gray-300') + '">'
+                                    + '★'.repeat(Number(v)) + '</button>';
+                            }).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Status</label>
+                        <div class="grid grid-cols-4 gap-1">
+                            ${['Not visited','Visited','To return','Avoid'].map(function(st) {
+                                const sel = (place.status || 'Not visited') === st;
+                                const col = st==='Not visited' ? (sel?'bg-green-500 text-white':'bg-gray-100 text-gray-700')
+                                          : st==='Visited'     ? (sel?'bg-gray-900 text-white':'bg-gray-100 text-gray-700')
+                                          : st==='To return'   ? (sel?'bg-yellow-400 text-gray-900':'bg-gray-100 text-gray-700')
+                                          :                      (sel?'bg-red-500 text-white':'bg-gray-100 text-gray-700');
+                                return '<button type="button" onclick="setInlinePlaceStatus(&quot;' + place.id + '&quot;,&quot;' + st + '&quot;)" '
+                                    + 'class="py-1 text-xs rounded font-semibold ' + col + '">'
+                                    + st + '</button>';
+                            }).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Notes</label>
+                        <textarea id="inline-notes-${place.id}" rows="2"
+                                  class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary">${place.notes || ''}</textarea>
+                    </div>
+
                 </div>
 
-                <div class="mt-3 text-xs text-gray-500 flex justify-between">
+                <!-- GPS info (read-only) -->
+                <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-500">
+                    <div><span class="font-semibold">Coordinates:</span> ${coordsText}</div>
+                    <div><span class="font-semibold">Accuracy:</span> ${accuracyText}</div>
+                </div>
+                <div class="mt-1 text-xs text-gray-400 flex justify-between">
                     <span>Logged: ${formatDate(place.time)}</span>
                     <span>${place.user || userProfile.name}</span>
                 </div>
