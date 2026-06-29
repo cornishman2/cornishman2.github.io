@@ -144,7 +144,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.384
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.138
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -14478,9 +14478,13 @@ function renderRoutesPanel(openMap) {
             const desc = String(route.description || '').trim();
 
             // Elevation stats and graph from route points
-            const _altPts = Array.isArray(route.points)
+            const _altPtsRaw = Array.isArray(route.points)
                 ? route.points.filter(p => p && p.alt != null && isFinite(p.alt))
                 : [];
+            // Filter altitude spikes (>100m from median)
+            const _altSorted = _altPtsRaw.map(p => p.alt).slice().sort((a,b) => a-b);
+            const _altMedian = _altSorted[Math.floor(_altSorted.length / 2)] || 0;
+            const _altPts = _altPtsRaw.filter(p => Math.abs(p.alt - _altMedian) <= 100);
             let _elevHtml = '';
             let _elevGraphHtml = '';
             if (_altPts.length >= 2) {
@@ -18779,11 +18783,17 @@ function buildElevationGraphHtml(openMap) {
     if (!openMap || !Array.isArray(openMap.tracks)) return '';
 
     // Collect all alt points across all visible routes in order
+    // Filter out altitude spikes (>100m from median)
     const segments = [];
     openMap.tracks.forEach(function(route) {
         if (!route || route.isVisible === false) return;
-        const pts = (Array.isArray(route.points) ? route.points : [])
+        var rawPts = (Array.isArray(route.points) ? route.points : [])
             .filter(function(p) { return p && p.alt != null && isFinite(p.alt); });
+        if (rawPts.length < 2) return;
+        // Compute median altitude for spike filtering
+        var sorted = rawPts.map(function(p) { return p.alt; }).slice().sort(function(a,b){return a-b;});
+        var median = sorted[Math.floor(sorted.length / 2)];
+        var pts = rawPts.filter(function(p) { return Math.abs(p.alt - median) <= 100; });
         if (pts.length >= 2) {
             segments.push({ route: route, pts: pts });
         }
