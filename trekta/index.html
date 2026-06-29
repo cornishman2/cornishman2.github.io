@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.835
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.141
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13082,39 +13082,27 @@ switch (s) {
         photosCount = thumbRef ? 1 : 0;
     }
 
-    let photoHtml = '';
-    if (thumbRef) {
-        const captionHtml = photosCount > 1
-            ? `<p class="mt-1 text-xs text-gray-600 text-center">
-                    ${photosCount} photos — tap to view gallery.
-               </p>`
-            : '';
+    // Build photo gallery HTML with individual dustbins for each photo
+    const _allPhotoRefs = Array.isArray(place.photos) && place.photos.length
+        ? place.photos
+        : (place.placePhotoRef ? [place.placePhotoRef] : (place.placePhotoData ? [place.placePhotoData] : []));
 
-        photoHtml = `
-            <div class="mt-3">
-                <div class="flex justify-center relative" style="width:91.666%%;margin:0 auto;">
-                    <img
-                        src=""
-                        data-photo-ref="${thumbRef}"
-                        data-photo-kind="place"
-                        data-place-id="${place.id}"
-                        data-map-id="${mapId}"
-                        alt="Place photo"
-                        class="w-full h-auto object-contain rounded-lg border border-gray-200 cursor-pointer"
-                        onclick="openPlacePhotoGallery('${place.id}', '${mapId}')"
-                    />
-                    <button
-                        type="button"
-                        class="absolute top-2 right-2 bg-black bg-opacity-60 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs hover:bg-opacity-80"
-                        onclick="event.stopPropagation(); deletePlacePhoto('${place.id}', '${mapId}', 0);"
-                        title="Delete photo"
-                    >
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </div>
-                ${captionHtml}
-            </div>
-        `;
+    let photoHtml = '';
+    if (_allPhotoRefs.length) {
+        const _photoItems = _allPhotoRefs.map(function(ref, idx) {
+            return '<div class="relative">'
+                + '<img src="" data-photo-ref="' + ref + '" data-photo-kind="place"'
+                + ' data-place-id="' + place.id + '" data-map-id="' + mapId + '"'
+                + ' alt="Photo ' + (idx+1) + '"'
+                + ' class="w-full h-32 object-cover rounded-lg border border-gray-200 cursor-pointer"'
+                + ' onclick="openPlacePhotoGallery(&quot;' + place.id + '&quot;,&quot;' + mapId + '&quot;)">'
+                + '<button type="button"'
+                + ' onclick="event.stopPropagation();deletePlacePhoto(&quot;' + place.id + '&quot;,&quot;' + mapId + '&quot;,' + idx + ')"'
+                + ' class="absolute top-1 right-1 bg-black bg-opacity-60 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"'
+                + ' title="Delete photo"><i class="fas fa-trash-alt"></i></button>'
+                + '</div>';
+        }).join('');
+        photoHtml = '<div class="mt-3 grid grid-cols-3 gap-2">' + _photoItems + '</div>';
     }
 
     const categoryText   = place.category ?? 'N/A';
