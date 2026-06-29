@@ -138,12 +138,13 @@
     <input type="file" id="place-card-photo-input" accept="image/*;capture=camera" class="hidden" onchange="handlePlaceCardPhotoSelected(event)">
     <input type="file" id="map-photo-input" accept="image/*;capture=camera" class="hidden" onchange="handleMapPhotoSelected(event)">
     <input type="file" id="quick-photo-place-input" accept="image/*" capture="environment" class="hidden" onchange="handleQuickPhotoPlaceSelected(event)">
+    <input type="file" id="quick-form-photo-input" accept="image/*;capture=camera" class="hidden" onchange="handleQuickFormPhotoSelected(event)">
 
 
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.911
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.250
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -18590,9 +18591,9 @@ function buildQuickFormHtml(openMap) {
                    class="w-full border border-gray-300 rounded-md p-2 text-sm">
             <div class="flex gap-2">
                 <button type="button"
-                        onclick="_quickPhotoQuickForm();document.getElementById('quick-photo-place-input').click()"
-                        class="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold border border-gray-200">
-                    <i class="fas fa-camera mr-1"></i> Photo
+                        onclick="document.getElementById('quick-form-photo-input').click()"
+                        class="flex-1 py-2 rounded-lg ${_quickFormPhotoRef ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-700'} text-sm font-semibold border border-gray-200">
+                    <i class="fas fa-camera mr-1"></i> ${_quickFormPhotoRef ? '✓ Photo' : 'Photo'}
                 </button>
                 <button type="button"
                         onclick="_quickFormStatus='Not visited';rerenderCompassIfActive()"
@@ -18673,18 +18674,42 @@ function _getQuickFormNameAndType() {
     return { type, name };
 }
 
-function quickSaveFormPlace() {
+async function quickSaveFormPlace() {
     const { type, name } = _getQuickFormNameAndType();
-    quickLogPlaceByCategory('', 'QUICK', {
+    const opts = {
         description: name,
         type: type,
         status: _quickFormStatus,
         rating: ''
-    });
+    };
+    if (_quickFormPhotoRef) {
+        opts.photos = [_quickFormPhotoRef];
+        opts.placePhotoRef = _quickFormPhotoRef;
+    }
+    quickLogPlaceByCategory('', 'QUICK', opts);
     // Reset form
     _quickFormName = '';
     _quickFormStatus = 'Not visited';
+    _quickFormPhotoRef = null;
     rerenderCompassIfActive();
+}
+
+async function handleQuickFormPhotoSelected(event) {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+
+    showMessage('Processing photo...', 'info');
+    try {
+        const dataUrl = await fileToResizedDataUrl(file);
+        const refs    = await saveDataUrlsAsPhotoRefs([dataUrl]);
+        _quickFormPhotoRef = refs[0] || dataUrl;
+        showMessage('Photo ready — tap Quick Save.', 'success');
+        rerenderCompassIfActive();
+    } catch(e) {
+        console.error('Quick form photo error:', e);
+        showMessage('Could not process photo.', 'error');
+    }
 }
 
 function _quickPhotoQuickForm() {
@@ -18708,6 +18733,7 @@ function _quickPhotoStarPlace(stars) {
 }
 
 let _quickPhotoPlacePending = null;
+let _quickFormPhotoRef = null;  // photo held ready for Quick Save
 
 
 function triggerQuickPhotoPlace(btn) {
@@ -18808,15 +18834,18 @@ async function handleQuickPhotoPlaceSelected(event) {
     }
 
     const _desc2 = p.label || 'Place';
-    console.log('[QUICK PHOTO] saving:', _desc2, 'type:', p.type, 'status:', p.status, 'refs:', photoRefs);
-    const _result = quickLogPlaceByCategory('', 'STAR', {
+    quickLogPlaceByCategory('', 'STAR', {
         description: _desc2,
         status: p.status || 'Visited',
         rating: p.rating ? String(p.rating) : '',
         type: p.type || 'Other',
         photos: photoRefs
     });
-    console.log('[QUICK PHOTO] result:', _result);
+    // Reset quick form after star+photo save
+    _quickFormName = '';
+    _quickFormStatus = 'Not visited';
+    _quickFormPhotoRef = null;
+    rerenderCompassIfActive();
 }
 
 
