@@ -144,7 +144,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.623
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.818
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -18870,23 +18870,39 @@ function buildElevationGraphHtml(openMap) {
         else          totalDescent -= diff;
     }
 
-    const statsTable = '<table style="width:100%;font-size:0.75rem;border-collapse:collapse;margin-top:6px;">'
-        + '<tr><td style="color:#9ca3af;padding:2px 4px;width:50%">Distance</td><td style="font-weight:600;padding:2px 4px;">' + distL + '</td></tr>'
-        + '<tr><td style="color:#9ca3af;padding:2px 4px;">Start</td><td style="font-weight:600;padding:2px 4px;">' + startAlt + 'm</td></tr>'
-        + '<tr><td style="color:#9ca3af;padding:2px 4px;">End</td><td style="font-weight:600;padding:2px 4px;">' + endAlt + 'm</td></tr>'
-        + '<tr><td style="color:#9ca3af;padding:2px 4px;">Highest</td><td style="font-weight:600;padding:2px 4px;">' + highAlt + 'm (' + highRel + 'm)</td></tr>'
-        + '<tr><td style="color:#9ca3af;padding:2px 4px;">Lowest</td><td style="font-weight:600;padding:2px 4px;">' + lowAlt + 'm (' + lowRel + 'm)</td></tr>'
-        + '<tr><td style="color:#9ca3af;padding:2px 4px;">Ascent</td><td style="font-weight:600;padding:2px 4px;">' + Math.round(totalAscent) + 'm</td></tr>'
-        + '<tr><td style="color:#9ca3af;padding:2px 4px;">Descent</td><td style="font-weight:600;padding:2px 4px;">' + Math.round(totalDescent) + 'm</td></tr>'
+    const statsTable = '<table style="width:100%;font-size:0.8rem;border-collapse:collapse;">'
+        + '<tr><td style="color:#374151;font-weight:700;padding:3px 4px;width:50%">Distance covered</td><td style="font-weight:700;padding:3px 4px;">' + distL + '</td></tr>'
+        + '<tr><td style="color:#374151;font-weight:700;padding:3px 4px;">Start</td><td style="font-weight:700;padding:3px 4px;">' + startAlt + 'm</td></tr>'
+        + '<tr><td style="color:#374151;font-weight:700;padding:3px 4px;">End</td><td style="font-weight:700;padding:3px 4px;">' + endAlt + 'm</td></tr>'
+        + '<tr><td style="color:#374151;font-weight:700;padding:3px 4px;">Highest</td><td style="font-weight:700;padding:3px 4px;">' + highAlt + 'm (' + highRel + 'm)</td></tr>'
+        + '<tr><td style="color:#374151;font-weight:700;padding:3px 4px;">Lowest</td><td style="font-weight:700;padding:3px 4px;">' + lowAlt + 'm (' + lowRel + 'm)</td></tr>'
+        + '<tr><td style="color:#374151;font-weight:700;padding:3px 4px;">Ascent</td><td style="font-weight:700;padding:3px 4px;">' + Math.round(totalAscent) + 'm</td></tr>'
+        + '<tr><td style="color:#374151;font-weight:700;padding:3px 4px;">Descent</td><td style="font-weight:700;padding:3px 4px;">' + Math.round(totalDescent) + 'm</td></tr>'
         + '</table>';
 
-    return '<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 px-3 pt-2 pb-2">'
-        + '<div class="text-xs text-gray-400 text-center mb-1">Distance covered: ' + distL + '</div>'
-        + '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="width:100%;height:40px;display:block;">'
-        + '<line x1="0" y1="' + H + '" x2="' + W + '" y2="' + H + '" stroke="#e5e7eb" stroke-width="0.5"/>'
-        + polylines
+    // Add axes to graph — viewBox with left margin for y-axis
+    const VW = 105, VH = 35, ML = 5; // viewBox width, height, left margin
+    // Rescale polylines x coords to account for left margin
+    const scaledPolylines = polylines.replace(/points="([^"]*)"/g, function(match, pts) {
+        const scaled = pts.split(' ').map(function(pair) {
+            const xy = pair.split(',');
+            if (xy.length !== 2) return pair;
+            const x = (parseFloat(xy[0]) / W * (VW - ML) + ML).toFixed(2);
+            return x + ',' + xy[1];
+        }).join(' ');
+        return 'points="' + scaled + '"';
+    });
+
+    return '<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 px-3 pt-2 pb-3">'
+        + '<div style="font-size:0.75rem;font-weight:700;color:#6b7280;text-align:center;margin-bottom:4px;">Elevation Graph</div>'
+        + '<svg viewBox="0 0 ' + VW + ' ' + VH + '" preserveAspectRatio="none" style="width:100%;height:48px;display:block;">'
+        // y-axis
+        + '<line x1="' + ML + '" y1="0" x2="' + ML + '" y2="' + VH + '" stroke="#d1d5db" stroke-width="0.8"/>'
+        // x-axis
+        + '<line x1="' + ML + '" y1="' + VH + '" x2="' + VW + '" y2="' + VH + '" stroke="#d1d5db" stroke-width="0.8"/>'
+        + scaledPolylines
         + '</svg>'
-        + statsTable
+        + '<div style="margin-top:10px;">' + statsTable + '</div>'
         + '</div>';
 }
 
