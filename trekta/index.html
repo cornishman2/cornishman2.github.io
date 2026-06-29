@@ -144,7 +144,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.984
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.819
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -14477,11 +14477,12 @@ function renderRoutesPanel(openMap) {
 
             const desc = String(route.description || '').trim();
 
-            // Elevation stats from route points
+            // Elevation stats and graph from route points
             const _altPts = Array.isArray(route.points)
                 ? route.points.filter(p => p && p.alt != null && isFinite(p.alt))
                 : [];
             let _elevHtml = '';
+            let _elevGraphHtml = '';
             if (_altPts.length >= 2) {
                 const _alts = _altPts.map(p => p.alt);
                 const _minAlt = Math.round(Math.min.apply(null, _alts));
@@ -14497,6 +14498,23 @@ function renderRoutesPanel(openMap) {
                     + ' ▼ ' + Math.round(_descent) + 'm'
                     + ' ↕ ' + _minAlt + '–' + _maxAlt + 'm'
                     + '</span>';
+
+                // Build elevation profile SVG graph
+                const _graphColor = getRouteTypeColor(route.type) || route.color || '#000000';
+                const _range = _maxAlt - _minAlt || 1;
+                const _w = 100, _h = 20; // viewBox units
+                const _pts = _altPts.map(function(p, i) {
+                    const x = (_w * i / (_altPts.length - 1)).toFixed(2);
+                    const y = (_h - _h * (p.alt - _minAlt) / _range).toFixed(2);
+                    return x + ',' + y;
+                }).join(' ');
+                _elevGraphHtml = '<svg viewBox="0 0 ' + _w + ' ' + _h + '" preserveAspectRatio="none"'
+                    + ' style="width:100%;height:32px;display:block;margin-top:4px;">'
+                    + '<polyline fill="none" stroke="' + _graphColor + '" stroke-width="1.5"'
+                    + ' stroke-linejoin="round" stroke-linecap="round" points="' + _pts + '"/>'
+                    + '<line x1="0" y1="' + _h + '" x2="' + _w + '" y2="' + _h
+                    + '" stroke="#e5e7eb" stroke-width="0.5"/>'
+                    + '</svg>';
             }
 
             const activeBadge = route.isRecording
@@ -14652,6 +14670,7 @@ function renderRoutesPanel(openMap) {
                             </button>
                         </div>
                     </div>
+                    ${_elevGraphHtml}
                 `}
 
                 </div>
