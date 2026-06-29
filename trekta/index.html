@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.971
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.911
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -18808,13 +18808,15 @@ async function handleQuickPhotoPlaceSelected(event) {
     }
 
     const _desc2 = p.label || 'Place';
-    quickLogPlaceByCategory('', 'STAR', {
+    console.log('[QUICK PHOTO] saving:', _desc2, 'type:', p.type, 'status:', p.status, 'refs:', photoRefs);
+    const _result = quickLogPlaceByCategory('', 'STAR', {
         description: _desc2,
         status: p.status || 'Visited',
         rating: p.rating ? String(p.rating) : '',
         type: p.type || 'Other',
         photos: photoRefs
     });
+    console.log('[QUICK PHOTO] result:', _result);
 }
 
 
