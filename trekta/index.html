@@ -144,7 +144,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.421
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.508
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -2406,20 +2406,18 @@ function renderHelpPage() {
       <h2 class="text-2xl font-extrabold text-primary mb-1">Help &amp; Getting Started</h2>
       <p class="text-sm text-gray-500 mb-2">Trekta – Map Your World</p>
       <p class="text-sm text-gray-700 mb-4">
-        Trekta is a personal mapping and journey-logging app. Record routes, log interesting places, save favourites, and build maps of anywhere you explore — walks, bike rides, holidays, heritage trails, and more. It works fully offline and stores everything on your device.
+        Trekta is a personal mapping and journey-logging app. Record routes, log places of interest, and build maps of anywhere you explore. Works fully offline and stores everything on your device.
       </p>
 
       <!-- NAVIGATION -->
       <div class="bg-white rounded-xl shadow border border-gray-100 p-4">
         <h3 class="text-lg font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-bars"></i> Navigation</h3>
-        <p class="text-sm text-gray-700 mb-2">Icons across the top (and along the bottom on mobile) switch between pages:</p>
         <div class="space-y-1 text-sm text-gray-700">
-          <div><i class="fas fa-home text-primary mr-2"></i><strong>Home</strong> — your map dashboard</div>
-          <div><i class="fas fa-compass text-primary mr-2"></i><strong>Map</strong> — live field view, route recording, and quick logging</div>
-          <div><i class="fas fa-map-marker-alt text-primary mr-2"></i><strong>Places</strong> — places of interest for the open map</div>
-          <div><i class="fas fa-trophy text-primary mr-2"></i><strong>Favourites</strong> — your permanent favourite places</div>
+          <div><i class="fas fa-home text-primary mr-2"></i><strong>Home</strong> — your maps dashboard</div>
+          <div><i class="fas fa-compass text-primary mr-2"></i><strong>Map</strong> — live field view, route recording, quick logging</div>
+          <div><i class="fas fa-map-marker-alt text-primary mr-2"></i><strong>Places</strong> — all logged places for the open map</div>
           <div><i class="fas fa-file-export text-primary mr-2"></i><strong>Export</strong> — backup, share, and import data</div>
-          <div><i class="fas fa-cog text-primary mr-2"></i><strong>Settings</strong> — profile, photo settings, quick-log buttons</div>
+          <div><i class="fas fa-cog text-primary mr-2"></i><strong>Settings</strong> — profile and photo settings</div>
           <div><i class="fas fa-question-circle text-primary mr-2"></i><strong>Help</strong> — this page</div>
         </div>
       </div>
@@ -2427,40 +2425,30 @@ function renderHelpPage() {
       <!-- HOME PAGE -->
       <div class="bg-white rounded-xl shadow border border-gray-100 p-4">
         <h3 class="text-lg font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-home"></i> Home Page</h3>
-        <p class="text-sm text-gray-700 mb-3">Your map dashboard. Shows every map with place, landmark, and favourite counts. Only one map can be <strong>Open</strong> at a time — it is the one used by the Map and Places pages.</p>
+        <p class="text-sm text-gray-700 mb-3">Your map dashboard. Shows all maps with counts. Only one map can be <strong>Open</strong> at a time.</p>
 
-        <p class="text-sm font-bold text-gray-700 mb-1">Map cards</p>
-        <p class="text-sm text-gray-700 mb-3">Each map is shown as a card. Tap the header or the <i class="fas fa-chevron-down text-gray-500"></i> chevron to expand it and reveal full details and action buttons. The currently open map expands automatically.</p>
+        <p class="text-sm font-bold text-gray-700 mb-1">Creating a map</p>
+        <p class="text-sm text-gray-700 mb-3">Tap <strong>Create New Map</strong>, enter a name, description and choose a <strong>Map Type</strong> (Town/City, Countryside, Road Trip, Flight, Train/Rail, Water, Coastal/Beach, or General). The map type filters the route and place type dropdowns to show only relevant options.</p>
+
+        <p class="text-sm font-bold text-gray-700 mb-1">Editing a map</p>
+        <p class="text-sm text-gray-700 mb-3">Tap a map card to expand it. Name, Description and Map Type are editable directly on the card. Tap <strong>Save</strong> to commit, <strong>Cancel</strong> to revert, or collapse the card to auto-save.</p>
 
         <p class="text-sm font-bold text-gray-700 mb-1">Map actions</p>
-        <div class="text-sm text-gray-700 space-y-1 mb-3">
-          <div><strong>Create New Map</strong> — opens the new-map form.</div>
-          <div><strong>Open</strong> — makes a map active for the Map and Places pages.</div>
-          <div><strong>Edit</strong> — update the name, description, photo, and optional details.</div>
-          <div><strong>Share as ZIP</strong> — packages the map and all photos for sharing via WhatsApp, email, etc.</div>
-          <div><strong>Delete</strong> — permanently removes the map and all its places.</div>
-        </div>
-
-        <p class="text-sm font-bold text-gray-700 mb-1">Optional map detail fields</p>
-        <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
-          <div>• Access permission details</div>
-          <div>• Area type &amp; terrain</div>
-          <div>• Weather &amp; conditions</div>
-          <div>• Purpose &amp; theme</div>
-          <div>• Access notes &amp; hazards</div>
-          <div>• Overall rating</div>
-          <div>• Would visit again?</div>
-          <div>• General observations</div>
-          <div>• Map photo</div>
+        <div class="text-sm text-gray-700 space-y-1 mb-2">
+          <div><strong>Close</strong> — closes the map (stays in your list).</div>
+          <div><strong>Add Photo to Map</strong> — attaches a photo. Multiple photos shown as a grid with dustbin to delete.</div>
+          <div><strong>Export as ZIP</strong> — packages the map and all photos for backup.</div>
+          <div><strong>Share as ZIP</strong> — shares via your device share sheet.</div>
+          <div><strong>Merge Maps</strong> — copies places and routes from other maps into this one.</div>
         </div>
       </div>
 
       <!-- MAP PAGE -->
       <div class="bg-white rounded-xl shadow border border-gray-100 p-4">
         <h3 class="text-lg font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-compass"></i> Map Page</h3>
-        <p class="text-sm text-gray-700 mb-3">The main field screen. Shows a north-up plot of all places, favourites, landmarks, and recorded routes for the open map. Your live GPS position is shown as a pulsing dot.</p>
+        <p class="text-sm text-gray-700 mb-3">The main field screen. Shows a north-up plot of all places and routes. Your GPS position is shown as a pulsing dot.</p>
 
-        <p class="text-sm font-bold text-gray-700 mb-1">Place &amp; Landmark pin colours (by visit status)</p>
+        <p class="text-sm font-bold text-gray-700 mb-1">Pin colours</p>
         <div class="flex flex-wrap gap-1 text-xs mb-3">
           <span class="inline-block px-2 py-1 rounded bg-green-500 text-white font-semibold">Green – Not visited</span>
           <span class="inline-block px-2 py-1 rounded bg-gray-900 text-white font-semibold">Black – Visited</span>
@@ -2468,132 +2456,87 @@ function renderHelpPage() {
           <span class="inline-block px-2 py-1 rounded bg-red-500 text-white font-semibold">Red – Avoid</span>
         </div>
 
-        <p class="text-sm font-bold text-gray-700 mb-1">Favourite pin colours (by type)</p>
-        <div class="flex flex-wrap gap-1 text-xs mb-3">
-          <span class="inline-block px-2 py-1 rounded bg-yellow-100 text-yellow-800 font-semibold">Yellow – Historic</span>
-          <span class="inline-block px-2 py-1 rounded bg-green-100 text-green-800 font-semibold">Green – Scenic</span>
-          <span class="inline-block px-2 py-1 rounded bg-teal-100 text-teal-800 font-semibold">Teal – Wildlife</span>
-          <span class="inline-block px-2 py-1 rounded bg-blue-100 text-blue-800 font-semibold">Blue – Leisure</span>
-          <span class="inline-block px-2 py-1 rounded bg-orange-100 text-orange-800 font-semibold">Orange – Refreshments</span>
-          <span class="inline-block px-2 py-1 rounded bg-purple-100 text-purple-800 font-semibold">Purple – Other</span>
-        </div>
-        <p class="text-xs text-gray-500 mb-3">Landmarks appear as small black filled circles with a label. Tap any pin to draw a navigation line from your position to it; tap again to clear.</p>
-
         <hr class="border-t border-gray-100 my-3">
-        <p class="text-sm font-bold text-gray-700 mb-1">Map controls</p>
+        <p class="text-sm font-bold text-gray-700 mb-1">Quick log form</p>
         <div class="text-sm text-gray-700 space-y-1 mb-3">
-          <div><strong>+ / −</strong> — zoom in and out.</div>
-          <div><strong>Reset</strong> — fit all pins in view.</div>
-          <div><strong>Show / Hide</strong> — toggle your live GPS position dot.</div>
-          <div><strong>◀ ▲ ▼ ▶</strong> — pan the map.</div>
+          <div><strong>Type</strong> — select a place type (filtered by map type).</div>
+          <div><strong>Name</strong> — optional. Defaults to the type if left blank.</div>
+          <div><strong>Photo</strong> — opens camera. Photo held ready — button turns green. Place not saved yet.</div>
+          <div><strong>Not visited / Visited</strong> — sets the initial status.</div>
+          <div><strong>Quick Save</strong> — saves the place with whatever has been filled in, including the photo.</div>
         </div>
 
         <hr class="border-t border-gray-100 my-3">
-        <p class="text-sm font-bold text-gray-700 mb-1">Map layers</p>
-        <p class="text-sm text-gray-700 mb-3">Expand <strong>Map layers</strong> to toggle routes, route labels, places, place labels, favourites, favourite labels, landmarks, and landmark labels independently.</p>
+        <p class="text-sm font-bold text-gray-700 mb-1">Star buttons</p>
+        <p class="text-sm text-gray-700 mb-2">Two rows of five star buttons log a place instantly. They pick up the Name and Type from the quick log form.</p>
+        <div class="flex gap-1 flex-wrap text-xs mb-3">
+          <span class="px-2 py-1 rounded bg-red-500 text-white font-semibold">&#9733; Avoid</span>
+          <span class="px-2 py-1 rounded bg-gray-900 text-white font-semibold">&#9733;&#9733; Visited</span>
+          <span class="px-2 py-1 rounded bg-gray-900 text-white font-semibold">&#9733;&#9733;&#9733; Visited</span>
+          <span class="px-2 py-1 rounded bg-yellow-400 text-gray-900 font-semibold">&#9733;&#9733;&#9733;&#9733; To return</span>
+          <span class="px-2 py-1 rounded bg-yellow-400 text-gray-900 font-semibold">&#9733;&#9733;&#9733;&#9733;&#9733; To return</span>
+        </div>
+        <p class="text-xs text-gray-500 mb-3">Row 1 (camera + stars) opens camera first then saves. Row 2 (stars only) saves immediately.</p>
 
         <hr class="border-t border-gray-100 my-3">
         <p class="text-sm font-bold text-gray-700 mb-1">Recording a route</p>
         <div class="text-sm text-gray-700 space-y-1 mb-3">
-          <div>Tap <strong>Start</strong> to begin recording your journey as a coloured line on the map.</div>
-          <div>The first route on a map is named <strong>Perimeter</strong>; subsequent routes are Route 2, Route 3, and so on. You can rename and recolour any route.</div>
-          <div>Tap <strong>Stop</strong> when you finish to end recording.</div>
-          <div>Saved routes appear in the <strong>Routes</strong> panel below the map.</div>
+          <div>Expand <strong>Routing Controls</strong> and tap <strong>Start Routing</strong>. Set a name, type and colour.</div>
+          <div>While recording, use <strong>Change Route Type</strong> to switch type mid-walk — the current route saves and a new one starts instantly.</div>
+          <div>Tap <strong>Stop Routing</strong> to finish.</div>
         </div>
 
-        <hr class="border-t border-gray-100 my-3">
-        <p class="text-sm font-bold text-gray-700 mb-1">Quick place buttons</p>
-        <p class="text-sm text-gray-700 mb-2">Coloured buttons log a place instantly at your GPS position. Camera buttons log a place and open the camera for a photo in one step. Configure the Category ranges for each colour in Settings.</p>
-
-        <hr class="border-t border-gray-100 my-3">
-        <p class="text-sm font-bold text-gray-700 mb-1">Logging landmarks</p>
-        <p class="text-sm text-gray-700 mb-3">To log a landmark (Car Park, Pub, Gate, Viewpoint etc.) tap <strong>Log New Place</strong> and select a landmark type from the Type dropdown. Landmarks appear as smaller pins on the map with their name label always shown.</p>
-
-        <hr class="border-t border-gray-100 my-3">
+        <p class="text-sm font-bold text-gray-700 mb-1">Route types</p>
+        <p class="text-sm text-gray-700">21 types available, filtered by map type: Any, A Road, B Road, Beach, Bridle Path, Canal, Coastal Path, Cycleway, Field, Flight Path, Footpath, Lane, Motorway, Path, Private Property, Railway, River, Sea Route, Street, Towpath, Unclassified Road.</p>
       </div>
 
       <!-- PLACES PAGE -->
       <div class="bg-white rounded-xl shadow border border-gray-100 p-4">
         <h3 class="text-lg font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-map-marker-alt"></i> Places Page</h3>
-        <p class="text-sm text-gray-700 mb-3">Lists all places and landmarks for the open map, sorted by Category or date.</p>
+        <p class="text-sm text-gray-700 mb-3">Lists all places for the open map. Use <strong>Search &amp; Filter</strong> to filter by type, status, favourites or map, and sort by date or type.</p>
 
         <p class="text-sm font-bold text-gray-700 mb-1">Logging a place</p>
-        <p class="text-sm text-gray-700 mb-3">Tap <strong>Log New Place</strong> to record a place of interest. Fields include description, category, star rating (1–5), type, GPS coordinates (auto-filled), and photos. All fields are optional except description.</p>
+        <p class="text-sm text-gray-700 mb-3">Tap <strong>Log New Place</strong>. Enter a description, choose a type from the categorised dropdown, add a rating and optional photo. GPS coordinates are logged automatically.</p>
 
-        <p class="text-sm font-bold text-gray-700 mb-1">Place card actions</p>
+        <p class="text-sm font-bold text-gray-700 mb-1">Place types</p>
+        <p class="text-sm text-gray-700 mb-3">Types are grouped into: Access &amp; Navigation, Accommodation, Food &amp; Drink, Nature &amp; Landscape, Places of Interest, Services, Transport. The list is filtered by your map type.</p>
+
+        <p class="text-sm font-bold text-gray-700 mb-1">Editing a place</p>
+        <p class="text-sm text-gray-700 mb-3">Tap a place card to expand it. All fields are editable directly: Description, Type, Rating, Status, Notes. Rating and Status update immediately on tap. Tap <strong>Save</strong> to commit description/type/notes changes, <strong>Cancel</strong> to revert, or collapse the card to auto-save.</p>
+
+        <p class="text-sm font-bold text-gray-700 mb-1">Photos</p>
+        <p class="text-sm text-gray-700 mb-3">Photos appear as a grid. Tap to view full size with a dustbin overlay. Tap the dustbin on a thumbnail or full-size photo to delete it. Tap <strong>Add Photo</strong> to add more.</p>
+
+        <p class="text-sm font-bold text-gray-700 mb-1">Place actions</p>
         <div class="text-sm text-gray-700 space-y-1 mb-2">
-          <div><strong>Visit status</strong> — Not visited · Visited · To return · Avoid</div>
-          <div><strong>Navigate</strong> — draws a line from your position to the place on the map.</div>
+          <div><strong>Navigate</strong> — draws a line from your GPS to the place on the map.</div>
           <div><strong>Centre Map</strong> — centres the map on this place.</div>
-          <div><strong>Edit</strong> — update any field or add/remove photos.</div>
-          <div><strong>Copy to Favourites</strong> — promotes the place to your permanent Favourites with additional notes.</div>
-          <div><strong>Delete</strong> — permanently removes the place.</div>
+          <div><strong>Show QR</strong> — shows a QR code for the place location.</div>
+          <div><strong>&#9825; Favourite</strong> — marks as favourite (&#9829; shown on map and card).</div>
+          <div><strong>Share</strong> — generates a standalone HTML report.</div>
+          <div><strong>Delete</strong> — immediately and permanently removes the place.</div>
         </div>
       </div>
 
-      <!-- FAVOURITES PAGE -->
+      <!-- EXPORT -->
       <div class="bg-white rounded-xl shadow border border-gray-100 p-4">
-        <h3 class="text-lg font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-trophy"></i> Favourites Page</h3>
-        <p class="text-sm text-gray-700 mb-3">Your permanent catalogue of favourite places, drawn from all maps. Use Search &amp; Filter to find by description, type, map, or date. Each favourite card shows full details, photos, and coordinates.</p>
-
-        <p class="text-sm font-bold text-gray-700 mb-1">Favourite card actions</p>
-        <div class="text-sm text-gray-700 space-y-1">
-          <div><strong>Edit</strong> — update any field or add/remove photos.</div>
-          <div><strong>Share Favourite</strong> — generates a self-contained HTML report with all details and photos, then opens the share sheet.</div>
-          <div><strong>Delete</strong> — permanently removes the favourite.</div>
+        <h3 class="text-lg font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-file-export"></i> Export &amp; Import</h3>
+        <div class="text-sm text-gray-700 space-y-2">
+          <div><strong>Export as ZIP</strong> — packages map, places, routes and photos. Recommended backup method.</div>
+          <div><strong>Export as GPX</strong> — standard GPX format for Google Maps, OsmAnd etc.</div>
+          <div><strong>Import Map (ZIP or JSON)</strong> — restores a previously exported map.</div>
+          <div><strong>Import GPX</strong> — imports waypoints and routes from a GPX file.</div>
         </div>
       </div>
 
-      <!-- EXPORT PAGE -->
+      <!-- SETTINGS -->
       <div class="bg-white rounded-xl shadow border border-gray-100 p-4">
-        <h3 class="text-lg font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-file-export"></i> Export &amp; Import Page</h3>
-
-        <p class="text-sm font-bold text-gray-700 mb-1">Export Open Map as ZIP</p>
-        <p class="text-sm text-gray-700 mb-3">Packages the open map — places, favourites, routes, and all photos — into a <strong>.zip</strong> file. This is the recommended backup method. Share via WhatsApp, email, or save to cloud storage.</p>
-
-        <hr class="border-t border-gray-100 my-3">
-        <p class="text-sm font-bold text-gray-700 mb-1">Export as GPX</p>
-        <p class="text-sm text-gray-700 mb-3">Exports the open map as a standard <strong>.gpx</strong> file compatible with Google Maps, OsmAnd, and most mapping apps. Choose which elements to include: places, landmarks, favourites, and/or routes.</p>
-
-        <hr class="border-t border-gray-100 my-3">
-        <p class="text-sm font-bold text-gray-700 mb-1">Import Map (ZIP or JSON)</p>
-        <p class="text-sm text-gray-700 mb-3">Imports a previously exported map file and adds it to your local data. Use to restore a backup or transfer data between devices.</p>
-
-        <hr class="border-t border-gray-100 my-3">
-        <p class="text-sm font-bold text-gray-700 mb-1">Import GPX</p>
-        <p class="text-sm text-gray-700">Imports a <strong>.gpx</strong> file containing waypoints and/or routes into the currently open map.</p>
-      </div>
-
-      <!-- SETTINGS PAGE -->
-      <div class="bg-white rounded-xl shadow border border-gray-100 p-4">
-        <h3 class="text-lg font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-cog"></i> Settings Page</h3>
-
-        <p class="text-sm font-bold text-gray-700 mb-1">Your Profile</p>
-        <p class="text-sm text-gray-700 mb-3">Set your name and club/group. Your name appears on photo stamps.</p>
-
-        <hr class="border-t border-gray-100 my-3">
-        <p class="text-sm font-bold text-gray-700 mb-1">Quick Place Buttons</p>
-        <p class="text-sm text-gray-700 mb-3">Configure the coloured quick-log buttons on the Map page. Each button has a Category range and type. Changes take effect immediately.</p>
-
-        <hr class="border-t border-gray-100 my-3">
-        <p class="text-sm font-bold text-gray-700 mb-1">Photo stamp</p>
-        <p class="text-sm text-gray-700 mb-3">Every photo is automatically stamped with your name, date/time, and GPS coordinates. The stamp is permanently baked into the image.</p>
-
-        <hr class="border-t border-gray-100 my-3">
-        <p class="text-sm font-bold text-gray-700 mb-1">Demo Map</p>
-        <p class="text-sm text-gray-700 mb-3">Tap <strong>Recreate Demo Map</strong> to restore the demo if you have deleted it.</p>
-
-        <hr class="border-t border-gray-100 my-3">
-        <p class="text-sm font-bold text-gray-700 mb-1">Danger Zone</p>
-        <p class="text-sm text-red-700"><strong>Reset ALL Local Data</strong> — permanently deletes everything on this device. Export first. Cannot be undone.</p>
-      </div>
-
-      <!-- DEMO MAP -->
-      <div class="bg-white rounded-xl shadow border border-gray-100 p-4">
-        <h3 class="text-lg font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-play-circle"></i> Demo Map</h3>
-        <p class="text-sm text-gray-700 mb-2">When you first open Trekta, a <strong>🟢 Demo Map — Try Me!</strong> appears on the Home page. It contains three pre-loaded routes (Village Walk, Heritage Trail, Bike Ride), places of interest, favourites, and landmarks — but no GPS coordinates yet.</p>
-        <p class="text-sm text-gray-700 mb-2">To bring it to life, take your phone outside to any open area and tap <strong>Open</strong> on the demo map. All places, routes, and landmarks will be positioned around your current GPS location so everything appears on the map around you.</p>
-        <p class="text-sm text-gray-700">When you are ready to start your own maps, delete the demo from the Home page and tap <strong>Create New Map</strong>.</p>
+        <h3 class="text-lg font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-cog"></i> Settings</h3>
+        <div class="text-sm text-gray-700 space-y-2">
+          <div><strong>Your Profile</strong> — name, mobile and email. Name appears on photo stamps; mobile and email on shared place reports.</div>
+          <div><strong>Photo Settings</strong> — maximum photo width to reduce storage use.</div>
+          <div><strong>Reset All Local Data</strong> — permanently deletes everything. Export first. Cannot be undone.</div>
+        </div>
       </div>
 
       <!-- GETTING STARTED -->
@@ -2602,58 +2545,39 @@ function renderHelpPage() {
         <div class="space-y-3 text-sm text-gray-700">
           <div class="flex gap-3 items-start">
             <span class="flex-none w-6 h-6 rounded-full bg-green-700 text-white text-xs font-bold flex items-center justify-center mt-0.5">1</span>
-            <div><strong>Set up your profile.</strong> Go to Settings and tap Edit Profile. Enter your name and club/group.</div>
+            <div><strong>Set up your profile.</strong> Go to Settings and enter your name.</div>
           </div>
           <div class="flex gap-3 items-start">
             <span class="flex-none w-6 h-6 rounded-full bg-green-700 text-white text-xs font-bold flex items-center justify-center mt-0.5">2</span>
-            <div><strong>Create a map.</strong> Go to Home, tap <strong>Create New Map</strong>, give it a name and description, then tap Create &amp; Open.</div>
+            <div><strong>Create a map.</strong> Go to Home, tap <strong>Create New Map</strong>, give it a name and choose a Map Type.</div>
           </div>
           <div class="flex gap-3 items-start">
             <span class="flex-none w-6 h-6 rounded-full bg-green-700 text-white text-xs font-bold flex items-center justify-center mt-0.5">3</span>
-            <div><strong>Record a route.</strong> Go to the Map page and tap <strong>Start</strong>. Walk your route — it is drawn as a line on the map. Tap <strong>Stop</strong> when done.</div>
+            <div><strong>Record a route.</strong> Map page &rarr; Routing Controls &rarr; Start Routing. Walk your route. Stop Routing when done. Use Change Route Type to switch mid-walk.</div>
           </div>
           <div class="flex gap-3 items-start">
             <span class="flex-none w-6 h-6 rounded-full bg-green-700 text-white text-xs font-bold flex items-center justify-center mt-0.5">4</span>
-            <div><strong>Log places as you go.</strong> Use the quick-log buttons to record a place instantly at your GPS position. Or go to Places and tap <strong>Log New Place</strong> for more detail.</div>
+            <div><strong>Log places.</strong> Select a type in the quick log form, optionally add a name and photo, then tap Quick Save. Or use the star buttons for instant logging.</div>
           </div>
           <div class="flex gap-3 items-start">
             <span class="flex-none w-6 h-6 rounded-full bg-green-700 text-white text-xs font-bold flex items-center justify-center mt-0.5">5</span>
-            <div><strong>Add landmarks.</strong> Tap <strong>Log New Place</strong> and select a landmark type (Car Park, Pub, Viewpoint etc.) from the Type dropdown.</div>
+            <div><strong>Edit places.</strong> On the Places page, tap any place to expand it and edit all fields directly. Collapse to save.</div>
           </div>
           <div class="flex gap-3 items-start">
             <span class="flex-none w-6 h-6 rounded-full bg-green-700 text-white text-xs font-bold flex items-center justify-center mt-0.5">6</span>
-            <div><strong>Save favourites.</strong> On the Places page, tap <strong>Copy to Favourites</strong> on any visited place to save it permanently to your Favourites library.</div>
-          </div>
-          <div class="flex gap-3 items-start">
-            <span class="flex-none w-6 h-6 rounded-full bg-green-700 text-white text-xs font-bold flex items-center justify-center mt-0.5">7</span>
-            <div><strong>Back up your data.</strong> Go to Export and tap <strong>Export Open Map as ZIP</strong> after each session. Share it via WhatsApp or email, or save to cloud storage.</div>
+            <div><strong>Back up your data.</strong> Go to Export and tap Export as ZIP after each session.</div>
           </div>
         </div>
-      </div>
-
-      <!-- GPS -->
-      <div class="bg-white rounded-xl shadow border border-gray-100 p-4">
-        <h3 class="text-lg font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-satellite-dish"></i> GPS Accuracy</h3>
-        <p class="text-sm text-gray-700">GPS is accurate to within a few metres. The accuracy reading is shown next to your coordinates on the Map page — green is good (under 5m), amber is acceptable (5–15m), red is poor (over 15m). For best results, wait for a green accuracy reading before logging important places.</p>
       </div>
 
       <!-- PRIVACY -->
       <div class="bg-white rounded-xl shadow border border-gray-100 p-4">
         <h3 class="text-lg font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-shield-alt"></i> Privacy &amp; Data</h3>
-        <p class="text-sm text-gray-700 mb-3">Trekta does not collect, transmit, or share any data. Everything is stored only on your device. Nothing leaves your device unless you explicitly choose to export or share it.</p>
+        <p class="text-sm text-gray-700 mb-3">Trekta does not collect, transmit, or share any data. Everything is stored only on your device.</p>
         <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
           <p class="text-sm font-bold text-amber-800 mb-1"><i class="fas fa-exclamation-triangle mr-1"></i> Sharing discloses your location</p>
-          <p class="text-sm text-amber-900">Exported maps and shared photos contain your GPS coordinates. Only share with people you trust.</p>
+          <p class="text-sm text-amber-900">Exported maps and shared photos contain GPS coordinates. Only share with people you trust.</p>
         </div>
-      </div>
-
-      <!-- CONTACT -->
-      <div class="bg-white rounded-xl shadow border border-gray-100 p-4">
-        <h3 class="text-lg font-bold text-primary mb-2 flex items-center gap-2"><i class="fas fa-envelope"></i> Contact &amp; Support</h3>
-        <p class="text-sm text-gray-700 mb-2">If you have a question or have found a problem, please email:</p>
-        <p class="text-sm font-semibold text-primary">
-          <a href="mailto:support.trekta@gmail.com">support.trekta@gmail.com</a>
-        </p>
       </div>
 
     </div>
