@@ -143,7 +143,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.146
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.665
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -9413,6 +9413,11 @@ async function handleInlinePlacePhoto(event, placeId, mapId) {
     const place = map && Array.isArray(map.targets) ? map.targets.find(t => t.id === placeId) : null;
     if (!place) return;
 
+    // Warn if file is very large but still try
+    if (file.size > 20 * 1024 * 1024) {
+        showMessage('Photo is very large — this may take a moment.', 'info');
+    }
+
     try {
         const dataUrl = await fileToResizedDataUrl(file);
         const refs    = await saveDataUrlsAsPhotoRefs([dataUrl]);
@@ -9427,7 +9432,7 @@ async function handleInlinePlacePhoto(event, placeId, mapId) {
         render();
     } catch(e) {
         console.error('Inline photo error:', e);
-        showMessage('Could not process photo.', 'error');
+        showMessage('Could not process photo — try a smaller image or lower resolution.', 'error');
     }
 }
 
@@ -13190,8 +13195,8 @@ switch (s) {
 
                 <!-- Add Photo -->
                 <div class="mt-2">
-                    <input type="file" id="inline-photo-input-${place.id}" accept="image/*" capture="environment" class="hidden"
-                           onchange="handleInlinePlacePhoto(event, '${place.id}', '${mapId}')">
+                    <input type="file" id="inline-photo-input-${place.id}" accept="image/*" class="hidden"
+                           onchange="handleInlinePlacePhoto(event, &quot;${place.id}&quot;, &quot;${mapId}&quot;)">
                     <button type="button"
                             onclick="document.getElementById('inline-photo-input-${place.id}').click()"
                             class="w-full py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold border border-gray-200 hover:bg-gray-200">
