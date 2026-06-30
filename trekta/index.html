@@ -144,7 +144,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.679
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.305
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13032,6 +13032,29 @@ function renderPlaceCard(place, mapId) {
     // --- Type icon & colour chip (uses shared icon lookup) ---
     let typeColor = 'bg-primary';
     let typeIcon  = 'fas ' + getPlaceTypeIcon(place.type);
+
+    // --- Status badge class & icon ---
+    let statusClass = 'bg-gray-100 text-gray-800';
+    let statusIcon  = '';
+    switch (place.status || 'Not visited') {
+        case 'Not visited':
+            statusClass = 'bg-green-100 text-green-800';
+            break;
+        case 'Visited':
+            statusClass = 'bg-gray-800 text-white';
+            statusIcon  = '<i class="fas fa-check mr-1"></i>';
+            break;
+        case 'To return':
+            statusClass = 'bg-amber-100 text-amber-800';
+            statusIcon  = '<i class="fas fa-rotate-left mr-1"></i>';
+            break;
+        case 'Avoid':
+            statusClass = 'bg-red-100 text-red-800';
+            statusIcon  = '<i class="fas fa-ban mr-1"></i>';
+            break;
+        default:
+            statusClass = 'bg-gray-100 text-gray-800';
+    }
 
     // --- Photo thumbnail block (IndexedDB-aware) ---
     let thumbRef    = '';
