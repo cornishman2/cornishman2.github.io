@@ -144,7 +144,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.704
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.596
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -1367,7 +1367,6 @@ function showMessageLong(text, type = 'info', ms = 4500) {
 // Map layer toggles (UI checkboxes on Compass/Map page)
 // These affect what is DRAWN, but NOT the bounds/auto-zoom calculation.
 let showMapPlaces = true;
-let showMapLandmarks  = true; // Landmarks are places with Category -100
 let showMapFavourites   = true;
 let showMapRoutes  = true;
 
@@ -1375,51 +1374,11 @@ let showMapRoutes  = true;
 let showMapPlaceLabels = true;
 let showMapFavouriteLabels   = true;
 let showMapRouteLabels  = true;
-let showMapLandmarkLabels  = true;
 
 // Map layers panel (Compass/Map page) expand/collapse state
 let mapLayersExpanded = true;
 let routesPanelExpanded = true;
 let gpsInfoExpanded   = true;
-
-// A "Landmark" is a place pin whose Category is -100 (used as a ground marker).
-// Landmark types — all specific place types render with a smaller pin and name label
-// Generic types (Unknown, Something else, empty) render as normal status pins
-const LANDMARK_TYPES = new Set([
-    // Transport
-    'Airport', 'Bus Stop', 'Ferry Terminal', 'Free Parking',
-    'Long Stay Parking', 'Petrol Station', 'Short Stay Parking', 'Train Station',
-    // Food & Drink
-    'Bakery', 'Bar', 'Café', 'Fast Food', 'Pub', 'Restaurant', 'Shop', 'Supermarket',
-    // Accommodation
-    'Camping Barn', 'Campsite', 'Hostel', 'Hotel',
-    // Services
-    'ATM', 'Bank', 'Emergency Department', 'Hospital', 'Information Point',
-    'Minor Injuries Unit', 'Pharmacy', 'Police Station', 'Public Toilet',
-    // Places of Interest
-    'Castle / Ruins', 'Church / Chapel', 'Historic Site', 'Museum',
-    // Nature & Landscape
-    'Beach', 'Forest / Wood', 'Hill / Summit', 'Lake / Reservoir',
-    'Moorland', 'River', 'Stream', 'Trig Point', 'Valley', 'Viewpoint',
-    // Access & Navigation
-    'Bridge', 'Dead End', 'Gate', 'One Way', 'Stile',
-    // New places of interest
-    'City Centre', 'Old Town', 'Shopping Centre / Mall', 'Town Centre', 'Town Square',
-    // New services
-    'Town Hall',
-    // New transport
-    'Metro / Underground',
-    // Old place types (for backwards compatibility)
-    'Historic', 'Scenic', 'Wildlife', 'Leisure', 'Refreshments', 'Infrastructure', 'Landmark',
-]);
-
-function isLandmarkPlace(t) {
-    if (!t || t.isFavourite) return false;
-    // Legacy: category === '-100'
-    if (String(t?.category ?? '').trim() === '-100') return true;
-    // New: type is in the landmark types set
-    return LANDMARK_TYPES.has(t.type);
-}
 
 let showUserPosition = true; // default: show user location on the map
 
@@ -2138,21 +2097,10 @@ let navOverlaySettings = {
     belowOffsetPct: 6   // default
 };
 
-function isLandmarkPlace(t) {
-    if (!t || t.isFavourite) return false;
-    if (String(t?.category ?? '').trim() === '-100') return true;
-    return LANDMARK_TYPES.has(t.type);
-}
-
 function getMapPlacesOnly(map) {
-    // Returns ALL non-deleted places (landmarks are now just typed places)
+    // Returns ALL non-deleted places
     const arr = Array.isArray(map?.targets) ? map.targets : [];
     return arr.filter(t => t && !t.deleted);
-}
-
-function getMapLandmarksOnly(map) {
-    // Kept for backwards compatibility but returns empty — all targets are places now
-    return [];
 }
 
 // Favourites: prefer global 'favourites' array (your app uses this) but also include map.finds if present.
@@ -7111,13 +7059,11 @@ function exportOpenMapAsGPX() {
     }
 
     const exportPlaces = document.getElementById('gpx-export-places')?.checked ?? true;
-    const exportLandmarks  = document.getElementById('gpx-export-landmarks')?.checked ?? true;
     const exportFavourites   = document.getElementById('gpx-export-favourites')?.checked ?? true;
     const exportRoutes  = document.getElementById('gpx-export-routes')?.checked ?? true;
 
     const parts = [];
     if (exportPlaces) parts.push('Places');
-    if (exportLandmarks)  parts.push('Landmarks');
     if (exportFavourites)   parts.push('Favourites');
     if (exportRoutes)  parts.push('Routes');
 
@@ -7154,11 +7100,10 @@ function actuallyExportOpenMapAsGPX() {
 
     // Read export options (default ON if UI missing)
     const exportPlaces = document.getElementById('gpx-export-places')?.checked ?? true;
-    const exportLandmarks  = document.getElementById('gpx-export-landmarks')?.checked ?? true;
     const exportFavourites   = document.getElementById('gpx-export-favourites')?.checked ?? true;
     const exportRoutes  = document.getElementById('gpx-export-routes')?.checked ?? true;
 
-    if (!exportPlaces && !exportLandmarks && !exportFavourites && !exportRoutes) {
+    if (!exportPlaces && !exportFavourites && !exportRoutes) {
         showMessage('Nothing selected to export (tick at least one box).', 'error');
         if (btn) {
             btn.disabled = false;
@@ -7273,14 +7218,10 @@ return `
 
         const openPlaces = Array.isArray(openMap.targets) ? openMap.targets : [];
 
-        // Split places vs landmarks (landmark = category == -100)
-        const isLandmarkPlace2 = (t) => isLandmarkPlace(t);
-
         let wptCountPlaces = 0;
-        let wptCountLandmarks  = 0;
 
         const wptsPlaces = (!exportPlaces) ? '' : openPlaces.map(t => {
-            if (!t || isLandmarkPlace(t)) return ''; // places export excludes landmarks
+            if (!t) return '';
             const ll = parseLatLon(t.coordinates);
             if (!ll) return '';
 
@@ -7289,7 +7230,7 @@ return `
             return makeWpt({
                 lat: ll.lat,
                 lon: ll.lon,
-                name: (t.category || 'N/A'),
+                name: (t.description || t.category || 'Place'),
                 desc: t.description || '',
                 sym: SYM_TARGET,
                 extensionsObj: {
@@ -7308,30 +7249,6 @@ return `
             });
         }).filter(Boolean).join('');
 
-        const wptsLandmarks = (!exportLandmarks) ? '' : openPlaces.map(t => {
-            if (!t || !isLandmarkPlace2(t)) return '';
-            const ll = parseLatLon(t.coordinates);
-            if (!ll) return '';
-
-            wptCountLandmarks++;
-
-            return makeWpt({
-                lat: ll.lat,
-                lon: ll.lon,
-                name: (t.description || 'STAKE'),
-                desc: t.description || '',
-                sym: SYM_STAKE,
-                extensionsObj: {
-                    kind: 'landmark',
-                    color: COLOR_STAKES,
-                    category: t.category ?? '',
-                    status: t.status ?? '',
-                    accuracy: t.accuracy ?? '',
-                    time: t.time ? new Date(t.time).toISOString() : '',
-                    mapId: openMap.id || ''
-                }
-            });
-        }).filter(Boolean).join('');
 
         // Favourites (ratingal)
         const linkedFavourites = (Array.isArray(favourites) ? favourites : []).filter(f => f && f.mapId === openMap.id);
@@ -7380,7 +7297,7 @@ return `
 
         const footer = `\n</gpx>\n`;
 
-        const gpx = header + '\n' + wptsPlaces + '\n' + wptsLandmarks + '\n' + wptsFavourites + '\n' + trks + footer;
+        const gpx = header + '\n' + wptsPlaces + '\n' + wptsFavourites + '\n' + trks + footer;
 
         // Filename helps Garmin infer collection name (no Garmin-only tags needed)
         const safeName = String(openMap.name || 'open-map')
@@ -7405,7 +7322,7 @@ return `
 
         log(`GPX exported: ${filename}`);
         log(exportPlaces ? `Waypoints (places): ${wptCountPlaces}` : `Waypoints (places): SKIPPED`);
-        log(exportLandmarks  ? `Waypoints (landmarks): ${wptCountLandmarks}`  : `Waypoints (landmarks): SKIPPED`);
+    
         log(exportFavourites   ? `Waypoints (favourites): ${wptCountFavourites}`    : `Waypoints (favourites): SKIPPED`);
         log(exportRoutes  ? `Routes: ${trkCount}`                    : `Routes: SKIPPED`);
 
@@ -7557,11 +7474,6 @@ function renderExportPage() {
                     <label class="flex items-center gap-2">
                         <input id="gpx-export-places" type="checkbox" checked class="h-4 w-4">
                         <span><strong>Export Places</strong></span>
-                    </label>
-
-                    <label class="flex items-center gap-2">
-                        <input id="gpx-export-landmarks" type="checkbox" checked class="h-4 w-4">
-                        <span><strong>Export Landmarks</strong></span>
                     </label>
 
                     <label class="flex items-center gap-2">
@@ -13488,13 +13400,6 @@ function renderPlacePlot(places, userCoordsOrNull = null) {
  const getMapPinLabelText = (t) => {
     const isFavourite = (t && (t.isFavourite || t.favourite || String(t.type || '').toLowerCase() === 'find'));
 
-    // Landmarks always show their description as label
-    if (isLandmarkPlace(t)) {
-        if (!showMapLandmarkLabels) return '';
-        const landmarkDesc = String(t.description || '').trim();
-        return (landmarkDesc && landmarkDesc !== 'STAKE') ? landmarkDesc : 'Landmark';
-    }
-
     // Label toggles — favourites use place label toggle
     if (!showMapPlaceLabels) return '';
 
@@ -13726,22 +13631,20 @@ const toPercent = (x, y) => {
     if (t.type === 'Route') return false;
     // draw-only toggles (bounds still includes all coords)
     if (t.isFavourite) return !!showMapFavourites;
-    if (isLandmarkPlace(t)) return !!showMapLandmarks;
     return !!showMapPlaces;
 }) // only pins here
         .map(t => {
             const { xPct, yPct } = toPercent(t.x, t.y);
 
             const isFavourite = !!t.isFavourite || (String(t.type || '').toLowerCase() === 'find');
-            const isLandmark = (!isFavourite) && isLandmarkPlace(t);
 
             // Get fill and border colours from shared helper
             const _ranges = [];
-            const _pinColors = isFavourite ? null : (isLandmark ? null : getPlacePinColors(t, _ranges));
+            const _pinColors = isFavourite ? null : getPlacePinColors(t, _ranges);
 
             // Compute dot colour once — reused for both pin and label
             const _statusColorMap = {'not visited':'#22c55e','visited':'#1f2937','to return':'#eab308','avoid':'#ef4444'};
-            const _dotColor = (isLandmark || (!isFavourite && !isLandmark))
+            const _dotColor = !isFavourite
                 ? (_statusColorMap[String(t.status||'not visited').toLowerCase()] || '#22c55e')
                 : null;
 
@@ -13771,15 +13674,14 @@ const toPercent = (x, y) => {
                     <div class="relative">
                         ${extraRing}
                         <div
-                          class="${isLandmark ? 'w-4 h-4' : 'w-6 h-6'} rounded-full border-2 shadow-lg cursor-pointer flex items-center justify-center ${navigationPlaceId && String(navigationPlaceId) === String(t.id) ? 'pin-blink' : ''}"
+                          class="w-6 h-6 rounded-full border-2 shadow-lg cursor-pointer flex items-center justify-center ${navigationPlaceId && String(navigationPlaceId) === String(t.id) ? 'pin-blink' : ''}"
                           style="
                           transform: scale(${pinZoomScale.toFixed(3)});
                           transform-origin: center;
                           ${_dotColor ? 'background-color:' + _dotColor + '; border-color:#ffffff;' : ''}
                           "
-                          title="${isLandmark ? (t.description || 'Landmark') : ''}"
-                          ><i class="fas ${getPlaceTypeIcon(t.type)} text-white" style="font-size:${isLandmark ? '7px' : '10px'};"></i></div>
-                        ${(t.favourite || t.isFavourite) && !isLandmark ? '<span style="position:absolute;top:-4px;right:-4px;font-size:9px;line-height:1;transform:scale(' + invZoom + ');transform-origin:top right;">♥</span>' : ''}
+                          ><i class="fas ${getPlaceTypeIcon(t.type)} text-white" style="font-size:10px;"></i></div>
+                        ${(t.favourite || t.isFavourite) ? '<span style="position:absolute;top:-4px;right:-4px;font-size:9px;line-height:1;transform:scale(' + invZoom + ');transform-origin:top right;">♥</span>' : ''}
                     </div>
 
                     <!-- Label: counter-scale so it stays the same size while zooming -->
@@ -14147,14 +14049,6 @@ const toPercent = (x, y) => {
         <label class="flex items-center gap-2 select-none">
             <input id="map-show-find-labels-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapFavouriteLabels=cb.checked;rerenderCompassIfActive();})(this)" ${showMapFavouriteLabels ? 'checked' : ''}>
             <span>Favourite Labels</span>
-        </label>
-        <label class="flex items-center gap-2 select-none">
-            <input id="map-show-landmarks-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapLandmarks=cb.checked;rerenderCompassIfActive();})(this)" ${showMapLandmarks ? 'checked' : ''}>
-            <span>Show Landmarks</span>
-        </label>
-        <label class="flex items-center gap-2 select-none">
-            <input id="map-show-landmark-labels-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapLandmarkLabels=cb.checked;rerenderCompassIfActive();})(this)" ${showMapLandmarkLabels ? 'checked' : ''}>
-            <span>Landmark Labels</span>
         </label>
   </div>
 </div>
@@ -14985,14 +14879,6 @@ ${(() => {
         <label class="flex items-center gap-2 select-none">
             <input id="map-show-find-labels-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapFavouriteLabels=cb.checked;rerenderCompassIfActive();})(this)" ${showMapFavouriteLabels ? 'checked' : ''}>
             <span>Favourite Labels</span>
-        </label>
-        <label class="flex items-center gap-2 select-none">
-            <input id="map-show-landmarks-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapLandmarks=cb.checked;rerenderCompassIfActive();})(this)" ${showMapLandmarks ? 'checked' : ''}>
-            <span>Show Landmarks</span>
-        </label>
-        <label class="flex items-center gap-2 select-none">
-            <input id="map-show-landmark-labels-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapLandmarkLabels=cb.checked;rerenderCompassIfActive();})(this)" ${showMapLandmarkLabels ? 'checked' : ''}>
-            <span>Landmark Labels</span>
         </label>
   </div>
 </div>
@@ -16405,7 +16291,7 @@ function buildMapReportHtml({explorerName, mapName, generatedStr, appVersionStr,
         <table class="summary-table">
             <thead>
                 <tr>
-                    <th>Places</th><th>Favourites</th><th>Landmarks</th><th>Routes</th><th>Photos</th>
+                    <th>Places</th><th>Favourites</th><th>Routes</th><th>Photos</th>
                 </tr>
             </thead>
             <tbody>
@@ -16502,7 +16388,6 @@ async function exportMapReportPdf() {
 
         // Summary counts
         const placesCount    = Array.isArray(map.targets) ? map.targets.filter(t => t && !t.deleted).length : 0;
-        const landmarksCount = 0;
         const mapFavourites  = Array.isArray(favourites) ? favourites.filter(f => f && !f.deleted && f.mapId === map.id) : [];
         const favouritesCount   = mapFavourites.length;
         const routesCount  = Array.isArray(map.tracks) ? map.tracks.length : 0;
@@ -17702,6 +17587,7 @@ if (routeVisibilityToggles && routeVisibilityToggles.length > 0) {
             maps.splice(existingIdx, 1);
         }
         localStorage.removeItem('trekta_demo_created_v1');
+        localStorage.removeItem('trekta_demo_created_v2');
         createDemoMapIfNeeded();
         showMessage('Demo map recreated — find it on the Home page.', 'success');
         render();
@@ -17848,14 +17734,6 @@ if (sortByDateBtn) {
     sortByDateBtn.addEventListener('click', () => {
         placesViewMode = 'places';
         placeSortMode = 'date';
-        render();
-    });
-}
-
-const toggleLandmarksBtn = document.getElementById('toggle-landmarks-btn');
-if (toggleLandmarksBtn) {
-    toggleLandmarksBtn.addEventListener('click', () => {
-        placesViewMode = (placesViewMode === 'landmarks') ? 'places' : 'landmarks';
         render();
     });
 }
