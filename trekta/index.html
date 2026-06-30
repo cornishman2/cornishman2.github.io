@@ -144,7 +144,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.039
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.305
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -2067,6 +2067,91 @@ function getRouteTypeIcon(type) {
 }
 
 // Font Awesome icon for each place type
+// Canonical place type -> category, used to build grouped dropdowns anywhere
+const PLACE_TYPE_CATEGORIES = {
+    'Access & Navigation': ['Bridge','Dead End','Gate','One Way'],
+    'Accommodation': ['Camping Barn','Campsite','Hostel','Hotel'],
+    'Food & Drink': ['Bakery','Bar','Café','Fast Food','Pub','Restaurant','Shop','Supermarket'],
+    'Nature & Landscape': ['Beach','Cliff Edge','Field','Forest / Wood','Hill / Summit','Lake / Reservoir','Mountain','Moorland','Quarry','River','Standing Stones','Stile','Stream','Trig Point','Valley','Viewpoint','Woods'],
+    'Places of Interest': ['Castle / Ruins','Church / Chapel','Cinema','City Centre','Historic Site','Museum','Old Town','Park','Playground','Shopping Centre / Mall','Sports Field','Town Centre','Town Square'],
+    'Services': ['ATM','Bank','Dentist','Emergency Department','GP Surgery','Hospital','Information Point','Minor Injuries Unit','Pharmacy','Police Station','Public Toilet','Town Hall'],
+    'Transport': ['Airport','Bus Stop','Ferry Terminal','Free Parking','Long Stay Parking','Metro / Underground','Petrol Station','Short Stay Parking','Train Station'],
+};
+
+// Reverse lookup: type -> category name
+const PLACE_TYPE_TO_CATEGORY = (function() {
+    const map = {};
+    Object.keys(PLACE_TYPE_CATEGORIES).forEach(function(cat) {
+        PLACE_TYPE_CATEGORIES[cat].forEach(function(t) { map[t] = cat; });
+    });
+    return map;
+})();
+
+// Build grouped <optgroup> HTML for any list of place types (filtered or full)
+function buildGroupedPlaceTypeOptions(types, selectedValue) {
+    const sel = selectedValue || '';
+    const buckets = {};
+    const order = Object.keys(PLACE_TYPE_CATEGORIES);
+    const other = [];
+
+    types.forEach(function(t) {
+        const cat = PLACE_TYPE_TO_CATEGORY[t];
+        if (cat) {
+            if (!buckets[cat]) buckets[cat] = [];
+            buckets[cat].push(t);
+        } else if (t) {
+            other.push(t);
+        }
+    });
+
+    let html = '';
+    order.forEach(function(cat) {
+        if (!buckets[cat] || !buckets[cat].length) return;
+        html += '<optgroup label="' + cat.replace(/&/g, '&amp;') + '">'
+            + buckets[cat].map(function(t) {
+                return '<option value="' + t + '"' + (sel === t ? ' selected' : '') + '>' + t + '</option>';
+            }).join('')
+            + '</optgroup>';
+    });
+    if (other.length) {
+        html += '<optgroup label="Other">'
+            + other.map(function(t) {
+                return '<option value="' + t + '"' + (sel === t ? ' selected' : '') + '>' + t + '</option>';
+            }).join('')
+            + '</optgroup>';
+    }
+    return html;
+}
+
+// Category fill colours for map pins (distinct from status ring colours)
+const PLACE_CATEGORY_COLORS = {
+    'Access & Navigation': '#6b7280', // grey
+    'Accommodation':       '#a855f7', // purple
+    'Food & Drink':        '#f97316', // orange
+    'Nature & Landscape':  '#16a34a', // green (mid, distinct from status green)
+    'Places of Interest':  '#d97706', // amber/brown
+    'Services':            '#0ea5e9', // sky blue
+    'Transport':           '#64748b', // slate
+    'Other':                '#9ca3af', // light grey fallback
+};
+
+function getPlaceCategoryColor(type) {
+    const cat = PLACE_TYPE_TO_CATEGORY[type];
+    return PLACE_CATEGORY_COLORS[cat] || PLACE_CATEGORY_COLORS['Other'];
+}
+
+// Decide icon glyph colour (white or near-black) for contrast against a given fill colour
+function getContrastIconColor(hexColor) {
+    const h = (hexColor || '#9ca3af').replace('#', '');
+    if (h.length !== 6) return '#ffffff';
+    const r = parseInt(h.substr(0,2), 16);
+    const g = parseInt(h.substr(2,2), 16);
+    const b = parseInt(h.substr(4,2), 16);
+    // Perceived brightness (0-255)
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 150 ? '#1f2937' : '#ffffff';
+}
+
 const PLACE_TYPE_ICONS = {
     // Transport
     'Airport': 'fa-plane', 'Bus Stop': 'fa-bus', 'Ferry Terminal': 'fa-ship',
@@ -13708,19 +13793,16 @@ const toPercent = (x, y) => {
 
             const isFavourite = !!t.isFavourite || (String(t.type || '').toLowerCase() === 'find');
 
-            // Get fill and border colours from shared helper
-            const _ranges = [];
-            const _pinColors = isFavourite ? null : getPlacePinColors(t, _ranges);
-
-            // Compute dot colour once — reused for both pin and label
+            // Fill = category colour (by type); Ring = status colour
             const _statusColorMap = {'not visited':'#22c55e','visited':'#1f2937','to return':'#eab308','avoid':'#ef4444'};
-            const _dotColor = !isFavourite
-                ? (_statusColorMap[String(t.status||'not visited').toLowerCase()] || '#22c55e')
-                : null;
+            const _ringColor = _statusColorMap[String(t.status||'not visited').toLowerCase()] || '#22c55e';
+            const _fillColor = getPlaceCategoryColor(t.type);
+            const _iconColor = getContrastIconColor(_fillColor);
 
-            // All pins use status colour — favourites shown with ♥ overlay
-            let pinColor = (_pinColors ? '' : 'bg-green-500');
-            const pinSize = 'w-4 h-4';
+            // Favourites are drawn slightly larger with a thicker border
+            const _pinSizeClass = isFavourite ? 'w-7 h-7' : 'w-6 h-6';
+            const _borderWidth  = isFavourite ? 'border-[3px]' : 'border-2';
+            const _iconFontSize = isFavourite ? '11px' : '10px';
 
             // Accuracy ring (optional)
             let extraRing = '';
@@ -13744,13 +13826,14 @@ const toPercent = (x, y) => {
                     <div class="relative">
                         ${extraRing}
                         <div
-                          class="w-6 h-6 rounded-full border-2 shadow-lg cursor-pointer flex items-center justify-center ${navigationPlaceId && String(navigationPlaceId) === String(t.id) ? 'pin-blink' : ''}"
+                          class="${_pinSizeClass} rounded-full ${_borderWidth} shadow-lg cursor-pointer flex items-center justify-center ${navigationPlaceId && String(navigationPlaceId) === String(t.id) ? 'pin-blink' : ''}"
                           style="
                           transform: scale(${pinZoomScale.toFixed(3)});
                           transform-origin: center;
-                          ${_dotColor ? 'background-color:' + _dotColor + '; border-color:#ffffff;' : ''}
+                          background-color: ${_fillColor};
+                          border-color: ${_ringColor};
                           "
-                          ><i class="fas ${getPlaceTypeIcon(t.type)} text-white" style="font-size:10px;"></i></div>
+                          ><i class="fas ${getPlaceTypeIcon(t.type)}" style="font-size:${_iconFontSize}; color:${_iconColor};"></i></div>
                         ${(t.favourite || t.isFavourite) ? '<span style="position:absolute;top:-4px;right:-4px;font-size:9px;line-height:1;transform:scale(' + invZoom + ');transform-origin:top right;">♥</span>' : ''}
                     </div>
 
@@ -18567,23 +18650,23 @@ function _quickRangeBtnClick(btn) {
 
 function buildQuickFormHtml(openMap) {
     const allowed = getFilteredPlaceTypes(openMap ? openMap.mapType : 'General');
-    const typeOpts = (allowed
-        ? [''].concat(allowed)
-        : ['','Airport','ATM','Bakery','Bank','Bar','Beach','Bridge','Bus Stop',
-           'Café','Camping Barn','Campsite','Castle / Ruins','Church / Chapel',
-           'City Centre','Dead End','Emergency Department','Fast Food','Ferry Terminal',
-           'Forest / Wood','Free Parking','Gate','Hill / Summit','Historic Site',
-           'Hostel','Hospital','Hotel','Information Point','Lake / Reservoir',
-           'Long Stay Parking','Metro / Underground','Minor Injuries Unit','Moorland',
-           'Museum','Old Town','One Way','Petrol Station','Pharmacy','Police Station',
-           'Pub','Public Toilet','Restaurant','River','Sea Route','Shop',
-           'Shopping Centre / Mall','Short Stay Parking','Stile','Stream','Supermarket',
-           'Town Centre','Town Hall','Town Square','Train Station','Trig Point',
-           'Valley','Viewpoint','Something else']
-    ).map(function(t) {
-        return '<option value="' + t + '"' + (_quickFormType === t ? ' selected' : '') + '>'
-            + (t || 'What kind of place is this?') + '</option>';
-    }).join('');
+    const fullTypeList = ['Airport','ATM','Bakery','Bank','Bar','Beach','Bridge','Bus Stop',
+       'Café','Camping Barn','Campsite','Castle / Ruins','Church / Chapel','Cinema',
+       'City Centre','Cliff Edge','Dead End','Dentist','Emergency Department',
+       'Fast Food','Ferry Terminal','Field','Forest / Wood','Free Parking',
+       'Gate','GP Surgery','Hill / Summit','Historic Site',
+       'Hostel','Hospital','Hotel','Information Point','Lake / Reservoir',
+       'Long Stay Parking','Metro / Underground','Minor Injuries Unit','Moorland',
+       'Mountain','Museum','Old Town','One Way','Park','Petrol Station','Pharmacy',
+       'Playground','Police Station',
+       'Pub','Public Toilet','Quarry','Restaurant','River','Sea Route','Shop',
+       'Shopping Centre / Mall','Short Stay Parking','Sports Field','Standing Stones',
+       'Stile','Stream','Supermarket',
+       'Town Centre','Town Hall','Town Square','Train Station','Trig Point',
+       'Valley','Viewpoint','Woods','Something else'];
+
+    const typeOpts = '<option value=""' + (_quickFormType === '' ? ' selected' : '') + '>What kind of place is this?</option>'
+        + buildGroupedPlaceTypeOptions(allowed || fullTypeList, _quickFormType);
 
     const notVisClass = _quickFormStatus === 'Not visited'
         ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-700';
