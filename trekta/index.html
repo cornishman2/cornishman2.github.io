@@ -144,7 +144,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.305
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.515
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -2055,10 +2055,10 @@ const ROUTE_TYPE_ICONS = {
     'Cycleway':          'fa-bicycle',
     'Field':             'fa-seedling',
     'Flight Path':       'fa-plane',
-    'Footpath':          'fa-shoe-prints',
+    'Footpath':          'fa-walking',
     'Lane':              'fa-road',
     'Motorway':          'fa-road',
-    'Path':              'fa-shoe-prints',
+    'Path':              'fa-walking',
     'Private Property':  'fa-lock',
     'Railway':           'fa-train',
     'River':             'fa-water',
@@ -2077,36 +2077,36 @@ const PLACE_TYPE_ICONS = {
     'Airport': 'fa-plane', 'Bus Stop': 'fa-bus', 'Ferry Terminal': 'fa-ship',
     'Free Parking': 'fa-square-parking', 'Long Stay Parking': 'fa-square-parking',
     'Petrol Station': 'fa-gas-pump', 'Short Stay Parking': 'fa-square-parking',
-    'Train Station': 'fa-train', 'Metro / Underground': 'fa-train-subway',
+    'Train Station': 'fa-train', 'Metro / Underground': 'fa-train',
     // Food & Drink
-    'Bakery': 'fa-bread-slice', 'Bar': 'fa-martini-glass', 'Café': 'fa-mug-hot',
-    'Fast Food': 'fa-burger', 'Pub': 'fa-beer-mug-empty', 'Restaurant': 'fa-utensils',
-    'Shop': 'fa-shop', 'Supermarket': 'fa-cart-shopping',
+    'Bakery': 'fa-bread-slice', 'Bar': 'fa-glass-martini-alt', 'Café': 'fa-coffee',
+    'Fast Food': 'fa-hamburger', 'Pub': 'fa-beer', 'Restaurant': 'fa-utensils',
+    'Shop': 'fa-store', 'Supermarket': 'fa-shopping-cart',
     // Accommodation
     'Camping Barn': 'fa-campground', 'Campsite': 'fa-campground',
     'Hostel': 'fa-bed', 'Hotel': 'fa-hotel',
     // Services
-    'ATM': 'fa-money-bill', 'Bank': 'fa-building-columns',
-    'Emergency Department': 'fa-truck-medical', 'Hospital': 'fa-hospital',
-    'Information Point': 'fa-circle-info', 'Minor Injuries Unit': 'fa-kit-medical',
-    'Pharmacy': 'fa-prescription-bottle-medical', 'Police Station': 'fa-building-shield',
+    'ATM': 'fa-money-bill', 'Bank': 'fa-university',
+    'Emergency Department': 'fa-ambulance', 'Hospital': 'fa-hospital',
+    'Information Point': 'fa-info-circle', 'Minor Injuries Unit': 'fa-first-aid',
+    'Pharmacy': 'fa-prescription-bottle', 'Police Station': 'fa-shield-alt',
     'Public Toilet': 'fa-restroom', 'Town Hall': 'fa-landmark',
     // Places of Interest
     'Castle / Ruins': 'fa-chess-rook', 'Church / Chapel': 'fa-place-of-worship',
-    'Historic Site': 'fa-monument', 'Museum': 'fa-building-columns',
+    'Historic Site': 'fa-monument', 'Museum': 'fa-university',
     'City Centre': 'fa-city', 'Old Town': 'fa-city',
-    'Shopping Centre / Mall': 'fa-bag-shopping', 'Town Centre': 'fa-city', 'Town Square': 'fa-city',
+    'Shopping Centre / Mall': 'fa-shopping-bag', 'Town Centre': 'fa-city', 'Town Square': 'fa-city',
     // Nature & Landscape
     'Beach': 'fa-umbrella-beach', 'Forest / Wood': 'fa-tree',
     'Hill / Summit': 'fa-mountain', 'Lake / Reservoir': 'fa-water',
-    'Moorland': 'fa-mountain-sun', 'River': 'fa-water', 'Stream': 'fa-water',
-    'Trig Point': 'fa-location-dot', 'Valley': 'fa-mountain', 'Viewpoint': 'fa-binoculars',
+    'Moorland': 'fa-mountain', 'River': 'fa-water', 'Stream': 'fa-water',
+    'Trig Point': 'fa-map-marker-alt', 'Valley': 'fa-mountain', 'Viewpoint': 'fa-binoculars',
     // Access & Navigation
-    'Bridge': 'fa-bridge', 'Dead End': 'fa-ban', 'Gate': 'fa-door-closed',
+    'Bridge': 'fa-grip-lines', 'Dead End': 'fa-ban', 'Gate': 'fa-door-closed',
     'One Way': 'fa-arrow-right', 'Stile': 'fa-grip-lines',
     // Other / legacy
     'Something else': 'fa-question', 'Historic': 'fa-monument', 'Scenic': 'fa-binoculars',
-    'Wildlife': 'fa-paw', 'Leisure': 'fa-umbrella-beach', 'Refreshments': 'fa-mug-hot',
+    'Wildlife': 'fa-paw', 'Leisure': 'fa-umbrella-beach', 'Refreshments': 'fa-coffee',
     'Infrastructure': 'fa-road', 'Landmark': 'fa-landmark',
 };
 function getPlaceTypeIcon(type) {
