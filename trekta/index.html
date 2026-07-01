@@ -144,7 +144,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.355
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.820
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13570,12 +13570,15 @@ function renderPlacePlot(places, userCoordsOrNull = null) {
 
     const categoryStr = String(v || '').trim();
 
+    // Star rating suffix
+    const stars = t.rating ? ' ' + '★'.repeat(Number(t.rating)) : '';
+
     // For non-landmark places: show "Category, Description" (or just Category if no description)
-    if (categoryStr && desc) return `${categoryStr}, ${desc}`;
-    if (categoryStr) return categoryStr;
+    if (categoryStr && desc) return `${categoryStr}, ${desc}${stars}`;
+    if (categoryStr) return categoryStr + stars;
 
     // Fallback: if no Category, at least show description (keeps current behaviour)
-    if (desc) return desc;
+    if (desc) return desc + stars;
 
     return '';
 };
