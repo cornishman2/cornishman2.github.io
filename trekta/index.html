@@ -12046,8 +12046,23 @@ function renderMapCard(map, isOpen = false) {
         ? map.photos
         : (map.mapPhotoRef ? [map.mapPhotoRef] : (map.mapPhotoData ? [map.mapPhotoData] : []));
 
-    const photoHtml = _allMapPhotoRefs.length
-        ? '<div class="mt-3 grid grid-cols-3 gap-2">'
+    let photoHtml = '';
+    if (_allMapPhotoRefs.length === 1) {
+        const ref = _allMapPhotoRefs[0];
+        photoHtml = '<div class="mt-3 relative">'
+            + '<img src="" data-photo-ref="' + ref + '" data-photo-kind="map"'
+            + ' data-map-id="' + map.id + '"'
+            + ' alt="Map photo"'
+            + ' class="w-full rounded-lg border border-gray-200 cursor-pointer object-cover"'
+            + ' style="max-height:220px;"'
+            + ' onclick="openMapPhotoGallery(&quot;' + map.id + '&quot;)">'
+            + '<button type="button"'
+            + ' onclick="event.stopPropagation();deleteMapPhoto(&quot;' + map.id + '&quot;,0)"'
+            + ' class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm"'
+            + ' title="Delete photo"><i class="fas fa-trash-alt"></i></button>'
+            + '</div>';
+    } else if (_allMapPhotoRefs.length > 1) {
+        photoHtml = '<div class="mt-3 grid grid-cols-3 gap-2">'
             + _allMapPhotoRefs.map(function(ref, idx) {
                 return '<div class="relative">'
                     + '<img src="" data-photo-ref="' + ref + '" data-photo-kind="map"'
@@ -12061,8 +12076,8 @@ function renderMapCard(map, isOpen = false) {
                     + ' title="Delete photo"><i class="fas fa-trash-alt"></i></button>'
                     + '</div>';
             }).join('')
-            + '</div>'
-        : '';
+            + '</div>';
+    }
 
     const createdStr  = formatDateDMY(map.creationDate);
     const changedStr  = formatDateDMY(map.dateLastChanged);
