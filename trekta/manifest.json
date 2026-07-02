@@ -39,31 +39,31 @@
     },
     {
       "src": "assets/screenshot-home.jpg",
-      "sizes": "720x1557",
+      "sizes": "720x1600",
       "type": "image/jpeg",
       "form_factor": "narrow",
-      "label": "Home page — map dashboard showing your maps"
+      "label": "Home page — map dashboard with London hero image"
     },
     {
       "src": "assets/screenshot-map.jpg",
-      "sizes": "720x1559",
+      "sizes": "720x1600",
       "type": "image/jpeg",
       "form_factor": "narrow",
-      "label": "Map page — live map showing places, routes and your GPS position"
+      "label": "Map page — live map showing coloured category pins and routes"
     },
     {
       "src": "assets/screenshot-places.jpg",
-      "sizes": "720x1557",
+      "sizes": "720x1600",
       "type": "image/jpeg",
       "form_factor": "narrow",
-      "label": "Places page — list of places of interest for the open map"
+      "label": "Places page — place cards with photos, ratings and status"
     },
     {
-      "src": "assets/screenshot-favourites.jpg",
-      "sizes": "720x1557",
+      "src": "assets/screenshot-settings.jpg",
+      "sizes": "720x1600",
       "type": "image/jpeg",
       "form_factor": "narrow",
-      "label": "Favourites page — your permanent catalogue of favourite places"
+      "label": "Settings page — customisable route type colours and widths"
     }
   ]
 }
