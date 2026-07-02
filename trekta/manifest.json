@@ -31,6 +31,13 @@
   ],
   "screenshots": [
     {
+      "src": "assets/London.png",
+      "sizes": "1774x887",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Trekta — Record, Explore, Remember"
+    },
+    {
       "src": "assets/screenshot-home.jpg",
       "sizes": "720x1557",
       "type": "image/jpeg",
