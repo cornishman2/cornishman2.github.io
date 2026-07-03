@@ -39,7 +39,7 @@
     },
     {
       "src": "assets/screenshot-home.jpeg",
-      "sizes": "720x1600",
+      "sizes": "714x1557",
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "Home page — map dashboard with London hero image"
