@@ -1,8 +1,18 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "io.github.cornishman2.detekta",
-        "sha256_cert_fingerprints": ["14:CE:E2:5E:51:2B:24:23:A9:54:CE:1B:31:2E:0F:93:A0:D2:A6:AF:8B:5B:78:F3:BA:E9:8F:C3:77:2B:FD:B7"]
-      }
-    }]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.cornishman2.detekta",
+      "sha256_cert_fingerprints": ["14:CE:E2:5E:51:2B:24:23:A9:54:CE:1B:31:2E:0F:93:A0:D2:A6:AF:8B:5B:78:F3:BA:E9:8F:C3:77:2B:FD:B7"]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.cornishman2.trekta",
+      "sha256_cert_fingerprints": ["4B:36:7B:18:C9:12:9C:1A:FD:30:57:8A:E0:89:94:5F:01:34:68:AD:75:E8:CC:B3:EA:99:CF:EE:05:2B:D2:FB"]
+    }
+  }
+]
