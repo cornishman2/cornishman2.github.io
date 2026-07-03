@@ -38,28 +38,28 @@
       "label": "Trekta — Record, Explore, Remember"
     },
     {
-      "src": "assets/screenshot-home.jpg",
+      "src": "assets/screenshot-home.jpeg",
       "sizes": "720x1600",
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "Home page — map dashboard with London hero image"
     },
     {
-      "src": "assets/screenshot-map.jpg",
+      "src": "assets/screenshot-map.jpeg",
       "sizes": "720x1600",
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "Map page — live map showing coloured category pins and routes"
     },
     {
-      "src": "assets/screenshot-places.jpg",
+      "src": "assets/screenshot-places.jpeg",
       "sizes": "720x1600",
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "Places page — place cards with photos, ratings and status"
     },
     {
-      "src": "assets/screenshot-settings.jpg",
+      "src": "assets/screenshot-settings.jpeg",
       "sizes": "720x1600",
       "type": "image/jpeg",
       "form_factor": "narrow",
