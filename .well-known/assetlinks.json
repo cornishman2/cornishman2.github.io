@@ -12,7 +12,7 @@
     "target": {
       "namespace": "android_app",
       "package_name": "io.github.cornishman2.trekta",
-      "sha256_cert_fingerprints": ["4B:36:7B:18:C9:12:9C:1A:FD:30:57:8A:E0:89:94:5F:01:34:68:AD:75:E8:CC:B3:EA:99:CF:EE:05:2B:D2:FB"]
+      "sha256_cert_fingerprints": ["46:12:84:69:77:C4:D7:05:2E:C8:6A:4F:07:C9:32:C8:E2:84:DD:2A:8D:E7:E7:33:3E:96:C4:63:E9:56:7A:12"]
     }
   }
 ]
