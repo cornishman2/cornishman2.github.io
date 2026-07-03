@@ -53,7 +53,7 @@
     },
     {
       "src": "assets/screenshot-places.jpeg",
-      "sizes": "720x1600",
+      "sizes": "720x1554",
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "Places page — place cards with photos, ratings and status"
