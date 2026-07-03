@@ -60,7 +60,7 @@
     },
     {
       "src": "assets/screenshot-settings.jpeg",
-      "sizes": "720x1600",
+      "sizes": "715x1560",
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "Settings page — customisable route type colours and widths"
