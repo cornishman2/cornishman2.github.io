@@ -46,7 +46,7 @@
     },
     {
       "src": "assets/screenshot-map.jpeg",
-      "sizes": "720x1600",
+      "sizes": "717x1440",
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "Map page — live map showing coloured category pins and routes"
