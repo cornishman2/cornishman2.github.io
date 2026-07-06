@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.848
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.187
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -11164,45 +11164,65 @@ case 'edit': {
 }
     
     function handleMapPlaceClick(event, placeId) {
-    // Don’t let this click bubble up to the map container,
-    // so it does NOT trigger toggleMapFullscreen().
-    event.stopPropagation();
-
+    if (event) event.stopPropagation();
     if (!placeId) {
-        navigationPlaceId = null;
-        if (navSession) { navSession.active = false; navSession.path = []; }
-        setTimeout(() => { if (typeof rerenderCompassIfActive === 'function') rerenderCompassIfActive(); }, 0);
+        if (_mlPopup) { _mlPopup.remove(); _mlPopup = null; }
         return;
     }
 
-    navigationPlaceId = (navigationPlaceId === placeId) ? null : placeId;
-    console.log('Navigation place selected from map:', navigationPlaceId);
+    const openMap = maps.find(s => s.status === 'Open');
+    if (!openMap) return;
+    const place = openMap.targets.find(t => t.id === placeId);
+    if (!place) return;
 
-    // Start a fresh navigation session (breadcrumbs)
-    if (!navSession) {
-        navSession = {};
-    }
-    navSession.active = true;
-    navSession.path = [];
-    navSession.startLat = null;
-    navSession.startLon = null;
-    navSession.lastLat = null;
-    navSession.lastLon = null;
-    navSession.smoothedViewRadiusM = null;
+    const parts = String(place.coordinates || '').split(',').map(c => parseFloat(c.trim()));
+    if (parts.length < 2 || isNaN(parts[0])) return;
+    const lat = parts[0], lon = parts[1];
 
+    const statusColors = {'Not visited':'#22c55e','Visited':'#1f2937','To return':'#eab308','Avoid':'#ef4444'};
+    const status = place.status || 'Not visited';
+    const statusColor = statusColors[status] || '#22c55e';
+    const stars = place.rating ? '\u2605'.repeat(Number(place.rating)) : '';
+    const fillColor = getPlaceCategoryColor(place.type);
+    const iconColor = getContrastIconColor(fillColor);
+    const textColor = statusColor === '#1f2937' ? '#fff' : '#111';
+    const notesHtml = place.notes ? '<div style="font-size:11px;color:#666;margin-bottom:8px;font-style:italic;">' + place.notes + '</div>' : '';
+    const starsHtml = stars ? ' &middot; <span style="color:#d97706;">' + stars + '</span>' : '';
 
-    // IMPORTANT: do NOT try to set startLat/startLon here.
-    // If GPS isn't ready yet, we initialise startLat/startLon later in renderNavigationPanel()
-    // when effectiveUser becomes available.
+    const div = document.createElement('div');
+    div.style.cssText = 'font-family:system-ui,sans-serif;min-width:160px;max-width:220px;';
+    div.innerHTML = [
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">',
+        '<div style="width:24px;height:24px;border-radius:50%;background:' + fillColor + ';border:2px solid ' + statusColor + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;">',
+        '<i class="fas ' + getPlaceTypeIcon(place.type) + '" style="font-size:10px;color:' + iconColor + ';"></i>',
+        '</div>',
+        '<strong style="font-size:13px;color:#111;line-height:1.2;">' + (place.description || 'Unnamed Place') + '</strong>',
+        '</div>',
+        '<div style="font-size:11px;color:#555;margin-bottom:4px;">' + (place.type || '') + starsHtml + '</div>',
+        '<div style="display:inline-block;font-size:10px;font-weight:600;padding:2px 6px;border-radius:9px;background:' + statusColor + ';color:' + textColor + ';margin-bottom:8px;">' + status + '</div>',
+        notesHtml
+    ].join('');
 
-    showMessage('Navigation place selected on map.', 'info');
+    const btn = document.createElement('button');
+    btn.style.cssText = 'width:100%;padding:5px;background:#16a34a;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;';
+    btn.textContent = 'Open in Places';
+    btn.onclick = function() {
+        currentPage = 'Places';
+        render();
+        if (_mlPopup) { _mlPopup.remove(); _mlPopup = null; }
+    };
+    div.appendChild(btn);
 
-    if (currentPage === 'Compass') {
-        setTimeout(() => {
-            if (typeof rerenderCompassIfActive === 'function') rerenderCompassIfActive();
-        }, 0);
+    if (_mlMap && _mlMapReady) {
+        if (_mlPopup) _mlPopup.remove();
+        _mlPopup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '240px' })
+            .setLngLat([lon, lat])
+            .setDOMContent(div)
+            .addTo(_mlMap);
     }
 }
+
+
 // ------------------------------------------------------
 // Place QR helpers
 // ------------------------------------------------------
@@ -13669,11 +13689,33 @@ function regeneratePinImagesWhenFontsReady() {
     });
 }
 
+// Sync MapLibre layer visibility with the show/hide toggle state
+function syncMapLibreLayerVisibility() {
+    if (!_mlMap || !_mlMapReady) return;
+    const layers = {
+        'trekta-routes-layer':   showMapRoutes,
+        'trekta-places-icons':   showMapPlaces,
+        'trekta-places-ring':    showMapPlaces,
+        'trekta-places-labels':  showMapPlaces && showMapPlaceLabels,
+    };
+    Object.entries(layers).forEach(([id, visible]) => {
+        if (_mlMap.getLayer(id)) {
+            _mlMap.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
+        }
+    });
+    // Labels specifically — also need to toggle the text in the icons layer
+    if (_mlMap.getLayer('trekta-places-icons')) {
+        _mlMap.setLayoutProperty('trekta-places-icons', 'text-field',
+            showMapPlaceLabels ? ['get', 'label'] : '');
+    }
+}
+
 // ── MapLibre native overlay system ──────────────────────────────────────────
 // Manages GeoJSON route layers and HTML markers — replaces CSS transform overlay
 
 let _mlMarkers = [];     // active maplibregl.Marker instances
 let _mlUserMarker = null; // user position marker
+let _mlPopup = null;     // active place popup
 
 function clearMapLibreOverlay() {
     _mlMarkers.forEach(m => m.remove());
@@ -13926,6 +13968,7 @@ function initOrSyncMapLibre(centerLon, centerLat, minLon, minLat, maxLon, maxLat
 
 // Destroy MapLibre instance when map panel collapses (saves memory)
 function destroyMapLibre() {
+    if (_mlPopup) { _mlPopup.remove(); _mlPopup = null; }
     if (_mlMap) {
         _mlMap.remove();
         _mlMap = null;
@@ -14743,7 +14786,7 @@ const toPercent = (x, y) => {
     <div class="text-sm font-semibold text-gray-700 mb-2">Map layers</div>
   <div class="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
         <label class="flex items-center gap-2 select-none">
-            <input id="map-show-routes-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapRoutes=cb.checked;rerenderCompassIfActive();})(this)" ${showMapRoutes ? 'checked' : ''}>
+            <input id="map-show-routes-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapRoutes=cb.checked;syncMapLibreLayerVisibility();rerenderCompassIfActive();})(this)" ${showMapRoutes ? 'checked' : ''}>
             <span>Show Routes</span>
         </label>
         <label class="flex items-center gap-2 select-none">
@@ -14751,15 +14794,15 @@ const toPercent = (x, y) => {
             <span>Route Labels</span>
         </label>
         <label class="flex items-center gap-2 select-none">
-            <input id="map-show-places-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapPlaces=cb.checked;rerenderCompassIfActive();})(this)" ${showMapPlaces ? 'checked' : ''}>
+            <input id="map-show-places-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapPlaces=cb.checked;syncMapLibreLayerVisibility();rerenderCompassIfActive();})(this)" ${showMapPlaces ? 'checked' : ''}>
             <span>Show Places</span>
         </label>
         <label class="flex items-center gap-2 select-none">
-            <input id="map-show-place-labels-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapPlaceLabels=cb.checked;rerenderCompassIfActive();})(this)" ${showMapPlaceLabels ? 'checked' : ''}>
+            <input id="map-show-place-labels-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapPlaceLabels=cb.checked;syncMapLibreLayerVisibility();rerenderCompassIfActive();})(this)" ${showMapPlaceLabels ? 'checked' : ''}>
             <span>Place Labels</span>
         </label>
         <label class="flex items-center gap-2 select-none">
-            <input id="map-show-favourites-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapFavourites=cb.checked;rerenderCompassIfActive();})(this)" ${showMapFavourites ? 'checked' : ''}>
+            <input id="map-show-favourites-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapFavourites=cb.checked;syncMapLibreLayerVisibility();rerenderCompassIfActive();})(this)" ${showMapFavourites ? 'checked' : ''}>
             <span>Show Favourites</span>
         </label>
         <label class="flex items-center gap-2 select-none">
@@ -15574,7 +15617,7 @@ ${(() => {
   </div>
   <div class="map-panel-body px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm" style="${mapLayersExpanded ? '' : 'display:none'}">
         <label class="flex items-center gap-2 select-none">
-            <input id="map-show-routes-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapRoutes=cb.checked;rerenderCompassIfActive();})(this)" ${showMapRoutes ? 'checked' : ''}>
+            <input id="map-show-routes-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapRoutes=cb.checked;syncMapLibreLayerVisibility();rerenderCompassIfActive();})(this)" ${showMapRoutes ? 'checked' : ''}>
             <span>Show Routes</span>
         </label>
         <label class="flex items-center gap-2 select-none">
@@ -15582,15 +15625,15 @@ ${(() => {
             <span>Route Labels</span>
         </label>
         <label class="flex items-center gap-2 select-none">
-            <input id="map-show-places-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapPlaces=cb.checked;rerenderCompassIfActive();})(this)" ${showMapPlaces ? 'checked' : ''}>
+            <input id="map-show-places-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapPlaces=cb.checked;syncMapLibreLayerVisibility();rerenderCompassIfActive();})(this)" ${showMapPlaces ? 'checked' : ''}>
             <span>Show Places</span>
         </label>
         <label class="flex items-center gap-2 select-none">
-            <input id="map-show-place-labels-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapPlaceLabels=cb.checked;rerenderCompassIfActive();})(this)" ${showMapPlaceLabels ? 'checked' : ''}>
+            <input id="map-show-place-labels-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapPlaceLabels=cb.checked;syncMapLibreLayerVisibility();rerenderCompassIfActive();})(this)" ${showMapPlaceLabels ? 'checked' : ''}>
             <span>Place Labels</span>
         </label>
         <label class="flex items-center gap-2 select-none">
-            <input id="map-show-favourites-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapFavourites=cb.checked;rerenderCompassIfActive();})(this)" ${showMapFavourites ? 'checked' : ''}>
+            <input id="map-show-favourites-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapFavourites=cb.checked;syncMapLibreLayerVisibility();rerenderCompassIfActive();})(this)" ${showMapFavourites ? 'checked' : ''}>
             <span>Show Favourites</span>
         </label>
         <label class="flex items-center gap-2 select-none">
