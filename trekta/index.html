@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.705 
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.663
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13568,6 +13568,83 @@ function rerenderCompassIfActive() {
 
 // ── MapLibre GL integration ──────────────────────────────────────────────────
 
+// Generate a canvas-based place pin image for MapLibre's image registry
+function generatePlacePinImage(fillColor, strokeColor, faUnicode, size) {
+    size = size || 32;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const cx = size / 2, cy = size / 2, r = size / 2 - 3;
+
+    // Outer ring (status colour)
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 2, 0, Math.PI * 2);
+    ctx.fillStyle = strokeColor;
+    ctx.fill();
+
+    // Inner circle (category colour)
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+
+    // Icon glyph
+    const iconColor = getContrastIconColor(fillColor);
+    ctx.fillStyle = iconColor;
+    ctx.font = Math.round(size * 0.42) + 'px "Font Awesome 6 Free"';
+    ctx.fontWeight = '900';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String.fromCodePoint(parseInt(faUnicode, 16)), cx, cy);
+
+    return ctx.getImageData(0, 0, size, size);
+}
+
+// Map Font Awesome class names to unicode code points
+const FA_UNICODE = {
+    'fa-map-marker-alt': 'f3c5', 'fa-plane': 'f072', 'fa-bus': 'f207',
+    'fa-ship': 'f21a', 'fa-square-parking': 'f540', 'fa-gas-pump': 'f52f',
+    'fa-train': 'f238', 'fa-bread-slice': 'f7ec', 'fa-glass-martini-alt': 'f57b',
+    'fa-coffee': 'f0f4', 'fa-hamburger': 'f805', 'fa-beer': 'f0fc',
+    'fa-utensils': 'f2e7', 'fa-store': 'f54e', 'fa-shopping-cart': 'f07a',
+    'fa-campground': 'f6bb', 'fa-bed': 'f236', 'fa-hotel': 'f594',
+    'fa-money-bill': 'f0d6', 'fa-university': 'f19c', 'fa-tooth': 'f5c9',
+    'fa-ambulance': 'f0f9', 'fa-stethoscope': 'f0f1', 'fa-hospital': 'f0f8',
+    'fa-info-circle': 'f05a', 'fa-first-aid': 'f479', 'fa-prescription-bottle': 'f485',
+    'fa-shield-alt': 'f3ed', 'fa-restroom': 'f7bd', 'fa-landmark': 'f66f',
+    'fa-chess-rook': 'f447', 'fa-place-of-worship': 'f67f', 'fa-film': 'f008',
+    'fa-monument': 'f5a6', 'fa-city': 'f64f', 'fa-shopping-bag': 'f290',
+    'fa-child': 'f1ae', 'fa-futbol': 'f1e3', 'fa-umbrella-beach': 'f5ca',
+    'fa-mountain': 'f6fc', 'fa-tree': 'f1bb', 'fa-water': 'f773',
+    'fa-seedling': 'f4d8', 'fa-binoculars': 'f1e5', 'fa-paw': 'f1b0',
+    'fa-grip-lines': 'f7a4', 'fa-ban': 'f05e', 'fa-door-closed': 'f52a',
+    'fa-arrow-right': 'f061', 'fa-road': 'f018', 'fa-horse': 'f6f0',
+    'fa-bicycle': 'f206', 'fa-walking': 'f554', 'fa-lock': 'f023',
+    'fa-question': '3f',   'fa-heart': 'f004',
+};
+
+function getOrRegisterPlacePinImage(type, status, isFavourite) {
+    if (!_mlMap || !_mlMapReady) return null;
+    const fillColor = getPlaceCategoryColor(type);
+    const statusColorMap = {'not visited':'#22c55e','visited':'#1f2937','to return':'#eab308','avoid':'#ef4444'};
+    const strokeColor = statusColorMap[String(status||'not visited').toLowerCase()] || '#22c55e';
+    const faClass = getPlaceTypeIcon(type);
+    const unicode = FA_UNICODE[faClass] || '3f';
+    const size = isFavourite ? 36 : 28;
+    const imageId = 'trekta-pin-' + faClass + '-' + fillColor.replace('#','') + '-' + strokeColor.replace('#','') + '-' + size;
+
+    if (!_mlMap.hasImage(imageId)) {
+        try {
+            const imgData = generatePlacePinImage(fillColor, strokeColor, unicode, size);
+            _mlMap.addImage(imageId, imgData, { pixelRatio: 1 });
+        } catch(e) {
+            return null;
+        }
+    }
+    return imageId;
+}
+
 // ── MapLibre native overlay system ──────────────────────────────────────────
 // Manages GeoJSON route layers and HTML markers — replaces CSS transform overlay
 
@@ -13624,18 +13701,23 @@ function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pin
     const statusColorMap = {'not visited':'#22c55e','visited':'#1f2937','to return':'#eab308','avoid':'#ef4444'};
     const placeCoords = parsedCoords.filter(t => !t.isUser);
 
-    const placeFeatures = placeCoords.map(t => ({
-        type: 'Feature',
-        properties: {
-            id: t.id,
-            description: t.description || '',
-            fill: getPlaceCategoryColor(t.type),
-            stroke: statusColorMap[String(t.status||'not visited').toLowerCase()] || '#22c55e',
-            label: getMapPinLabelText(t),
-            radius: (t.isFavourite || t.favourite) ? 10 : 8
-        },
-        geometry: { type: 'Point', coordinates: [t.lon, t.lat] }
-    }));
+    const placeFeatures = placeCoords.map(t => {
+        const isFavourite = !!t.isFavourite || !!t.favourite;
+        const imageId = getOrRegisterPlacePinImage(t.type, t.status, isFavourite);
+        return {
+            type: 'Feature',
+            properties: {
+                id: t.id,
+                description: t.description || '',
+                fill: getPlaceCategoryColor(t.type),
+                stroke: statusColorMap[String(t.status||'not visited').toLowerCase()] || '#22c55e',
+                label: getMapPinLabelText(t),
+                radius: isFavourite ? 10 : 8,
+                imageId: imageId || ''
+            },
+            geometry: { type: 'Point', coordinates: [t.lon, t.lat] }
+        };
+    });
 
     const placeGeoJSON = { type: 'FeatureCollection', features: placeFeatures };
 
@@ -13644,30 +13726,21 @@ function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pin
     } else {
         _mlMap.addSource('trekta-places', { type: 'geojson', data: placeGeoJSON });
 
-        // Status ring (outer circle)
+        // Place icons (canvas-generated images with category colour + status ring)
         _mlMap.addLayer({
-            id: 'trekta-places-ring',
-            type: 'circle',
-            source: 'trekta-places',
-            paint: {
-                'circle-radius': ['get', 'radius'],
-                'circle-color': ['get', 'fill'],
-                'circle-stroke-width': 3,
-                'circle-stroke-color': ['get', 'stroke']
-            }
-        });
-
-        // Labels
-        _mlMap.addLayer({
-            id: 'trekta-places-labels',
+            id: 'trekta-places-icons',
             type: 'symbol',
             source: 'trekta-places',
             layout: {
+                'icon-image': ['get', 'imageId'],
+                'icon-allow-overlap': true,
+                'icon-anchor': 'center',
                 'text-field': ['get', 'label'],
                 'text-size': 12,
                 'text-anchor': 'left',
                 'text-offset': [1.2, 0],
-                'text-allow-overlap': false
+                'text-allow-overlap': false,
+                'text-optional': true
             },
             paint: {
                 'text-color': '#1f2937',
@@ -13676,14 +13749,30 @@ function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pin
             }
         });
 
-        // Click handler
-        _mlMap.on('click', 'trekta-places-ring', (e) => {
-            if (e.features.length > 0) {
-                handleMapPlaceClick(e.originalEvent, e.features[0].properties.id || '');
+        // Fallback circle for places without a registered image
+        _mlMap.addLayer({
+            id: 'trekta-places-ring',
+            type: 'circle',
+            source: 'trekta-places',
+            filter: ['==', ['get', 'imageId'], ''],
+            paint: {
+                'circle-radius': ['get', 'radius'],
+                'circle-color': ['get', 'fill'],
+                'circle-stroke-width': 3,
+                'circle-stroke-color': ['get', 'stroke']
             }
+        }, 'trekta-places-icons');
+
+        // Click handlers
+        ['trekta-places-icons', 'trekta-places-ring'].forEach(layerId => {
+            _mlMap.on('click', layerId, (e) => {
+                if (e.features.length > 0) {
+                    handleMapPlaceClick(e.originalEvent, e.features[0].properties.id || '');
+                }
+            });
+            _mlMap.on('mouseenter', layerId, () => { _mlMap.getCanvas().style.cursor = 'pointer'; });
+            _mlMap.on('mouseleave', layerId, () => { _mlMap.getCanvas().style.cursor = ''; });
         });
-        _mlMap.on('mouseenter', 'trekta-places-ring', () => { _mlMap.getCanvas().style.cursor = 'pointer'; });
-        _mlMap.on('mouseleave', 'trekta-places-ring', () => { _mlMap.getCanvas().style.cursor = ''; });
     }
 
     // ── User position marker ─────────────────────────────────────────────────
@@ -13781,9 +13870,11 @@ function initOrSyncMapLibre(centerLon, centerLat, minLon, minLat, maxLon, maxLat
                     const c = _mlMap.getCenter();
                     _mlCenterLon = c.lng;
                     _mlCenterLat = c.lat;
-                    // Remove any CSS fallback layer
-                    const fallback = document.querySelector('#place-map-container .map-inner-layer');
-                    if (fallback) fallback.remove();
+                    // Remove loading indicator and any CSS fallback layer
+                    const container = document.getElementById('place-map-container');
+                    if (container) {
+                        container.querySelectorAll('.map-inner-layer, .map-loading-indicator').forEach(el => el.remove());
+                    }
                     // Apply any pending overlay
                     if (_mlPendingOverlay) {
                         const o = _mlPendingOverlay;
@@ -14434,7 +14525,7 @@ const toPercent = (x, y) => {
              style="height: ${heightStyle};"
              id="place-map-container"
         >
-            <div class="text-center text-gray-400 text-sm pointer-events-none" style="z-index:2;">
+            <div class="map-loading-indicator text-center text-gray-400 text-sm pointer-events-none" style="z-index:2;">
                 <i class="fas fa-map fa-2x mb-2 block"></i>
                 Loading map…
             </div>
