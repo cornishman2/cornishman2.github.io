@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.432
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.611
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13582,6 +13582,7 @@ function clearMapLibreOverlay() {
 function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pinZoomScale) {
     if (!_mlMap || !_mlMapReady) return;
     console.log('[ML Overlay] parsedCoords:', parsedCoords.length, 'routes:', drawRoutes.length, 'user:', !!userCoord);
+    parsedCoords.forEach((t,i) => console.log('[ML Coord', i, ']', t.description, 'lat:', t.lat, 'lon:', t.lon, 'type:', t.type, 'isUser:', t.isUser));
 
     // ── Routes as GeoJSON ────────────────────────────────────────────────────
     const routeFeatures = drawRoutes.map(route => ({
