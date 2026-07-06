@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.179
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.423
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13578,23 +13578,18 @@ function initOrSyncMapLibre(centerLon, centerLat, minLon, minLat, maxLon, maxLat
         mlContainer.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:0;';
         mapContainer.insertBefore(mlContainer, mapContainer.firstChild);
         console.log('[MapLibre] Created persistent container');
-    } else {
-        // Ensure dimensions are always set correctly
-        mlContainer.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:0;';
+    } else if (!mapContainer.contains(mlContainer)) {
+        // Container exists but got detached — reattach it
+        mapContainer.insertBefore(mlContainer, mapContainer.firstChild);
+        console.log('[MapLibre] Reattached container');
     }
-
-    // If map already exists and is ready, just sync the view
-    if (_mlMap && _mlMapReady) {
-        try {
-            _mlMap.resize();
-            _mlMap.fitBounds([[minLon, minLat], [maxLon, maxLat]], { animate: false, padding: 0 });
-        } catch(e) { console.log('[MapLibre] fitBounds error:', e); }
-        return;
-    }
-
-    // If map is still loading, just update pending bounds
-    if (_mlMap && !_mlMapReady) {
-        _mlPendingBounds = [[minLon, minLat], [maxLon, maxLat]];
+    // If MapLibre canvas already exists inside container, map is alive — just sync
+    if (_mlMap && mlContainer.querySelector('canvas')) {
+        if (_mlMapReady) {
+            try { _mlMap.resize(); _mlMap.fitBounds([[minLon, minLat], [maxLon, maxLat]], { animate: false, padding: 0 }); } catch(e) {}
+        } else {
+            _mlPendingBounds = [[minLon, minLat], [maxLon, maxLat]];
+        }
         return;
     }
 
@@ -14196,7 +14191,7 @@ const toPercent = (x, y) => {
     const heightStyle = isMapFullscreen ? 'calc(100vh - 140px)' : mapSize + 'px';
 
     return `
-        <div class="relative w-full bg-transparent rounded-xl border border-gray-200 overflow-hidden"
+        <div class="relative w-full bg-transparent rounded-xl border border-gray-200"
              style="height: ${heightStyle};"
              id="place-map-container"
         >
