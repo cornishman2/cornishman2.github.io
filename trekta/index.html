@@ -6,6 +6,9 @@
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
+    <!-- MapLibre GL JS for real map tiles -->
+    <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
 <title>Trekta – Map Your World</title>
 
@@ -144,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.0
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.013
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13455,6 +13458,13 @@ function renderPlaceCard(place, mapId) {
             // --- MAP ZOOM & PAN STATE ---
 
 let mapZoom = 1;
+
+// MapTiler / MapLibre integration
+const MAPTILER_KEY = 'UX5ikZObTRxSPyClatt2';
+const MAPTILER_STYLE_URL = `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${MAPTILER_KEY}`;
+let _mlMap = null;          // MapLibre map instance
+let _mlMapReady = false;    // true once the map has loaded its style
+let _mlPendingBounds = null; // bounds to fit once map is ready
 let mapOffsetX = 0; // in %
 let mapOffsetY = 0; // in %
 
@@ -13516,6 +13526,59 @@ function rerenderCompassIfActive() {
                 attachPageEventListeners();
             }
         }
+    }
+}
+
+// ── MapLibre GL integration ──────────────────────────────────────────────────
+
+function initOrSyncMapLibre(centerLon, centerLat, minLon, minLat, maxLon, maxLat) {
+    const container = document.getElementById('maplibre-container');
+    if (!container) return;
+
+    // If map already exists and container is the same, just update the view
+    if (_mlMap && _mlMapReady) {
+        _mlMap.resize(); // ensure size is correct after any DOM changes
+        _mlMap.fitBounds(
+            [[minLon, minLat], [maxLon, maxLat]],
+            { animate: false, padding: 0 }
+        );
+        return;
+    }
+
+    // If map exists but not ready yet, store bounds for later
+    if (_mlMap && !_mlMapReady) {
+        _mlPendingBounds = [[minLon, minLat], [maxLon, maxLat]];
+        return;
+    }
+
+    // Create new MapLibre instance
+    _mlMap = new maplibregl.Map({
+        container: container,
+        style: MAPTILER_STYLE_URL,
+        center: [centerLon, centerLat],
+        zoom: 14,
+        interactive: false,  // we handle interaction ourselves
+        attributionControl: false
+    });
+
+    // Add compact attribution
+    _mlMap.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+
+    _mlMap.on('load', () => {
+        _mlMapReady = true;
+        const bounds = _mlPendingBounds || [[minLon, minLat], [maxLon, maxLat]];
+        _mlMap.fitBounds(bounds, { animate: false, padding: 0 });
+        _mlPendingBounds = null;
+    });
+}
+
+// Destroy MapLibre instance when map panel collapses (saves memory)
+function destroyMapLibre() {
+    if (_mlMap) {
+        _mlMap.remove();
+        _mlMap = null;
+        _mlMapReady = false;
+        _mlPendingBounds = null;
     }
 }
 
@@ -14052,6 +14115,23 @@ const toPercent = (x, y) => {
         transform-origin: center center;
     `;
 
+
+    // Calculate lat/lon bounds for MapLibre sync
+    const _mlMinLat = minY / M_PER_DEG_LAT;
+    const _mlMaxLat = maxY / M_PER_DEG_LAT;
+    const _mlMinLon = minX / mPerDegLon;
+    const _mlMaxLon = maxX / mPerDegLon;
+    const _mlCenterLat = centerLat;
+    const _mlCenterLon = allCoords.reduce((s, c) => s + c.lon, 0) / allCoords.length;
+
+    // Sync MapLibre after DOM update
+    requestAnimationFrame(() => {
+        initOrSyncMapLibre(
+            _mlCenterLon, _mlCenterLat,
+            _mlMinLon, _mlMinLat, _mlMaxLon, _mlMaxLat
+        );
+    });
+
     const mapSize = Math.min(window.innerWidth - 32, 480);
     const heightStyle = isMapFullscreen ? 'calc(100vh - 140px)' : mapSize + 'px';
 
@@ -14060,7 +14140,9 @@ const toPercent = (x, y) => {
              style="height: ${heightStyle};"
              id="place-map-container"
         >
-            <div class="map-inner-layer absolute inset-0" style="${transformStyle}">
+            <!-- MapLibre GL background layer -->
+            <div id="maplibre-container" class="absolute inset-0" style="z-index:0;"></div>
+            <div class="map-inner-layer absolute inset-0" style="${transformStyle}; z-index:1;">
                 ${gridTileHtml}
                 ${routeSvgHtml}
                 ${navLineHtml}
