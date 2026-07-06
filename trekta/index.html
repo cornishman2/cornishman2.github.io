@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.197
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.270
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13499,6 +13499,7 @@ let _mlPendingBounds = null; // bounds to fit once map is ready
 let _mlLastBounds = null;   // last fitBounds call — used for reset
 let _mlSkipInit = false;    // true during inner-layer-only updates
 let _mlUserInteracted = false; // true once user has manually panned/zoomed
+let _mlBaseZoom = null;     // MapLibre zoom level when mapZoom === 1 (after fitBounds)
 let mapOffsetX = 0; // in %
 let mapOffsetY = 0; // in %
 
@@ -13621,7 +13622,12 @@ function initOrSyncMapLibre(centerLon, centerLat, minLon, minLat, maxLon, maxLat
             _mlMap.resize();
             _mlMap.fitBounds(bounds, { animate: false, padding: 0 });
             _mlPendingBounds = null;
-            setTimeout(() => { if (_mlMap) _mlMap.resize(); }, 200);
+            setTimeout(() => {
+                if (_mlMap) {
+                    _mlMap.resize();
+                    _mlBaseZoom = _mlMap.getZoom();
+                }
+            }, 200);
         });
 
         _mlMap.on('error', (e) => console.warn('[MapLibre]', e.error || e));
@@ -13642,17 +13648,27 @@ function destroyMapLibre() {
     }
 }
 
+// Each CSS zoom step (0.25) maps to 0.5 MapLibre zoom levels
+const ML_ZOOM_FACTOR = 0.5 / MAP_ZOOM_STEP;
+
+function _syncMlZoom() {
+    if (!_mlMap || !_mlMapReady || _mlBaseZoom === null) return;
+    // mapZoom=1 is base; offset from there
+    const mlZoom = _mlBaseZoom + (mapZoom - 1) * ML_ZOOM_FACTOR;
+    _mlMap.zoomTo(mlZoom, { animate: false });
+}
+
 function zoomMapIn(event) {
     if (event) { event.preventDefault(); event.stopPropagation(); }
     mapZoom = Math.min(MAP_ZOOM_MAX, mapZoom + MAP_ZOOM_STEP);
-    if (_mlMap && _mlMapReady) { _mlUserInteracted = true; _mlMap.zoomIn({ animate: false }); }
+    if (_mlMap && _mlMapReady) { _mlUserInteracted = true; _syncMlZoom(); }
     rerenderCompassIfActive();
 }
 
 function zoomMapOut(event) {
     if (event) { event.preventDefault(); event.stopPropagation(); }
     mapZoom = Math.max(MAP_ZOOM_MIN, mapZoom - MAP_ZOOM_STEP);
-    if (_mlMap && _mlMapReady) { _mlUserInteracted = true; _mlMap.zoomOut({ animate: false }); }
+    if (_mlMap && _mlMapReady) { _mlUserInteracted = true; _syncMlZoom(); }
     rerenderCompassIfActive();
 }
 
@@ -13668,6 +13684,7 @@ function resetMapView(event) {
     if (_mlMap && _mlMapReady && _mlLastBounds) {
         _mlUserInteracted = false;
         _mlMap.fitBounds(_mlLastBounds, { animate: false, padding: 0 });
+        setTimeout(() => { if (_mlMap) _mlBaseZoom = _mlMap.getZoom(); }, 100);
     }
 
 
