@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.789
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.847
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -15556,6 +15556,17 @@ ${(() => {
     `;
 })()}
 
+            <!-- Map Style selector -->
+            <div class="flex gap-1 mb-2">
+                ${['outdoor-v2','streets-v2','openstreetmap','satellite'].map(s => {
+                    const labels = {'outdoor-v2':'Outdoor','streets-v2':'Streets','openstreetmap':'OSM','satellite':'Satellite'};
+                    const active = mapTilerStyle === s;
+                    return '<button onclick="setMapLibreStyle(\'' + s + '\');rerenderCompassIfActive();" '
+                        + 'class="flex-1 py-1 text-xs font-semibold rounded-lg border ' + (active ? 'bg-primary text-white border-primary' : 'bg-white text-gray-600 border-gray-300') + '">'
+                        + labels[s] + '</button>';
+                }).join('')}
+            </div>
+
             <!-- Map -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 overflow-hidden">
                 <div class="px-4 py-3 ${mapCanvasExpanded ? 'border-b border-gray-100' : ''} flex items-center justify-between cursor-pointer select-none"
@@ -15680,15 +15691,6 @@ ${(() => {
             <input id="map-show-find-labels-cb" type="checkbox" class="h-4 w-4" onchange="(function(cb){showMapFavouriteLabels=cb.checked;rerenderCompassIfActive();})(this)" ${showMapFavouriteLabels ? 'checked' : ''}>
             <span>Favourite Labels</span>
         </label>
-        <div class="col-span-2 flex items-center gap-2 mt-1 pt-2 border-t border-gray-100">
-            <span class="text-gray-600 flex-shrink-0">Map Style</span>
-            <select onchange="setMapLibreStyle(this.value)" class="flex-1 text-sm border border-gray-300 rounded-lg px-2 py-1 bg-white">
-                <option value="outdoor-v2" ${mapTilerStyle === 'outdoor-v2' ? 'selected' : ''}>Outdoor</option>
-                <option value="streets-v2" ${mapTilerStyle === 'streets-v2' ? 'selected' : ''}>Streets</option>
-                <option value="openstreetmap" ${mapTilerStyle === 'openstreetmap' ? 'selected' : ''}>OpenStreetMap</option>
-                <option value="satellite" ${mapTilerStyle === 'satellite' ? 'selected' : ''}>Satellite</option>
-            </select>
-        </div>
   </div>
 </div>
 
