@@ -1,4 +1,4 @@
-const CACHE_NAME = "trekta-cache-v2"; // <-- bumped to v2
+const CACHE_NAME = "trekta-cache-v3"; // <-- bumped to v3
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -12,12 +12,15 @@ const APP_SHELL = [
   "./assets/screenshot-settings.jpg"
 ];
 
-// Install: pre-cache app shell
+// Install: pre-cache app shell, ignore individual failures
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => {
+      // Use individual adds so one failure doesn't block the rest
+      return Promise.allSettled(
+        APP_SHELL.map(url => cache.add(url).catch(err => console.warn('[SW] Failed to cache:', url, err)))
+      );
+    }).then(() => self.skipWaiting())
   );
 });
 
@@ -39,7 +42,6 @@ async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   try {
     const fresh = await fetch(request, { cache: "no-store" });
-    // Only cache successful basic (same-origin) responses
     if (fresh && fresh.ok && fresh.type === "basic") {
       cache.put(request, fresh.clone());
     }
@@ -64,18 +66,14 @@ async function cacheFirst(request) {
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
-  // Only handle GET
   if (req.method !== "GET") return;
   const url = new URL(req.url);
-  // Only same-origin requests (avoid caching third-party)
   if (url.origin !== self.location.origin) return;
-  // Treat navigations + HTML as network-first so index updates
   const isNavigation = req.mode === "navigate";
   const isHtml = req.headers.get("accept")?.includes("text/html");
   if (isNavigation || isHtml || url.pathname.endsWith("/") || url.pathname.endsWith("/index.html") || url.pathname.endsWith("/Trekta.html")) {
     event.respondWith(networkFirst(req));
     return;
   }
-  // Everything else: cache-first
   event.respondWith(cacheFirst(req));
 });
