@@ -1,4 +1,4 @@
-const CACHE_NAME = "trekta-cache-v1"; // <-- bump this on every deployment
+const CACHE_NAME = "trekta-cache-v2"; // <-- bumped to v2
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -9,7 +9,7 @@ const APP_SHELL = [
   "./assets/screenshot-home.jpg",
   "./assets/screenshot-map.jpg",
   "./assets/screenshot-places.jpg",
-  "./assets/screenshot-favourites.jpg"
+  "./assets/screenshot-settings.jpg"
 ];
 
 // Install: pre-cache app shell
