@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.596
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.619
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -8653,6 +8653,7 @@ function updateMapWithUserLocationAndRender() {
         }
         if (savedScroll > 0) requestAnimationFrame(() => window.scrollTo(0, savedScroll));
         attachPageEventListeners();
+        requestAnimationFrame(repositionPinsForMapLibre);
         return;
     }
 
@@ -13574,6 +13575,7 @@ function rerenderCompassIfActive() {
                 }
             }
             if (typeof attachPageEventListeners === 'function') attachPageEventListeners();
+            requestAnimationFrame(repositionPinsForMapLibre);
             return;
         }
 
@@ -13586,6 +13588,41 @@ function rerenderCompassIfActive() {
 }
 
 // ── MapLibre GL integration ──────────────────────────────────────────────────
+
+// Reposition all map pins using MapLibre's projection after render
+function repositionPinsForMapLibre() {
+    if (!_mlMap || !_mlMapReady) return;
+    const container = document.getElementById('place-map-container');
+    if (!container) return;
+    const pins = container.querySelectorAll('.map-pin[data-lat]');
+    pins.forEach(pin => {
+        const lat = parseFloat(pin.dataset.lat);
+        const lon = parseFloat(pin.dataset.lon);
+        if (isNaN(lat) || isNaN(lon)) return;
+        try {
+            const point = _mlMap.project([lon, lat]);
+            const w = container.offsetWidth;
+            const h = container.offsetHeight;
+            pin.style.left = (point.x / w * 100).toFixed(2) + '%';
+            pin.style.top  = (point.y / h * 100).toFixed(2) + '%';
+        } catch(e) {}
+    });
+    // Also reposition user dot
+    const userDot = container.querySelector('.map-user-dot[data-lat]');
+    if (userDot) {
+        const lat = parseFloat(userDot.dataset.lat);
+        const lon = parseFloat(userDot.dataset.lon);
+        if (!isNaN(lat) && !isNaN(lon)) {
+            try {
+                const point = _mlMap.project([lon, lat]);
+                const w = container.offsetWidth;
+                const h = container.offsetHeight;
+                userDot.style.left = (point.x / w * 100).toFixed(2) + '%';
+                userDot.style.top  = (point.y / h * 100).toFixed(2) + '%';
+            } catch(e) {}
+        }
+    }
+}
 
 function initOrSyncMapLibre(centerLon, centerLat, minLon, minLat, maxLon, maxLat) {
     if (_mlSkipInit) return;
@@ -13647,6 +13684,7 @@ function initOrSyncMapLibre(centerLon, centerLat, minLon, minLat, maxLon, maxLat
                 if (_mlMap) {
                     _mlMap.resize();
                     _mlBaseZoom = _mlMap.getZoom();
+                    repositionPinsForMapLibre();
                 }
             }, 200);
         });
@@ -13674,10 +13712,10 @@ const ML_ZOOM_FACTOR = 0.5 / MAP_ZOOM_STEP;
 
 function _syncMlZoom() {
     if (!_mlMap || !_mlMapReady) return;
-    // Capture base zoom on first call if timeout hasn't fired yet
     if (_mlBaseZoom === null) _mlBaseZoom = _mlMap.getZoom();
     const mlZoom = _mlBaseZoom + (mapZoom - 1) * ML_ZOOM_FACTOR;
     _mlMap.zoomTo(mlZoom, { animate: false });
+    requestAnimationFrame(repositionPinsForMapLibre);
 }
 
 function zoomMapIn(event) {
@@ -13755,6 +13793,7 @@ function panMap(dir, event) {
         const pxX = dir === 'left' ? w * step / 100 : dir === 'right' ? -w * step / 100 : 0;
         const pxY = dir === 'up' ? h * step / 100 : dir === 'down' ? -h * step / 100 : 0;
         _mlMap.panBy([pxX, pxY], { animate: false });
+        requestAnimationFrame(repositionPinsForMapLibre);
     }
 }
 
@@ -14065,6 +14104,7 @@ const toPercent = (x, y) => {
             return `
                 <div
                     class="absolute map-pin"
+                    data-lat="${t.lat}" data-lon="${t.lon}"
                     style="left:${xPct.toFixed(2)}%; top:${yPct.toFixed(2)}%; transform: translate(-50%, -50%); z-index: 10;"
                     title="${(t.description || '').replace(/"/g,'&quot;')}${t.rating ? ' (' + '★'.repeat(Number(t.rating)) + ')' : ''}"
                     onclick="handleMapPlaceClick(event, '${t.id || ''}')"
@@ -14104,7 +14144,8 @@ const toPercent = (x, y) => {
 
         userHtml = `
             <div
-                class="absolute ${navigationPlaceId ? 'cursor-pointer' : 'pointer-events-none'}"
+                class="absolute map-user-dot ${navigationPlaceId ? 'cursor-pointer' : 'pointer-events-none'}"
+                data-lat="${userCoord.lat}" data-lon="${userCoord.lon}"
                 style="left:${xPct.toFixed(2)}%; top:${yPct.toFixed(2)}%; transform: translate(-50%, -50%); z-index: 20;"
                 title="${navigationPlaceId ? 'Tap to clear navigation line' : 'You'}"
                 onclick="${navigationPlaceId ? 'handleMapPlaceClick(event,&quot;&quot;)' : ''}"
@@ -14227,10 +14268,10 @@ const toPercent = (x, y) => {
     }
 
     // 8. Map HTML
-    const transformStyle = `
-        transform: translate(${mapOffsetX}%, ${mapOffsetY}%) scale(${mapZoom});
-        transform-origin: center center;
-    `;
+    // When MapLibre is active, disable CSS transform — pins positioned via MapLibre projection
+    const transformStyle = (_mlMap && _mlMapReady)
+        ? 'transform: none;'
+        : `transform: translate(${mapOffsetX}%, ${mapOffsetY}%) scale(${mapZoom}); transform-origin: center center;`;
 
 
     // Calculate lat/lon bounds for MapLibre sync
@@ -14295,7 +14336,8 @@ const toPercent = (x, y) => {
 
         userHtml = `
             <div
-                class="absolute ${navigationPlaceId ? 'cursor-pointer' : 'pointer-events-none'}"
+                class="absolute map-user-dot ${navigationPlaceId ? 'cursor-pointer' : 'pointer-events-none'}"
+                data-lat="${userCoord.lat}" data-lon="${userCoord.lon}"
                 style="left:${xPct.toFixed(2)}%; top:${yPct.toFixed(2)}%; transform: translate(-50%, -50%); z-index: 20;"
                 title="${navigationPlaceId ? 'Tap to clear navigation line' : 'You'}"
                 onclick="${navigationPlaceId ? 'handleMapPlaceClick(event,&quot;&quot;)' : ''}"
