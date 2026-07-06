@@ -135,7 +135,7 @@
 </style>
 </head>
 <body class="min-h-screen">
-    <!-- Persistent hidden inputs always in DOM --> 
+    <!-- Persistent hidden inputs always in DOM -->
 
     <input type="file" id="find-card-photo-input" accept="image/*;capture=camera" class="hidden" onchange="handleFavouriteCardPhotoSelected(event)">
     <input type="file" id="place-card-photo-input" accept="image/*;capture=camera" class="hidden" onchange="handlePlaceCardPhotoSelected(event)">
@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.206
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.197
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13498,6 +13498,7 @@ let _mlMapReady = false;    // true once the map has loaded its style
 let _mlPendingBounds = null; // bounds to fit once map is ready
 let _mlLastBounds = null;   // last fitBounds call — used for reset
 let _mlSkipInit = false;    // true during inner-layer-only updates
+let _mlUserInteracted = false; // true once user has manually panned/zoomed
 let mapOffsetX = 0; // in %
 let mapOffsetY = 0; // in %
 
@@ -13582,14 +13583,17 @@ function initOrSyncMapLibre(centerLon, centerLat, minLon, minLat, maxLon, maxLat
         mapContainer.insertBefore(mlContainer, mapContainer.firstChild);
     }
 
-    // If MapLibre canvas already exists, map is alive — just sync
+    // If MapLibre canvas already exists, map is alive — just resize, don't move it
     if (_mlMap && mlContainer.querySelector('canvas')) {
         if (_mlMapReady) {
             try {
-                const bounds = [[minLon, minLat], [maxLon, maxLat]];
-                _mlLastBounds = bounds;
                 _mlMap.resize();
-                _mlMap.fitBounds(bounds, { animate: false, padding: 0 });
+                // Only fit bounds if user hasn't manually panned/zoomed
+                if (!_mlUserInteracted) {
+                    const bounds = [[minLon, minLat], [maxLon, maxLat]];
+                    _mlLastBounds = bounds;
+                    _mlMap.fitBounds(bounds, { animate: false, padding: 0 });
+                }
             } catch(e) {}
         } else {
             _mlPendingBounds = [[minLon, minLat], [maxLon, maxLat]];
@@ -13641,14 +13645,14 @@ function destroyMapLibre() {
 function zoomMapIn(event) {
     if (event) { event.preventDefault(); event.stopPropagation(); }
     mapZoom = Math.min(MAP_ZOOM_MAX, mapZoom + MAP_ZOOM_STEP);
-    if (_mlMap && _mlMapReady) _mlMap.zoomIn({ animate: false });
+    if (_mlMap && _mlMapReady) { _mlUserInteracted = true; _mlMap.zoomIn({ animate: false }); }
     rerenderCompassIfActive();
 }
 
 function zoomMapOut(event) {
     if (event) { event.preventDefault(); event.stopPropagation(); }
     mapZoom = Math.max(MAP_ZOOM_MIN, mapZoom - MAP_ZOOM_STEP);
-    if (_mlMap && _mlMapReady) _mlMap.zoomOut({ animate: false });
+    if (_mlMap && _mlMapReady) { _mlUserInteracted = true; _mlMap.zoomOut({ animate: false }); }
     rerenderCompassIfActive();
 }
 
@@ -13662,6 +13666,7 @@ function resetMapView(event) {
 
     // Reset MapLibre to fit all data
     if (_mlMap && _mlMapReady && _mlLastBounds) {
+        _mlUserInteracted = false;
         _mlMap.fitBounds(_mlLastBounds, { animate: false, padding: 0 });
     }
 
@@ -13705,6 +13710,7 @@ function panMap(dir, event) {
 
     // Sync MapLibre pan — convert % offset to pixels
     if (_mlMap && _mlMapReady && container) {
+        _mlUserInteracted = true;
         const w = container.offsetWidth;
         const h = container.offsetHeight;
         const pxX = dir === 'left' ? w * step / 100 : dir === 'right' ? -w * step / 100 : 0;
