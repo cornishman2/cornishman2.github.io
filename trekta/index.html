@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.187
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.274
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13697,6 +13697,7 @@ function syncMapLibreLayerVisibility() {
         'trekta-places-icons':   showMapPlaces,
         'trekta-places-ring':    showMapPlaces,
         'trekta-places-labels':  showMapPlaces && showMapPlaceLabels,
+        'trekta-places-hearts':  showMapPlaces,
     };
     Object.entries(layers).forEach(([id, visible]) => {
         if (_mlMap.getLayer(id)) {
@@ -13777,8 +13778,10 @@ function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pin
                 description: t.description || '',
                 fill: getPlaceCategoryColor(t.type),
                 stroke: statusColorMap[String(t.status||'not visited').toLowerCase()] || '#22c55e',
+                strokeWidth: isFavourite ? 4 : 2,
                 label: getMapPinLabelText(t),
-                radius: isFavourite ? 10 : 8,
+                radius: isFavourite ? 11 : 8,
+                isFavourite: isFavourite ? 1 : 0,
                 imageId: imageId || ''
             },
             geometry: { type: 'Point', coordinates: [t.lon, t.lat] }
@@ -13824,13 +13827,33 @@ function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pin
             paint: {
                 'circle-radius': ['get', 'radius'],
                 'circle-color': ['get', 'fill'],
-                'circle-stroke-width': 3,
+                'circle-stroke-width': ['get', 'strokeWidth'],
                 'circle-stroke-color': ['get', 'stroke']
             }
         }, 'trekta-places-icons');
 
+        // Heart symbol for favourites
+        _mlMap.addLayer({
+            id: 'trekta-places-hearts',
+            type: 'symbol',
+            source: 'trekta-places',
+            filter: ['==', ['get', 'isFavourite'], 1],
+            layout: {
+                'text-field': '♥',
+                'text-size': 10,
+                'text-anchor': 'top-left',
+                'text-offset': [0.6, -1.2],
+                'text-allow-overlap': true
+            },
+            paint: {
+                'text-color': '#ef4444',
+                'text-halo-color': '#ffffff',
+                'text-halo-width': 1
+            }
+        });
+
         // Click handlers
-        ['trekta-places-icons', 'trekta-places-ring'].forEach(layerId => {
+        ['trekta-places-icons', 'trekta-places-ring', 'trekta-places-hearts'].forEach(layerId => {
             _mlMap.on('click', layerId, (e) => {
                 if (e.features.length > 0) {
                     handleMapPlaceClick(e.originalEvent, e.features[0].properties.id || '');
