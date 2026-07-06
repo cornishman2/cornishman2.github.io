@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.892
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.311
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13762,6 +13762,9 @@ function initOrSyncMapLibre(centerLon, centerLat, minLon, minLat, maxLon, maxLat
                     const c = _mlMap.getCenter();
                     _mlCenterLon = c.lng;
                     _mlCenterLat = c.lat;
+                    // Remove any CSS fallback layer that was shown before MapLibre was ready
+                    const fallback = document.querySelector('#place-map-container .map-inner-layer');
+                    if (fallback) fallback.remove();
                 }
             }, 200);
         });
@@ -14397,24 +14400,21 @@ const toPercent = (x, y) => {
         ></div>`;
     }
 
-    // MapLibre not yet ready — initialise it and show CSS fallback
+    // MapLibre initialising — show empty container with loading spinner, no CSS overlay
     requestAnimationFrame(() => {
         initOrSyncMapLibre(_mlCenterLon, _mlCenterLat, _mlMinLon, _mlMinLat, _mlMaxLon, _mlMaxLat);
     });
 
     return `
-        <div class="relative w-full bg-gray-50 rounded-xl border border-gray-200 overflow-hidden"
+        <div class="relative w-full bg-gray-100 rounded-xl border border-gray-200 overflow-hidden flex items-center justify-center"
              style="height: ${heightStyle};"
              id="place-map-container"
         >
-            <div class="map-inner-layer absolute inset-0" style="${transformStyle}; z-index:1;">
-                ${gridTileHtml}
-                ${routeSvgHtml}
-                ${navLineHtml}
-                ${pinsHtml}
-                ${userHtml}
+            <div class="text-center text-gray-400 text-sm pointer-events-none" style="z-index:2;">
+                <i class="fas fa-map fa-2x mb-2 block"></i>
+                Loading map…
             </div>
-</div>
+        </div>
 
 
 
@@ -14572,6 +14572,15 @@ const toPercent = (x, y) => {
 
     const mapSize = Math.min(window.innerWidth - 32, 480);
     const heightStyle = isMapFullscreen ? 'calc(100vh - 140px)' : mapSize + 'px';
+
+    // If MapLibre is active, return empty container — overlay managed by MapLibre
+    if (_mlMap) {
+        return `
+        <div class="relative w-full bg-transparent rounded-xl border border-gray-200 overflow-hidden"
+             style="height: ${heightStyle};"
+             id="place-map-container"
+        ></div>`;
+    }
 
     return `
         <div class="relative w-full bg-gray-50 rounded-xl border border-gray-200 overflow-hidden"
