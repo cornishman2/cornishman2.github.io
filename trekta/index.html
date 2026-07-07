@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.548
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.663
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13632,6 +13632,9 @@ function rerenderCompassIfActive() {
                 const userCoord = showUserPosition ? (smoothedUserCoords || currentUserCoords) : null;
                 renderPlacePlot(places, userCoord);
             }
+            // Update GPS button text to reflect current state
+            const gpsBtn = document.getElementById('toggle-gps-btn');
+            if (gpsBtn) gpsBtn.innerHTML = '<i class="fas fa-location-crosshairs mr-1"></i>' + (showUserPosition ? 'Hide GPS' : 'Show GPS');
             if (typeof attachPageEventListeners === 'function') attachPageEventListeners();
             return;
         }
@@ -15652,7 +15655,6 @@ ${(() => {
                 </button>
                 <button id="toggle-gps-btn" type="button" class="flex-1 h-10 rounded-xl font-semibold text-white text-sm shadow hover:opacity-90 select-none flex items-center justify-center gap-1"
                     style="background-color: rgb(var(--color-secondary));"
-                    onclick="showUserPosition=!showUserPosition;rerenderCompassIfActive();"
                 ><i class="fas fa-location-crosshairs mr-1"></i>${showUserPosition ? 'Hide GPS' : 'Show GPS'}</button>
             </div>
 
@@ -18327,26 +18329,18 @@ function attachPageEventListeners() {
 if (gpsBtn) {
     gpsBtn.onclick = () => {
         showUserPosition = !showUserPosition;
+        // Update button text immediately without waiting for re-render
+        gpsBtn.innerHTML = '<i class="fas fa-location-crosshairs mr-1"></i>' + (showUserPosition ? 'Hide GPS' : 'Show GPS');
         if (showUserPosition) {
-            // Showing: ensure watch is running, then re-render once we have coords.
-            // If we already have smoothed coords from before, re-render immediately.
-            // Either way, also ensure the watch + auto-refresh are running so the
-            // map keeps updating.
             if (!liveMapWatchId) {
                 startLiveMapLocationWatch();
-                // Watch just (re)started — wait for the first fix before re-rendering,
-                // otherwise the dot won't appear. The auto-refresh interval started by
-                // startLiveMapLocationWatch will trigger the first re-render once a fix
-                // arrives, so we only need an immediate re-render if we already have coords.
                 if (smoothedUserCoords || currentUserCoords) {
                     if (typeof rerenderCompassIfActive === 'function') rerenderCompassIfActive();
                 }
             } else {
-                // Watch already running (position already known) — re-render immediately.
                 if (typeof rerenderCompassIfActive === 'function') rerenderCompassIfActive();
             }
         } else {
-            // Hiding: only stop the watch if nothing else needs GPS.
             if (!needsGpsNow()) {
                 if (typeof stopLiveMapLocationWatch === 'function') stopLiveMapLocationWatch();
             }
