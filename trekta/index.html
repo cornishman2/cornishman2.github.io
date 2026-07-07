@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.425
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.891
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -8666,6 +8666,8 @@ function updateMapWithUserLocationAndRender() {
     }
 
     // Fallback: full re-render if MapLibre not yet ready
+    // BUT skip if we're in the middle of a fullRerenderCompass transition
+    if (_mlSkipInit) return;
     appContent.innerHTML = renderCompassPage(true);
     if (savedScroll > 0) {
         requestAnimationFrame(() => window.scrollTo(0, savedScroll));
@@ -10980,7 +10982,10 @@ function fullRerenderCompass() {
 
     // Detach MapLibre container before innerHTML replacement so it survives
     const mlContainer = document.getElementById('maplibre-container');
-    if (mlContainer) mlContainer.remove(); // detach from DOM (keeps JS object alive)
+    if (mlContainer) mlContainer.remove();
+
+    // Block initOrSyncMapLibre and GPS re-renders during the transition
+    _mlSkipInit = true;
 
     const savedScroll = window.scrollY;
     appContent.innerHTML = renderCompassPage(false);
@@ -10994,8 +10999,24 @@ function fullRerenderCompass() {
         if (newMapContainer) {
             mlContainer.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:0;';
             newMapContainer.insertBefore(mlContainer, newMapContainer.firstChild);
-            setTimeout(() => { if (_mlMap) { _mlMap.resize(); syncMapLibreLayerVisibility(); } }, 50);
+            setTimeout(() => {
+                _mlSkipInit = false;
+                if (_mlMap) { _mlMap.resize(); syncMapLibreLayerVisibility(); }
+                // Update overlay with current data
+                const openMap = maps.find(s => s.status === 'Open');
+                if (openMap && _mlMapReady) {
+                    const places = getActivePlaces(openMap).filter(
+                        t => t.coordinates && t.coordinates.includes(',') && t.coordinates !== 'No GPS logged'
+                    );
+                    const userCoord = showUserPosition ? (smoothedUserCoords || currentUserCoords) : null;
+                    renderPlacePlot(places, userCoord);
+                }
+            }, 100);
+        } else {
+            _mlSkipInit = false;
         }
+    } else {
+        _mlSkipInit = false;
     }
 }
 
@@ -13761,6 +13782,7 @@ function rerenderCompassIfActive() {
         }
 
         // Fallback: full re-render
+        if (_mlSkipInit) return;
         const savedScroll = window.scrollY;
         appContent.innerHTML = renderCompassPage(true);
         if (savedScroll > 0) requestAnimationFrame(() => window.scrollTo(0, savedScroll));
