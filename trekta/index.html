@@ -147,17 +147,17 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.663
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.168
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
 
                 
+                    <button class="nav-btn p-2 rounded-full text-gray-500 hover:text-primary transition duration-150" data-page="Compass">
+                        <i class="fas fa-map text-xl"></i>
+                    </button>
                     <button class="nav-btn p-2 rounded-full text-gray-500 hover:text-primary transition duration-150" data-page="Home">
                         <i class="fas fa-home text-xl"></i>
-                    </button>
-                    <button class="nav-btn p-2 rounded-full text-gray-500 hover:text-primary transition duration-150" data-page="Compass">
-                        <i class="fas fa-compass text-xl"></i>
                     </button>
                     <button class="nav-btn p-2 rounded-full text-gray-500 hover:text-primary transition duration-150" data-page="Places">
                         <i class="fas fa-bullseye text-xl"></i>
@@ -1285,7 +1285,7 @@ let currentGalleryPhotoRefs = [];  // original IDB refs parallel to resolved URL
 let currentGalleryIndex    = 0;
 let gallerySwipeInitialized = false;
 let galleryTouchStartX     = 0;
-let currentPage = 'Home';
+let currentPage = 'Compass';
 let expandedMapIds  = new Set(); // map IDs whose cards are currently expanded
 let expandedPlaceIds  = new Set(); // place IDs whose cards are currently expanded
 let expandedFavouriteIds    = new Set(); // find IDs whose cards are currently expanded
@@ -7094,10 +7094,10 @@ switch (currentPage) {
                 const allPlaces = [...places, ...legacyFavs];
                 const userCoord = showUserPosition ? (smoothedUserCoords || currentUserCoords) : null;
                 renderPlacePlot(allPlaces, userCoord);
+                attachPageEventListeners();
+                updateActiveNavButtons();
+                return; // skip full re-render entirely
             }
-            attachPageEventListeners();
-            updateActiveNavButtons();
-            return; // skip full re-render entirely
         }
         contentHtml = renderCompassPage(false);
         break;
@@ -15403,11 +15403,17 @@ function renderCompassPage(isAutoRefresh = false) {
 
 if (!openMap) {
         return `
-            <div class="p-4">
-                <h2 class="text-3xl font-bold text-primary mb-2">Map</h2>
-                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-amber-400">
-                    <h3 class="text-xl font-bold text-amber-600 mb-3">No Map Open</h3>
-                    <p class="text-gray-700">There is no open map to display. Go to the <strong>Home</strong> page to open an existing map or create a new one.</p>
+            <div class="p-4 flex flex-col items-center justify-center" style="min-height:60vh;">
+                <div class="text-center max-w-xs">
+                    <i class="fas fa-map text-6xl text-green-300 mb-4 block"></i>
+                    <h2 class="text-2xl font-bold text-gray-700 mb-2">Welcome to Trekta</h2>
+                    <p class="text-gray-500 text-sm mb-6">Create a map to start logging places and recording routes.</p>
+                    <button onclick="currentPage='Home';render();"
+                        class="w-full py-4 px-6 rounded-2xl text-white font-bold text-lg shadow-lg"
+                        style="background:linear-gradient(135deg,#16a34a,#15803d);">
+                        <i class="fas fa-plus mr-2"></i>Create Map
+                    </button>
+                    <p class="text-xs text-gray-400 mt-4">Your GPS position will appear here once a map is open.</p>
                 </div>
             </div>
         `;
@@ -20281,14 +20287,14 @@ try {
   <div class="container mx-auto max-w-lg">
     <div class="flex items-center justify-between px-1 py-1">
 
-      <button class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-primary" data-page="Home">
-        <i class="fas fa-home text-lg"></i>
-        <span class="text-[10px]">Home</span>
+      <button class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-primary" data-page="Compass">
+        <i class="fas fa-map text-lg"></i>
+        <span class="text-[10px]">Explore</span>
       </button>
 
-      <button class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-primary" data-page="Compass">
-        <i class="fas fa-compass text-lg"></i>
-        <span class="text-[10px]">Map</span>
+      <button class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-primary" data-page="Home">
+        <i class="fas fa-home text-lg"></i>
+        <span class="text-[10px]">Maps</span>
       </button>
 
       <button class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-primary" data-page="Places">
