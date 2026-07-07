@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.553
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.444
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -7101,7 +7101,6 @@ switch (currentPage) {
             updateActiveNavButtons();
             return;
         }
-        console.log('[DESTROY] render() Compass case firing full rebuild, _mlMapReady=', _mlMapReady, '_mlSkipInit=', _mlSkipInit);
         contentHtml = renderCompassPage(false);
         break;
     case 'Export':
@@ -8013,7 +8012,7 @@ function processLiveGpsPosition(position) {
     if (!hasRenderedFirstGpsFix && currentUserCoords && currentPage === 'Compass') {
         hasRenderedFirstGpsFix = true;
         const appContent = document.getElementById('app-content');
-        if (appContent) { appContent.innerHTML = renderCompassPage(true); attachPageEventListeners(); }
+        if (appContent && !_mlMap) { appContent.innerHTML = renderCompassPage(true); attachPageEventListeners(); }
     }
 
     if (smoothedUserCoords && activeRouteId && activeRouteMapId) {
@@ -8673,7 +8672,6 @@ function updateMapWithUserLocationAndRender() {
     // Fallback: full re-render if MapLibre not yet ready
     // BUT skip if we're in the middle of a fullRerenderCompass transition
     if (_mlSkipInit) return;
-    console.log('[DESTROY] updateMapWithUserLocationAndRender fallback firing, _mlSkipInit=', _mlSkipInit, '_mlMapReady=', _mlMapReady);
     appContent.innerHTML = renderCompassPage(true);
     if (savedScroll > 0) {
         requestAnimationFrame(() => window.scrollTo(0, savedScroll));
@@ -13790,7 +13788,6 @@ function rerenderCompassIfActive() {
 
         // Fallback: full re-render
         if (_mlSkipInit) return;
-        console.log('[DESTROY] rerenderCompassIfActive fallback firing, _mlSkipInit=', _mlSkipInit, '_mlMapReady=', _mlMapReady);
         const savedScroll = window.scrollY;
         appContent.innerHTML = renderCompassPage(true);
         if (savedScroll > 0) requestAnimationFrame(() => window.scrollTo(0, savedScroll));
