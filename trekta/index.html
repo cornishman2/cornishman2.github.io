@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.847
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.646
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -7078,6 +7078,27 @@ switch (currentPage) {
         break;
     }
     case 'Compass':
+        // If MapLibre is active, update data layers in-place — avoid destroying the map
+        if (_mlMap && _mlMapReady && document.getElementById('place-map-container')) {
+            const openMap = maps.find(s => s.status === 'Open');
+            if (openMap) {
+                const places = getActivePlaces(openMap).filter(
+                    t => t.coordinates && t.coordinates.includes(',') && t.coordinates !== 'No GPS logged'
+                );
+                const legacyFavs = (Array.isArray(favourites) ? favourites : [])
+                    .filter(f => f && String(f.mapId) === String(openMap.id) && f.coordinates && String(f.coordinates).includes(',') && String(f.coordinates) !== 'No GPS logged')
+                    .map(f => ({ id: f.id, description: f.description || 'Favourite', type: f.type || 'Unknown',
+                        category: '', status: f.statusAtSave || 'Visited', rating: f.rating || '',
+                        accuracy: f.accuracy || '', coordinates: f.coordinates, centerOnMap: false,
+                        favourite: true, isFavourite: true }));
+                const allPlaces = [...places, ...legacyFavs];
+                const userCoord = showUserPosition ? (smoothedUserCoords || currentUserCoords) : null;
+                renderPlacePlot(allPlaces, userCoord);
+            }
+            attachPageEventListeners();
+            updateActiveNavButtons();
+            return; // skip full re-render entirely
+        }
         contentHtml = renderCompassPage(false);
         break;
     case 'Export':
@@ -13502,11 +13523,31 @@ function setMapLibreStyle(style) {
     mapTilerStyle = style;
     localStorage.setItem('trektaMapStyle', style);
     if (!_mlMap) return;
-    // Changing style destroys all sources/layers — need to re-add them after
+
+    // Show a loading overlay on top of the existing map — no flicker
+    const container = document.getElementById('place-map-container');
+    if (container) {
+        let overlay = document.getElementById('map-style-loading');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'map-style-loading';
+            overlay.style.cssText = 'position:absolute;inset:0;z-index:100;background:rgba(255,255,255,0.7);display:flex;align-items:center;justify-content:center;border-radius:inherit;';
+            overlay.innerHTML = '<div style="text-align:center;color:#374151;">'
+                + '<i class="fas fa-circle-notch fa-spin fa-2x mb-2 block"></i>'
+                + '<div style="font-size:12px;font-weight:600;">Loading map…</div>'
+                + '</div>';
+            container.appendChild(overlay);
+        }
+    }
+
+    // Change style — destroys all sources/layers
     _mlMapReady = false;
     _mlMap.setStyle(getMaptilerStyleUrl(style));
     _mlMap.once('styledata', () => {
         _mlMapReady = true;
+        // Remove loading overlay
+        const overlay = document.getElementById('map-style-loading');
+        if (overlay) overlay.remove();
         // Re-add trekta layers
         const openMap = maps && maps.find(s => s.status === 'Open');
         if (openMap) {
@@ -15562,7 +15603,8 @@ ${(() => {
                     const labels = {'outdoor-v2':'Outdoor','streets-v2':'Streets','openstreetmap':'OSM','satellite':'Satellite'};
                     const active = mapTilerStyle === s;
                     return '<button onclick="setMapLibreStyle(\'' + s + '\');rerenderCompassIfActive();" '
-                        + 'class="flex-1 py-1 text-xs font-semibold rounded-lg border ' + (active ? 'bg-primary text-white border-primary' : 'bg-white text-gray-600 border-gray-300') + '">'
+                        + 'class="flex-1 py-1 text-xs font-semibold rounded-lg border ' 
+                        + (active ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-300') + '">'
                         + labels[s] + '</button>';
                 }).join('')}
             </div>
