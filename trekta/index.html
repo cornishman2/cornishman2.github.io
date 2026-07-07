@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.646
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.421
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13782,7 +13782,7 @@ function clearMapLibreOverlay() {
     if (_mlUserMarker) { _mlUserMarker.remove(); _mlUserMarker = null; }
 }
 
-function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pinZoomScale) {
+function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pinZoomScale, routesOnly) {
     if (!_mlMap) return;
     if (!_mlMapReady) {
         _mlPendingOverlay = { parsedCoords, drawRoutes, userCoord, invZoom, pinZoomScale };
@@ -13820,6 +13820,7 @@ function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pin
     }
 
     // ── Place pins as GeoJSON circle layer ──────────────────────────────────
+    if (routesOnly) return; // progressive load — skip places on first pass
     _mlMarkers.forEach(m => m.remove());
     _mlMarkers = [];
 
@@ -14022,14 +14023,22 @@ function initOrSyncMapLibre(centerLon, centerLat, minLon, minLat, maxLon, maxLat
                     if (container) {
                         container.querySelectorAll('.map-inner-layer, .map-loading-indicator').forEach(el => el.remove());
                     }
-                    // Apply any pending overlay
+                    // Progressive load: routes first, then places after a short delay
                     if (_mlPendingOverlay) {
                         const o = _mlPendingOverlay;
                         _mlPendingOverlay = null;
-                        updateMapLibreOverlay(o.parsedCoords, o.drawRoutes, o.userCoord, o.invZoom, o.pinZoomScale);
+                        // Step 1: routes + user position only
+                        updateMapLibreOverlay(o.parsedCoords, o.drawRoutes, o.userCoord, o.invZoom, o.pinZoomScale, true);
+                        // Step 2: places a moment later so map tiles are visible first
+                        setTimeout(() => {
+                            if (_mlMap && _mlMapReady) {
+                                updateMapLibreOverlay(o.parsedCoords, o.drawRoutes, o.userCoord, o.invZoom, o.pinZoomScale, false);
+                                regeneratePinImagesWhenFontsReady();
+                            }
+                        }, 400);
+                    } else {
+                        regeneratePinImagesWhenFontsReady();
                     }
-                    // Regenerate pin images once FA font is ready
-                    regeneratePinImagesWhenFontsReady();
                 }
             }, 200);
         });
