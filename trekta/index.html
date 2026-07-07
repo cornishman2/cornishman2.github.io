@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.890
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.121
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -10908,11 +10908,37 @@ async function confirmInlineMapDelete(mapId) {
 }
 
 // Map canvas toggle — update state then re-render
-function toggleMapCanvas() {
-    mapCanvasExpanded = !mapCanvasExpanded;
-    rerenderCompassIfActive();
+// Full re-render of Compass page content while preserving the MapLibre instance
+function fullRerenderCompass() {
+    if (typeof currentPage === 'undefined' || currentPage !== 'Compass') return;
+    const appContent = document.getElementById('app-content');
+    if (!appContent || typeof renderCompassPage !== 'function') return;
+
+    // Detach MapLibre container before innerHTML replacement so it survives
+    const mlContainer = document.getElementById('maplibre-container');
+    if (mlContainer) mlContainer.remove(); // detach from DOM (keeps JS object alive)
+
+    const savedScroll = window.scrollY;
+    appContent.innerHTML = renderCompassPage(false);
+    if (savedScroll > 0) requestAnimationFrame(() => window.scrollTo(0, savedScroll));
+    attachPageEventListeners();
+    updateActiveNavButtons();
+
+    // Re-attach MapLibre container into the new place-map-container
+    if (mlContainer && _mlMap) {
+        const newMapContainer = document.getElementById('place-map-container');
+        if (newMapContainer) {
+            mlContainer.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:0;';
+            newMapContainer.insertBefore(mlContainer, newMapContainer.firstChild);
+            setTimeout(() => { if (_mlMap) { _mlMap.resize(); syncMapLibreLayerVisibility(); } }, 50);
+        }
+    }
 }
 
+function toggleMapCanvas() {
+    mapCanvasExpanded = !mapCanvasExpanded;
+    fullRerenderCompass();
+}
 function toggleMapCard(mapId) {
     if (expandedMapIds.has(mapId)) {
         // Collapsing — auto-save inline fields if present
@@ -10995,11 +11021,11 @@ function toggleMapPanel(panel) {
     }
     if (panel === 'gps') {
         gpsInfoExpanded = !gpsInfoExpanded;
-        rerenderCompassIfActive();
+        fullRerenderCompass();
         return;
     }
     if (panel === 'routes')   { routesPanelExpanded = !routesPanelExpanded; }
-    rerenderCompassIfActive();
+    fullRerenderCompass();
 }
 
 async function handleMapAction(button) {
