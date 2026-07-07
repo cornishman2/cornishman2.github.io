@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.869
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.821
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -15563,7 +15563,6 @@ if (!openMap) {
 
     return `
         <div class="p-4">
-            <h2 class="text-3xl font-bold text-primary mb-2">Map</h2>
 
             ${gpsLostWarning ? `
             <div class="mb-4 p-3 bg-red-50 border-2 border-red-400 rounded-xl flex items-center gap-3">
@@ -15579,36 +15578,88 @@ if (!openMap) {
                 <p class="text-amber-700 text-sm font-semibold">GPS recovering… (attempt ${gpsRecoveryAttempts}/${GPS_MAX_RECOVERIES})</p>
             </div>
             ` : ''}
-            ${(() => {
-                const _allPlaces = Array.isArray(openMap.targets) ? openMap.targets.filter(t => t && !t.deleted) : [];
-                const _totalPlaces     = _allPlaces.length;
-                const _totalFavourites = _allPlaces.filter(t => t.favourite).length;
-                const _totalRoutes     = Array.isArray(openMap.tracks) ? openMap.tracks.filter(t => t && t.deleted !== true).length : 0;
-                const _borderCls  = mapSummaryExpanded ? 'border-b border-gray-100' : '';
-                const _chevronCls = mapSummaryExpanded ? 'fa-chevron-up' : 'fa-chevron-down';
-                const _countsHtml = mapSummaryExpanded
-                    ? '<div class="px-4 py-2 flex flex-wrap gap-x-4 gap-y-1">'
-                    + '<span class="text-xs text-gray-600 flex items-center gap-1"><i class="fas fa-map-marker-alt text-primary w-3"></i><span class="font-semibold">' + _totalPlaces + '</span> places</span>'
-                    + '<span class="text-xs text-gray-600 flex items-center gap-1"><span class="text-red-500 font-bold w-3">♥</span><span class="font-semibold">' + _totalFavourites + '</span> favourites</span>'
-                    + '<span class="text-xs text-gray-600 flex items-center gap-1"><i class="fas fa-route text-green-600 w-3"></i><span class="font-semibold">' + _totalRoutes + '</span> routes</span>'
-                    + '</div>'
-                    : '';
-                return `
+
+            <!-- Map -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 overflow-hidden">
-                <div class="px-4 py-3 ${_borderCls} flex items-center justify-between cursor-pointer select-none"
-                     onclick="toggleMapSummary()">
-                    <h3 class="text-xl font-semibold text-gray-700 flex items-center min-w-0">
-                        <i class="fas fa-map mr-2 flex-shrink-0"></i>
-                        <span class="truncate">${openMap.name || 'Unnamed map'}</span>
-                    </h3>
-                    <div class="flex items-center gap-2 flex-shrink-0">
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${showUserPosition ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">Open</span>
-                        <i class="fas ${_chevronCls} text-gray-400"></i>
+                <div class="px-4 py-3 ${mapCanvasExpanded ? 'border-b border-gray-100' : ''} flex items-center justify-between cursor-pointer select-none"
+                     onclick="toggleMapCanvas()">
+                    <div class="flex flex-col min-w-0">
+                        <h3 class="text-base font-bold text-gray-800 flex items-center truncate">
+                            <i class="fas fa-map mr-2 text-primary flex-shrink-0"></i>
+                            <span class="truncate">${openMap.name || 'Unnamed map'}</span>
+                        </h3>
+                        <div class="flex items-center gap-3 mt-0.5 pl-6">
+                            <span class="text-xs text-gray-500 flex items-center gap-1"><i class="fas fa-map-marker-alt text-primary"></i> ${(Array.isArray(openMap.targets) ? openMap.targets.filter(t => t && !t.deleted).length : 0)}</span>
+                            <span class="text-xs text-gray-500 flex items-center gap-1"><span class="text-red-500 font-bold">♥</span> ${(Array.isArray(openMap.targets) ? openMap.targets.filter(t => t && !t.deleted && t.favourite).length : 0)}</span>
+                            <span class="text-xs text-gray-500 flex items-center gap-1"><i class="fas fa-route text-green-600"></i> ${(Array.isArray(openMap.tracks) ? openMap.tracks.filter(t => t && !t.deleted).length : 0)}</span>
+                        </div>
                     </div>
+                    <i class="fas ${mapCanvasExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400 ml-2 flex-shrink-0"></i>
                 </div>
-                ${_countsHtml}
-            </div>`;
-            })()}
+                ${mapCanvasExpanded ? renderPlacePlot(pointsForPlot, showUserPosition ? (smoothedUserCoords || currentUserCoords) : null) : ''}
+                <div id="map-canvas-controls" class="px-4 pb-4" style="${mapCanvasExpanded ? '' : 'display:none'}">
+            <!-- Reset and GPS buttons — touch/pinch/drag replaces zoom/pan buttons -->
+            <div class="mt-2 mb-2 flex gap-2">
+                <button type="button" class="flex-1 h-10 rounded-xl bg-gray-200 hover:bg-gray-300 active:bg-gray-400 font-semibold text-sm shadow select-none flex items-center justify-center gap-1" onclick="resetMapView(event)">
+                    <i class="fas fa-compress-arrows-alt text-gray-600"></i> <span>Reset</span>
+                </button>
+                <button id="toggle-gps-btn" type="button" class="flex-1 h-10 rounded-xl font-semibold text-white text-sm shadow hover:opacity-90 select-none flex items-center justify-center gap-1"
+                    style="background-color: rgb(var(--color-secondary));"
+                ><i class="fas fa-location-crosshairs mr-1"></i>${showUserPosition ? 'Hide GPS' : 'Show GPS'}</button>
+            </div>
+
+                                ${buildQuickFormHtml(openMap)}
+                                ${buildCompassPhotoBtnsHtml()}
+                    ${buildCompassRangeButtonsHtml()}
+
+                </div>
+            </div>
+
+<!-- Current GPS -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 overflow-hidden">
+  <div class="px-4 py-3 ${gpsInfoExpanded ? 'border-b border-gray-100' : ''} flex items-center justify-between cursor-pointer select-none"
+       onclick="toggleMapPanel('gps')">
+    <h3 class="text-xl font-semibold text-gray-700 flex items-center">
+      <i class="fas fa-satellite-dish mr-2"></i> Current GPS
+    </h3>
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${showUserPosition ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
+        ${showUserPosition ? 'Showing' : 'Hidden'}
+      </span>
+      <i class="fas ${gpsInfoExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400"></i>
+    </div>
+  </div>
+  ${gpsInfoExpanded ? `
+  <div class="px-4 py-3">
+    ${(() => {
+      const c = getBestLiveGpsCoordsOrNull() || lastKnownMapCoords;
+      const acc = (typeof currentUserAccuracy === 'number' && isFinite(currentUserAccuracy)) ? currentUserAccuracy : 0;
+      const accClass = acc <= 5 ? 'text-green-600' : acc <= 15 ? 'text-amber-600' : 'text-red-600';
+      if (!c) return (
+        '<div class="flex items-center gap-2 text-gray-500 text-sm mb-3">' +
+        '<i class="fas fa-satellite-dish text-gray-400 mr-1"></i>' +
+        '<span>No GPS fix yet</span>' +
+        '</div>'
+      );
+      const accBadge = showUserPosition
+        ? '<span class="' + accClass + ' font-medium">±' + acc.toFixed(1) + 'm</span>'
+        : '<span class="text-gray-500 italic">last known</span>';
+      return (
+        '<div class="flex items-center gap-2 mb-1">' +
+        '<i class="fas fa-satellite-dish ' + accClass + '"></i>' +
+        '<span class="text-sm font-mono text-gray-700">' + c.lat.toFixed(6) + ', ' + c.lon.toFixed(6) + '</span>' +
+        '</div>' +
+        '<div class="text-xs text-gray-500 mb-3 ml-5">Accuracy: ' + accBadge + '</div>'
+      );
+    })()}
+    <button type="button"
+            onclick="showUserPosition=!showUserPosition;rerenderCompassIfActive()"
+            class="w-full py-2 rounded-lg text-sm font-semibold transition duration-150 ${showUserPosition ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-green-600 text-white hover:bg-green-700'}">
+      <i class="fas ${showUserPosition ? 'fa-eye-slash' : 'fa-eye'} mr-2"></i>
+      ${showUserPosition ? 'Hide my position' : 'Show my position'}
+    </button>
+  </div>` : ''}
+</div>
 
 ${(() => {
     const isOn = !!isAnyRouteRecording();
@@ -15699,80 +15750,6 @@ ${(() => {
                         + labels[s] + '</button>';
                 }).join('')}
             </div>
-
-            <!-- Map -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 overflow-hidden">
-                <div class="px-4 py-3 ${mapCanvasExpanded ? 'border-b border-gray-100' : ''} flex items-center justify-between cursor-pointer select-none"
-                     onclick="toggleMapCanvas()">
-                    <h3 class="text-xl font-semibold text-gray-700 flex items-center">
-                        <i class="fas fa-map mr-2"></i> Map
-                    </h3>
-                    <i class="fas ${mapCanvasExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400 ml-2"></i>
-                </div>
-                ${mapCanvasExpanded ? renderPlacePlot(pointsForPlot, showUserPosition ? (smoothedUserCoords || currentUserCoords) : null) : ''}
-                <div id="map-canvas-controls" class="px-4 pb-4" style="${mapCanvasExpanded ? '' : 'display:none'}">
-            <!-- Reset and GPS buttons — touch/pinch/drag replaces zoom/pan buttons -->
-            <div class="mt-2 mb-2 flex gap-2">
-                <button type="button" class="flex-1 h-10 rounded-xl bg-gray-200 hover:bg-gray-300 active:bg-gray-400 font-semibold text-sm shadow select-none flex items-center justify-center gap-1" onclick="resetMapView(event)">
-                    <i class="fas fa-compress-arrows-alt text-gray-600"></i> <span>Reset</span>
-                </button>
-                <button id="toggle-gps-btn" type="button" class="flex-1 h-10 rounded-xl font-semibold text-white text-sm shadow hover:opacity-90 select-none flex items-center justify-center gap-1"
-                    style="background-color: rgb(var(--color-secondary));"
-                ><i class="fas fa-location-crosshairs mr-1"></i>${showUserPosition ? 'Hide GPS' : 'Show GPS'}</button>
-            </div>
-
-                                ${buildQuickFormHtml(openMap)}
-                                ${buildCompassPhotoBtnsHtml()}
-                    ${buildCompassRangeButtonsHtml()}
-
-                </div>
-            </div>
-
-<!-- Current GPS -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 overflow-hidden">
-  <div class="px-4 py-3 ${gpsInfoExpanded ? 'border-b border-gray-100' : ''} flex items-center justify-between cursor-pointer select-none"
-       onclick="toggleMapPanel('gps')">
-    <h3 class="text-xl font-semibold text-gray-700 flex items-center">
-      <i class="fas fa-satellite-dish mr-2"></i> Current GPS
-    </h3>
-    <div class="flex items-center gap-2 flex-shrink-0">
-      <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${showUserPosition ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
-        ${showUserPosition ? 'Showing' : 'Hidden'}
-      </span>
-      <i class="fas ${gpsInfoExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400"></i>
-    </div>
-  </div>
-  ${gpsInfoExpanded ? `
-  <div class="px-4 py-3">
-    ${(() => {
-      const c = getBestLiveGpsCoordsOrNull() || lastKnownMapCoords;
-      const acc = (typeof currentUserAccuracy === 'number' && isFinite(currentUserAccuracy)) ? currentUserAccuracy : 0;
-      const accClass = acc <= 5 ? 'text-green-600' : acc <= 15 ? 'text-amber-600' : 'text-red-600';
-      if (!c) return (
-        '<div class="flex items-center gap-2 text-gray-500 text-sm mb-3">' +
-        '<i class="fas fa-satellite-dish text-gray-400 mr-1"></i>' +
-        '<span>No GPS fix yet</span>' +
-        '</div>'
-      );
-      const accBadge = showUserPosition
-        ? '<span class="' + accClass + ' font-medium">±' + acc.toFixed(1) + 'm</span>'
-        : '<span class="text-gray-500 italic">last known</span>';
-      return (
-        '<div class="flex items-center gap-2 mb-1">' +
-        '<i class="fas fa-satellite-dish ' + accClass + '"></i>' +
-        '<span class="text-sm font-mono text-gray-700">' + c.lat.toFixed(6) + ', ' + c.lon.toFixed(6) + '</span>' +
-        '</div>' +
-        '<div class="text-xs text-gray-500 mb-3 ml-5">Accuracy: ' + accBadge + '</div>'
-      );
-    })()}
-    <button type="button"
-            onclick="showUserPosition=!showUserPosition;rerenderCompassIfActive()"
-            class="w-full py-2 rounded-lg text-sm font-semibold transition duration-150 ${showUserPosition ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-green-600 text-white hover:bg-green-700'}">
-      <i class="fas ${showUserPosition ? 'fa-eye-slash' : 'fa-eye'} mr-2"></i>
-      ${showUserPosition ? 'Hide my position' : 'Show my position'}
-    </button>
-  </div>` : ''}
-</div>
 
 <!-- Map Layers -->
 <div id="map-layers-details" class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 overflow-hidden">
