@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.11
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.647
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13753,8 +13753,8 @@ function rerenderCompassIfActive() {
 
         // If MapLibre exists (even if not yet ready), never do a full DOM rebuild
         if (_mlMap) {
-            const openMap = maps.find(s => s.status === 'Open');
             if (_mlMapReady) {
+                const openMap = maps.find(s => s.status === 'Open');
                 if (openMap) {
                     const places = getActivePlaces(openMap).filter(
                         t => t.coordinates && t.coordinates.includes(',') && t.coordinates !== 'No GPS logged'
@@ -13763,23 +13763,6 @@ function rerenderCompassIfActive() {
                     renderPlacePlot(places, userCoord);
                 }
             }
-
-            // Refresh the Routes panel in place so inline edit/delete UI
-            // (expandedRouteEditId / expandedRouteDeleteId) actually shows up
-            // instead of silently updating state with no visible change.
-            if (openMap && typeof renderRoutesPanel === 'function') {
-                const routesPanelEl = document.getElementById('routes-panel-details');
-                if (routesPanelEl) {
-                    const freshHtml = renderRoutesPanel(openMap);
-                    const tmp = document.createElement('div');
-                    tmp.innerHTML = freshHtml;
-                    const newPanelEl = tmp.firstElementChild;
-                    if (newPanelEl) {
-                        routesPanelEl.replaceWith(newPanelEl);
-                    }
-                }
-            }
-
             const gpsBtn = document.getElementById('toggle-gps-btn');
             if (gpsBtn) gpsBtn.innerHTML = '<i class="fas fa-location-crosshairs mr-1"></i>' + (showUserPosition ? 'Hide GPS' : 'Show GPS');
             if (typeof attachPageEventListeners === 'function') attachPageEventListeners();
