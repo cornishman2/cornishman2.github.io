@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.647
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.13
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -7773,6 +7773,36 @@ function renderExportPage() {
     openEditRouteModal(routeId);
 }
 
+/**
+ * Refreshes ONLY the Routes panel DOM in place (used to show/hide the inline
+ * edit form and delete confirmation). Deliberately kept separate from
+ * rerenderCompassIfActive() — that function is on the hot path for GPS marker
+ * updates (called by the GPS toggle, layer checkboxes, and an automatic
+ * aspect-ratio recheck that re-fires on its own after every render), so it
+ * must never be given extra work or a way to fail before it finishes.
+ * Returns true on success; false means the caller should fall back to a
+ * full rerenderCompassIfActive().
+ */
+function refreshRoutesPanelInPlace() {
+    if (typeof currentPage === 'undefined' || currentPage !== 'Compass') return true; // nothing to refresh
+    try {
+        const openMap = maps.find(s => s.status === 'Open');
+        if (!openMap || typeof renderRoutesPanel !== 'function') return false;
+        const routesPanelEl = document.getElementById('routes-panel-details');
+        if (!routesPanelEl) return false;
+        const freshHtml = renderRoutesPanel(openMap);
+        const tmp = document.createElement('div');
+        tmp.innerHTML = freshHtml;
+        const newPanelEl = tmp.firstElementChild;
+        if (!newPanelEl) return false;
+        routesPanelEl.replaceWith(newPanelEl);
+        return true;
+    } catch (e) {
+        console.error('refreshRoutesPanelInPlace failed, falling back to full rerender:', e);
+        return false;
+    }
+}
+
         
         function deleteRoute(routeId) {
     const found = findRouteById(routeId);
@@ -10881,7 +10911,7 @@ function saveInlineRouteEdit(routeId) {
     if (!found || !found.route) {
         showMessage('Route not found.', 'error');
         expandedRouteEditId = null;
-        rerenderCompassIfActive();
+        if (!refreshRoutesPanelInPlace()) rerenderCompassIfActive();
         return;
     }
 
@@ -10892,20 +10922,20 @@ function saveInlineRouteEdit(routeId) {
     saveMapsToLocalStorage();
 
     expandedRouteEditId = null;
-    rerenderCompassIfActive();
+    if (!refreshRoutesPanelInPlace()) rerenderCompassIfActive();
 }
 
 /** Cancel an inline route edit without saving. */
 function cancelInlineRouteEdit() {
     expandedRouteEditId = null;
-    rerenderCompassIfActive();
+    if (!refreshRoutesPanelInPlace()) rerenderCompassIfActive();
 }
 
 /** Open the inline delete confirmation for a route. */
 function openInlineRouteDelete(routeId) {
     expandedRouteEditId   = null; // close any open edit
     expandedRouteDeleteId = routeId;
-    rerenderCompassIfActive();
+    if (!refreshRoutesPanelInPlace()) rerenderCompassIfActive();
 }
 
 /** Confirm and execute the inline route delete. */
@@ -10913,7 +10943,7 @@ function confirmInlineRouteDelete(routeId) {
     expandedRouteDeleteId = null;
 
     const found = findRouteById(routeId);
-    if (!found) { showMessage('Route not found.', 'error'); rerenderCompassIfActive(); return; }
+    if (!found) { showMessage('Route not found.', 'error'); if (!refreshRoutesPanelInPlace()) rerenderCompassIfActive(); return; }
 
     const { map, route } = found;
     const routeName = route.name || 'route';
@@ -10935,7 +10965,7 @@ function confirmInlineRouteDelete(routeId) {
 /** Cancel the inline route delete. */
 function cancelInlineRouteDelete() {
     expandedRouteDeleteId = null;
-    rerenderCompassIfActive();
+    if (!refreshRoutesPanelInPlace()) rerenderCompassIfActive();
 }
 
 /** Open the inline delete confirmation for a map. */
@@ -15504,7 +15534,7 @@ function renderRoutesPanel(openMap) {
                                   style="background:${route.color || 'rgba(59,130,246,0.9)'}"></span>
                             <button
                                 type="button"
-                                onclick="expandedRouteEditId='${route.id}';rerenderCompassIfActive()"
+                                onclick="expandedRouteEditId='${route.id}'; if (!refreshRoutesPanelInPlace()) rerenderCompassIfActive();"
                                 class="px-3 py-2 rounded-lg bg-slate-700 text-white text-sm hover:bg-slate-800"
                                 title="Edit route name & colour"
                                 aria-label="Edit route"
