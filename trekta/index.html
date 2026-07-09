@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.25
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.26
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -2520,7 +2520,7 @@ function renderHelpPage() {
           <div><strong>Name</strong> — optional. Defaults to the type if left blank.</div>
           <div><strong>Photo</strong> — opens camera. Photo held ready — button turns green. Place not saved yet.</div>
           <div><strong>Not visited / Visited</strong> — sets the initial status.</div>
-          <div><strong>Quick Save</strong> — saves the place with whatever has been filled in, including the photo.</div>
+          <div><strong>Save Place</strong> — saves the place with whatever has been filled in, including the photo.</div>
         </div>
 
         <hr class="border-t border-gray-100 my-3">
@@ -2627,7 +2627,7 @@ function renderHelpPage() {
           </div>
           <div class="flex gap-3 items-start">
             <span class="flex-none w-6 h-6 rounded-full bg-green-700 text-white text-xs font-bold flex items-center justify-center mt-0.5">5</span>
-            <div><strong>Log places.</strong> Select a type in the quick log form, optionally add a name and photo, then tap Quick Save. Or use the star buttons for instant logging.</div>
+            <div><strong>Log places.</strong> Select a type in the quick log form, optionally add a name and photo, then tap Save Place. Or use the star buttons for instant logging.</div>
           </div>
           <div class="flex gap-3 items-start">
             <span class="flex-none w-6 h-6 rounded-full bg-green-700 text-white text-xs font-bold flex items-center justify-center mt-0.5">6</span>
@@ -7803,6 +7803,89 @@ function refreshRoutesPanelInPlace() {
     }
 }
 
+/**
+ * Builds the "Current GPS" card (coords/accuracy readout + Hide/Show button).
+ * Pulled out into its own function — like renderRoutesPanel() — so it can be
+ * refreshed in isolation. Previously this card's content was baked into the
+ * page at full-render time and never touched again by the periodic GPS
+ * ticker (which only redraws the map marker), so it could get stuck showing
+ * "No GPS fix yet" long after a fix actually arrived and the map dot was
+ * already pulsing correctly.
+ */
+function renderGpsInfoCard() {
+    const bodyHtml = (() => {
+        const c = getBestLiveGpsCoordsOrNull() || lastKnownMapCoords;
+        const acc = (typeof currentUserAccuracy === 'number' && isFinite(currentUserAccuracy)) ? currentUserAccuracy : 0;
+        const accClass = acc <= 5 ? 'text-green-600' : acc <= 15 ? 'text-amber-600' : 'text-red-600';
+        if (!c) return (
+            '<div class="flex items-center gap-2 text-gray-500 text-sm mb-3">' +
+            '<i class="fas fa-satellite-dish text-gray-400 mr-1"></i>' +
+            '<span>No GPS fix yet</span>' +
+            '</div>'
+        );
+        const accBadge = showUserPosition
+            ? '<span class="' + accClass + ' font-medium">±' + acc.toFixed(1) + 'm</span>'
+            : '<span class="text-gray-500 italic">last known</span>';
+        return (
+            '<div class="flex items-center gap-2 mb-1">' +
+            '<i class="fas fa-satellite-dish ' + accClass + '"></i>' +
+            '<span class="text-sm font-mono text-gray-700">' + c.lat.toFixed(6) + ', ' + c.lon.toFixed(6) + '</span>' +
+            '</div>' +
+            '<div class="text-xs text-gray-500 mb-3 ml-5">Accuracy: ' + accBadge + '</div>'
+        );
+    })();
+
+    return `<div id="gps-info-card" class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 overflow-hidden">
+  <div class="px-4 py-3 ${gpsInfoExpanded ? 'border-b border-gray-100' : ''} flex items-center justify-between cursor-pointer select-none"
+       onclick="toggleMapPanel('gps')">
+    <h3 class="text-xl font-semibold text-gray-700 flex items-center">
+      <i class="fas fa-satellite-dish mr-2"></i> Current GPS
+    </h3>
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${showUserPosition ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
+        ${showUserPosition ? 'Showing' : 'Hidden'}
+      </span>
+      <i class="fas ${gpsInfoExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400"></i>
+    </div>
+  </div>
+  ${gpsInfoExpanded ? `
+  <div class="px-4 py-3">
+    ${bodyHtml}
+    <button type="button"
+            onclick="showUserPosition=!showUserPosition; if (!refreshGpsInfoCardInPlace()) rerenderCompassIfActive();"
+            class="w-full py-2 rounded-lg text-sm font-semibold transition duration-150 ${showUserPosition ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-green-600 text-white hover:bg-green-700'}">
+      <i class="fas ${showUserPosition ? 'fa-eye-slash' : 'fa-eye'} mr-2"></i>
+      ${showUserPosition ? 'Hide my position' : 'Show my position'}
+    </button>
+  </div>` : ''}
+</div>`;
+}
+
+/**
+ * Refreshes ONLY the Current GPS card in place — coords, accuracy, the
+ * Showing/Hidden badge, and the Hide/Show button. Called both immediately on
+ * click (for instant feedback) and from the periodic GPS ticker (so the
+ * readout keeps live-updating while the card sits open, instead of freezing
+ * at whatever it showed the moment the card was expanded).
+ */
+function refreshGpsInfoCardInPlace() {
+    if (typeof currentPage === 'undefined' || currentPage !== 'Compass') return true;
+    try {
+        const cardEl = document.getElementById('gps-info-card');
+        if (!cardEl || typeof renderGpsInfoCard !== 'function') return false;
+        const freshHtml = renderGpsInfoCard();
+        const tmp = document.createElement('div');
+        tmp.innerHTML = freshHtml;
+        const newCardEl = tmp.firstElementChild;
+        if (!newCardEl) return false;
+        cardEl.replaceWith(newCardEl);
+        return true;
+    } catch (e) {
+        console.error('refreshGpsInfoCardInPlace failed, falling back to full rerender:', e);
+        return false;
+    }
+}
+
         
         function deleteRoute(routeId) {
     const found = findRouteById(routeId);
@@ -8707,6 +8790,9 @@ function updateMapWithUserLocationAndRender() {
                 const userCoord = showUserPosition ? (smoothedUserCoords || currentUserCoords) : null;
                 renderPlacePlot(places, userCoord);
             }
+        }
+        if (typeof refreshGpsInfoCardInPlace === 'function') {
+            try { refreshGpsInfoCardInPlace(); } catch (e) { /* never let this block the map/marker update above */ }
         }
         if (savedScroll > 0) requestAnimationFrame(() => window.scrollTo(0, savedScroll));
         attachPageEventListeners();
@@ -16172,51 +16258,7 @@ if (!openMap) {
                 </div>
             </div>
 
-<!-- Current GPS -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 overflow-hidden">
-  <div class="px-4 py-3 ${gpsInfoExpanded ? 'border-b border-gray-100' : ''} flex items-center justify-between cursor-pointer select-none"
-       onclick="toggleMapPanel('gps')">
-    <h3 class="text-xl font-semibold text-gray-700 flex items-center">
-      <i class="fas fa-satellite-dish mr-2"></i> Current GPS
-    </h3>
-    <div class="flex items-center gap-2 flex-shrink-0">
-      <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${showUserPosition ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
-        ${showUserPosition ? 'Showing' : 'Hidden'}
-      </span>
-      <i class="fas ${gpsInfoExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400"></i>
-    </div>
-  </div>
-  ${gpsInfoExpanded ? `
-  <div class="px-4 py-3">
-    ${(() => {
-      const c = getBestLiveGpsCoordsOrNull() || lastKnownMapCoords;
-      const acc = (typeof currentUserAccuracy === 'number' && isFinite(currentUserAccuracy)) ? currentUserAccuracy : 0;
-      const accClass = acc <= 5 ? 'text-green-600' : acc <= 15 ? 'text-amber-600' : 'text-red-600';
-      if (!c) return (
-        '<div class="flex items-center gap-2 text-gray-500 text-sm mb-3">' +
-        '<i class="fas fa-satellite-dish text-gray-400 mr-1"></i>' +
-        '<span>No GPS fix yet</span>' +
-        '</div>'
-      );
-      const accBadge = showUserPosition
-        ? '<span class="' + accClass + ' font-medium">±' + acc.toFixed(1) + 'm</span>'
-        : '<span class="text-gray-500 italic">last known</span>';
-      return (
-        '<div class="flex items-center gap-2 mb-1">' +
-        '<i class="fas fa-satellite-dish ' + accClass + '"></i>' +
-        '<span class="text-sm font-mono text-gray-700">' + c.lat.toFixed(6) + ', ' + c.lon.toFixed(6) + '</span>' +
-        '</div>' +
-        '<div class="text-xs text-gray-500 mb-3 ml-5">Accuracy: ' + accBadge + '</div>'
-      );
-    })()}
-    <button type="button"
-            onclick="showUserPosition=!showUserPosition;rerenderCompassIfActive()"
-            class="w-full py-2 rounded-lg text-sm font-semibold transition duration-150 ${showUserPosition ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-green-600 text-white hover:bg-green-700'}">
-      <i class="fas ${showUserPosition ? 'fa-eye-slash' : 'fa-eye'} mr-2"></i>
-      ${showUserPosition ? 'Hide my position' : 'Show my position'}
-    </button>
-  </div>` : ''}
-</div>
+${renderGpsInfoCard()}
 
 ${(() => {
     const isOn = !!isAnyRouteRecording();
@@ -19963,11 +20005,10 @@ function buildQuickFormHtml(openMap) {
     const visClass = _quickFormStatus === 'Visited'
         ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700';
 
-    return `<div class="bg-green-50 px-3 pt-3 pb-3 rounded-xl shadow-sm border border-green-200 mb-2">
+    return `<div id="quick-form-card" class="bg-green-50 px-3 pt-3 pb-3 rounded-xl shadow-sm border border-green-200 mb-2">
         <div class="flex items-center gap-2 mb-2 pb-2 border-b border-green-200">
             <i class="fas fa-map-pin text-green-600"></i>
-            <span class="text-sm font-semibold text-green-800">Quick Log a Place</span>
-            <span class="text-xs text-green-600 ml-auto">Logs at your GPS position</span>
+            <span class="text-sm font-semibold text-green-800">Quick Log</span>
         </div>
         <div class="space-y-2">
             <select id="quick-form-type" onchange="_quickFormType=this.value"
@@ -19985,12 +20026,12 @@ function buildQuickFormHtml(openMap) {
                     <i class="fas fa-camera mr-1"></i> ${_quickFormPhotoRef ? '✓ Photo' : 'Photo'}
                 </button>
                 <button type="button"
-                        onclick="_quickFormStatus='Not visited';rerenderCompassIfActive()"
+                        onclick="_quickFormStatus='Not visited'; if (!refreshQuickFormInPlace()) rerenderCompassIfActive();"
                         class="flex-1 py-2 rounded-lg text-sm font-semibold ${notVisClass}">
                     Not visited
                 </button>
                 <button type="button"
-                        onclick="_quickFormStatus='Visited';rerenderCompassIfActive()"
+                        onclick="_quickFormStatus='Visited'; if (!refreshQuickFormInPlace()) rerenderCompassIfActive();"
                         class="flex-1 py-2 rounded-lg text-sm font-semibold ${visClass}">
                     Visited
                 </button>
@@ -19999,7 +20040,7 @@ function buildQuickFormHtml(openMap) {
                     onclick="quickSaveFormPlace()"
                     class="w-full py-2 rounded-lg font-bold text-sm text-white shadow"
                     style="background-color:rgb(var(--color-primary))">
-                Quick Save
+                Save Place
             </button>
         </div>
     </div>`;
@@ -20231,6 +20272,35 @@ function _getQuickFormNameAndType() {
     return { type, name };
 }
 
+/**
+ * Refreshes ONLY the Quick Log card in place (status/photo button highlights,
+ * name/type fields). Deliberately separate from rerenderCompassIfActive() —
+ * that function is the GPS-marker hot path and its fast path never rebuilds
+ * this card, which is exactly why the Visited/Not-visited/Photo button
+ * highlights previously never updated after being tapped.
+ * Returns true on success; false means the caller should fall back to a
+ * full rerenderCompassIfActive().
+ */
+function refreshQuickFormInPlace() {
+    if (typeof currentPage === 'undefined' || currentPage !== 'Compass') return true;
+    try {
+        const openMap = maps.find(s => s.status === 'Open');
+        if (!openMap || typeof buildQuickFormHtml !== 'function') return false;
+        const cardEl = document.getElementById('quick-form-card');
+        if (!cardEl) return false;
+        const freshHtml = buildQuickFormHtml(openMap);
+        const tmp = document.createElement('div');
+        tmp.innerHTML = freshHtml;
+        const newCardEl = tmp.firstElementChild;
+        if (!newCardEl) return false;
+        cardEl.replaceWith(newCardEl);
+        return true;
+    } catch (e) {
+        console.error('refreshQuickFormInPlace failed, falling back to full rerender:', e);
+        return false;
+    }
+}
+
 async function quickSaveFormPlace() {
     const { type, name } = _getQuickFormNameAndType();
     const opts = {
@@ -20248,7 +20318,8 @@ async function quickSaveFormPlace() {
     _quickFormName = '';
     _quickFormStatus = 'Not visited';
     _quickFormPhotoRef = null;
-    rerenderCompassIfActive();
+    refreshQuickFormInPlace();       // reset the form's own visual state
+    rerenderCompassIfActive();       // draw the newly saved place's pin on the map
 }
 
 async function handleQuickFormPhotoSelected(event) {
@@ -20261,8 +20332,8 @@ async function handleQuickFormPhotoSelected(event) {
         const dataUrl = await fileToResizedDataUrl(file);
         const refs    = await saveDataUrlsAsPhotoRefs([dataUrl]);
         _quickFormPhotoRef = refs[0] || dataUrl;
-        showMessage('Photo ready — tap Quick Save.', 'success');
-        rerenderCompassIfActive();
+        showMessage('Photo ready — tap Save Place.', 'success');
+        if (!refreshQuickFormInPlace()) rerenderCompassIfActive();
     } catch(e) {
         console.error('Quick form photo error:', e);
         showMessage('Could not process photo.', 'error');
