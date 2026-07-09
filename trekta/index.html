@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.22
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.23
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -11667,7 +11667,9 @@ function handlePlaceQrScanned(text) {
         return;
     }
 
-    if (!payload || payload.kind !== 'trekta-place') {
+    // buildPlaceQrPayload() writes abbreviated keys to keep the QR code less
+    // dense (k, d, t, c, st, dep, ...) — read those, not the old long names.
+    if (!payload || payload.k !== 'place') {
         showMessage('The QR code is not a GeoFavourite Place QR.', 'error');
         return;
     }
@@ -11678,7 +11680,7 @@ function handlePlaceQrScanned(text) {
         return;
     }
 
-    const description = payload.description || 'Imported place';
+    const description = payload.d || 'Imported place';
 
     const confirmTitle = 'Import Place from QR';
     const confirmMessage = `
@@ -11703,18 +11705,18 @@ if (!r.ok) {
         const newPlace = {
             id: generateId(),
 
-            description: payload.description || 'Imported place',
+            description: payload.d || 'Imported place',
             category: payload.category || 'N/A',
-            rating: payload.rating || 'Unknown',
-            type: payload.type || 'Unknown',
+            rating: payload.dep || 'Unknown',
+            type: payload.t || 'Unknown',
 
-            status: payload.status || 'Not visited',
+            status: payload.st || 'Not visited',
             time: now,
 
-            coordinates: payload.coordinates || 'No GPS logged',
-            accuracy: payload.accuracy || 'N/A',
+            coordinates: payload.c || 'No GPS logged',
+            accuracy: 'N/A', // not included in the compact QR payload
 
-            user: payload.user || userProfile.name || '',
+            user: userProfile.name || '',
             device: '',
 
             centerOnMap: false,
