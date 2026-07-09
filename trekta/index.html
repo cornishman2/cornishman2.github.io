@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.18
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.19
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13994,6 +13994,8 @@ function clearMapLibreOverlay() {
     if (_mlNavTargetMarker) { _mlNavTargetMarker.remove(); _mlNavTargetMarker = null; }
     const navInfo = document.getElementById('trekta-nav-info');
     if (navInfo) navInfo.remove();
+    const locateIndicator = document.getElementById('trekta-locate-indicator');
+    if (locateIndicator) locateIndicator.remove();
 }
 
 function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pinZoomScale, routesOnly) {
@@ -14300,6 +14302,91 @@ function clearNavigationTarget() {
     if (typeof rerenderCompassIfActive === 'function') rerenderCompassIfActive();
 }
 
+/**
+ * Shows a small centred badge — a rotating arrow with the distance
+ * underneath — whenever the user's own position marker has been panned or
+ * zoomed off the visible map. Zooming in on a place is easy to do and easy
+ * to lose your own dot off the edge of the screen doing it; without this,
+ * that looks identical to a GPS failure. Hidden whenever the dot is
+ * actually on screen, or there's no GPS fix to point at.
+ *
+ * Runs on every MapLibre 'render' event (which fires continuously during
+ * drag/zoom/animation, same mechanism the library uses internally to keep
+ * its own markers in sync), so it stays live while panning — not just on
+ * GPS ticks. Reads position state live rather than via a parameter, since
+ * the render event doesn't pass one through.
+ */
+function updateOffscreenUserIndicator() {
+    if (!_mlMap || !_mlMapReady) return;
+
+    const mapContainer = document.getElementById('place-map-container');
+    let indicator = document.getElementById('trekta-locate-indicator');
+    const userCoord = showUserPosition ? (smoothedUserCoords || currentUserCoords) : null;
+
+    if (!userCoord || !mapContainer) {
+        if (indicator) indicator.style.display = 'none';
+        return;
+    }
+
+    let pt, w, h;
+    try {
+        pt = _mlMap.project([userCoord.lon, userCoord.lat]);
+        const mapEl = _mlMap.getContainer ? _mlMap.getContainer() : mapContainer;
+        w = mapEl.clientWidth || mapContainer.clientWidth;
+        h = mapEl.clientHeight || mapContainer.clientHeight;
+    } catch (e) {
+        return;
+    }
+    if (!w || !h) return;
+
+    const margin = 16; // small allowance so the badge doesn't flicker right at the true edge
+    const isOnScreen = pt.x >= -margin && pt.x <= w + margin && pt.y >= -margin && pt.y <= h + margin;
+
+    if (isOnScreen) {
+        if (indicator) indicator.style.display = 'none';
+        return;
+    }
+
+    const center = _mlMap.getCenter();
+    const dist = distanceMeters(center.lat, center.lng, userCoord.lat, userCoord.lon);
+    const bearing = initialBearingDegrees(center.lat, center.lng, userCoord.lat, userCoord.lon);
+    const distLabel = dist < 1000 ? Math.round(dist) + 'm' : (dist / 1000).toFixed(1) + 'km';
+
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'trekta-locate-indicator';
+        indicator.style.cssText = 'position:absolute; top:50%; left:50%; z-index:15; '
+            + 'display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; '
+            + 'animation: user-dot-idle 2s ease-in-out infinite;';
+        indicator.title = 'Tap to centre the map on your position';
+        indicator.onclick = (e) => { e.stopPropagation(); recenterOnUser(); };
+        indicator.innerHTML =
+            '<div class="trekta-locate-arrow" style="width:34px;height:34px;border-radius:50%;'
+            + 'background:rgba(17,24,39,0.85);display:flex;align-items:center;justify-content:center;'
+            + 'box-shadow:0 2px 6px rgba(0,0,0,0.3);">'
+            + '<i class="fas fa-location-arrow" style="color:#3b82f6;font-size:15px;"></i></div>'
+            + '<div class="trekta-locate-dist" style="background:rgba(17,24,39,0.85);color:#fff;'
+            + 'font-size:11px;font-weight:700;padding:1px 7px;border-radius:9999px;white-space:nowrap;"></div>';
+        mapContainer.appendChild(indicator);
+    }
+
+    indicator.style.display = 'flex';
+    indicator.style.transform = 'translate(-50%, -50%)';
+    const arrowEl = indicator.querySelector('.trekta-locate-arrow i');
+    if (arrowEl) arrowEl.style.transform = `rotate(${bearing}deg)`;
+    const distEl = indicator.querySelector('.trekta-locate-dist');
+    if (distEl) distEl.textContent = distLabel;
+}
+
+/** Re-centres the map on the user's current live position without changing zoom. */
+function recenterOnUser() {
+    if (!_mlMap || !_mlMapReady) return;
+    const userCoord = showUserPosition ? (smoothedUserCoords || currentUserCoords) : null;
+    if (!userCoord) { showMessage('No GPS fix yet.', 'error'); return; }
+    _mlUserInteracted = true; // keep the current zoom/place-focus — this is a targeted pan, not a full reset
+    _mlMap.easeTo({ center: [userCoord.lon, userCoord.lat], duration: 300 });
+}
+
 // No-op placeholder kept for compatibility
 function repositionPinsForMapLibre() {}
 
@@ -14430,6 +14517,9 @@ function initOrSyncMapLibre(centerLon, centerLat, minLon, minLat, maxLon, maxLat
         // Reposition pins on every MapLibre render frame — this is the key sync mechanism
         _mlMap.on('render', () => {
             repositionPinsForMapLibre();
+            if (typeof updateOffscreenUserIndicator === 'function') {
+                try { updateOffscreenUserIndicator(); } catch (e) { /* never let this break map rendering */ }
+            }
         });
 
         _mlMap.on('error', (e) => console.warn('[MapLibre]', e.error || e));
