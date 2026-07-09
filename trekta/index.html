@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.21
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.22
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13724,9 +13724,31 @@ function getMaptilerStyleUrl(style) {
 
 const MAPTILER_STYLE_URL = getMaptilerStyleUrl(mapTilerStyle);
 
+/**
+ * Updates just the highlighted state of the 4 map-style buttons directly,
+ * without touching rerenderCompassIfActive() — that function is the shared
+ * GPS-marker hot path and deliberately skips rebuilding most of the page for
+ * performance, so relying on it here left the highlight permanently stuck on
+ * whichever button was active at the last full page render.
+ */
+function refreshMapStyleButtonsInPlace(activeStyle) {
+    const container = document.getElementById('map-style-buttons');
+    if (!container) return;
+    container.querySelectorAll('button[data-style]').forEach(btn => {
+        const isActive = btn.dataset.style === activeStyle;
+        btn.classList.toggle('bg-gray-800', isActive);
+        btn.classList.toggle('text-white', isActive);
+        btn.classList.toggle('border-gray-800', isActive);
+        btn.classList.toggle('bg-white', !isActive);
+        btn.classList.toggle('text-gray-600', !isActive);
+        btn.classList.toggle('border-gray-300', !isActive);
+    });
+}
+
 function setMapLibreStyle(style) {
     mapTilerStyle = style;
     localStorage.setItem('trektaMapStyle', style);
+    refreshMapStyleButtonsInPlace(style);
     if (!_mlMap) return;
 
     // Show a loading overlay on top of the existing map — no flicker
@@ -16067,11 +16089,11 @@ if (!openMap) {
                 <div id="map-canvas-controls" class="px-4 pb-4" style="${mapCanvasExpanded ? '' : 'display:none'}">
             <!-- Map Style selector — kept directly against the map itself rather than
                  buried further down the page, since it controls what the map looks like -->
-            <div class="flex gap-1 mt-2 mb-2">
+            <div id="map-style-buttons" class="flex gap-1 mt-2 mb-2">
                 ${['outdoor-v2','streets-v2','openstreetmap','satellite'].map(s => {
                     const labels = {'outdoor-v2':'Outdoor','streets-v2':'Streets','openstreetmap':'OSM','satellite':'Satellite'};
                     const active = mapTilerStyle === s;
-                    return '<button onclick="setMapLibreStyle(\'' + s + '\');rerenderCompassIfActive();" '
+                    return '<button data-style="' + s + '" onclick="setMapLibreStyle(\'' + s + '\');" '
                         + 'class="flex-1 py-1 text-xs font-semibold rounded-lg border ' 
                         + (active ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-300') + '">'
                         + labels[s] + '</button>';
