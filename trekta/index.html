@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.19
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.20
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -14347,9 +14347,22 @@ function updateOffscreenUserIndicator() {
         return;
     }
 
-    const center = _mlMap.getCenter();
-    const dist = distanceMeters(center.lat, center.lng, userCoord.lat, userCoord.lon);
-    const bearing = initialBearingDegrees(center.lat, center.lng, userCoord.lat, userCoord.lon);
+    // Direction is computed directly from screen pixels — pt (the user's
+    // projected position) minus the screen centre (w/2, h/2), both already
+    // in the same on-screen pixel space. This deliberately avoids any
+    // geographic-bearing-to-CSS-rotation conversion: there's no compass
+    // convention, icon default-orientation, or map-rotation edge case that
+    // can make it point the wrong way, because it's just "draw a line from
+    // point A to point B" in the coordinates MapLibre itself just gave us.
+    const centerX = w / 2, centerY = h / 2;
+    const dx = pt.x - centerX, dy = pt.y - centerY;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const ux = dx / len, uy = dy / len;
+
+    const R = 34; // line length within the 100x100 SVG viewBox, centred at (50,50)
+    const x2 = 50 + ux * R, y2 = 50 + uy * R;
+
+    const dist = distanceMeters(userCoord.lat, userCoord.lon, _mlMap.getCenter().lat, _mlMap.getCenter().lng);
     const distLabel = dist < 1000 ? Math.round(dist) + 'm' : (dist / 1000).toFixed(1) + 'km';
 
     if (!indicator) {
@@ -14357,14 +14370,15 @@ function updateOffscreenUserIndicator() {
         indicator.id = 'trekta-locate-indicator';
         indicator.style.cssText = 'position:absolute; top:50%; left:50%; z-index:15; '
             + 'display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; '
-            + 'animation: user-dot-idle 2s ease-in-out infinite;';
+            + 'width:70px; animation: user-dot-idle 2s ease-in-out infinite;';
         indicator.title = 'Tap to centre the map on your position';
         indicator.onclick = (e) => { e.stopPropagation(); recenterOnUser(); };
         indicator.innerHTML =
-            '<div class="trekta-locate-arrow" style="width:34px;height:34px;border-radius:50%;'
-            + 'background:rgba(17,24,39,0.85);display:flex;align-items:center;justify-content:center;'
-            + 'box-shadow:0 2px 6px rgba(0,0,0,0.3);">'
-            + '<i class="fas fa-location-arrow" style="color:#3b82f6;font-size:15px;"></i></div>'
+            '<svg viewBox="0 0 100 100" style="width:70px;height:70px;overflow:visible;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.4));">'
+            + '<line class="trekta-locate-line" x1="50" y1="50" x2="50" y2="50" stroke="#3b82f6" stroke-width="4" stroke-linecap="round"></line>'
+            + '<circle cx="50" cy="50" r="4" fill="#fff" stroke="#3b82f6" stroke-width="3"></circle>'
+            + '<circle class="trekta-locate-tip" cx="50" cy="50" r="5" fill="#3b82f6" stroke="#fff" stroke-width="2"></circle>'
+            + '</svg>'
             + '<div class="trekta-locate-dist" style="background:rgba(17,24,39,0.85);color:#fff;'
             + 'font-size:11px;font-weight:700;padding:1px 7px;border-radius:9999px;white-space:nowrap;"></div>';
         mapContainer.appendChild(indicator);
@@ -14372,8 +14386,10 @@ function updateOffscreenUserIndicator() {
 
     indicator.style.display = 'flex';
     indicator.style.transform = 'translate(-50%, -50%)';
-    const arrowEl = indicator.querySelector('.trekta-locate-arrow i');
-    if (arrowEl) arrowEl.style.transform = `rotate(${bearing}deg)`;
+    const lineEl = indicator.querySelector('.trekta-locate-line');
+    if (lineEl) { lineEl.setAttribute('x2', x2); lineEl.setAttribute('y2', y2); }
+    const tipEl = indicator.querySelector('.trekta-locate-tip');
+    if (tipEl) { tipEl.setAttribute('cx', x2); tipEl.setAttribute('cy', y2); }
     const distEl = indicator.querySelector('.trekta-locate-dist');
     if (distEl) distEl.textContent = distLabel;
 }
