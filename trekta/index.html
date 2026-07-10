@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.27
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.29
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -13677,7 +13677,7 @@ function renderPlaceCard(place, mapId) {
 
             <!-- Expandable body -->
             ${isExpanded ? `
-            <div class="px-4 pb-4 border-t border-gray-100">
+            <div class="px-4 pb-4 border-t border-gray-100 bg-gray-50">
 
                 ${photoHtml}
 
@@ -20005,7 +20005,7 @@ function buildQuickFormHtml(openMap) {
     const visClass = _quickFormStatus === 'Visited'
         ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700';
 
-    return `<div id="quick-form-card" class="bg-green-50 px-3 pt-3 pb-3 rounded-xl shadow-sm border border-green-200 mb-2">
+    return `<div id="quick-form-card" class="bg-green-100 px-3 pt-3 pb-3 rounded-xl shadow-sm border border-green-200 mb-2">
         <div class="flex items-center gap-2 mb-2 pb-2 border-b border-green-200">
             <i class="fas fa-map-pin text-green-600"></i>
             <span class="text-sm font-semibold text-green-800">Quick Log</span>
@@ -20216,7 +20216,7 @@ function buildElevationGraphHtml(openMap) {
 
 function buildCompassPhotoBtnsHtml(ranges) {
     return `
-        <div class="bg-white px-3 pt-3 pb-1 rounded-t-xl shadow-lg border border-gray-100 border-b-0 mb-0">
+        <div class="bg-amber-50 px-3 pt-3 pb-1 rounded-t-xl shadow-lg border border-amber-200 border-b-0 mb-0">
             <div class="grid grid-cols-5 gap-2">
             <button type="button"
                 class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
@@ -20480,7 +20480,7 @@ async function handleQuickPhotoPlaceSelected(event) {
 
 function buildCompassRangeButtonsHtml(ranges) {
     return `
-        <div class="bg-white px-3 pb-3 pt-2 rounded-b-xl shadow-lg border border-gray-100 border-t-0 mb-4">
+        <div class="bg-amber-50 px-3 pb-3 pt-2 rounded-b-xl shadow-lg border border-amber-200 border-t-0 mb-4">
             <div class="grid grid-cols-5 gap-2">
             <button type="button"
                 class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
