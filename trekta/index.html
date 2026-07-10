@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.32
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.33
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -19636,8 +19636,28 @@ async function sharePlaceAsHtml(placeId, mapId) {
     const stars = place.rating ? '★'.repeat(Number(place.rating)) : '';
     const favHeart = place.favourite ? ' ♥' : '';
     const coordsText = place.coordinates && place.coordinates !== 'No GPS logged' ? place.coordinates : '—';
-    const dateText = place.dateCreated ? new Date(place.dateCreated).toLocaleDateString('en-GB') : '—';
+    // formatPlaceLoggedDateTime() already handles the several different field
+    // names a place's timestamp can be stored under (time / dateCreated /
+    // creationDate / dateLastChanged, depending on how it was created) — the
+    // previous version here only ever checked dateCreated, which places
+    // created via Quick Log never set, so the date was silently blank for
+    // most places.
+    const dateText = formatPlaceLoggedDateTime(place);
     const mapName = map ? (map.name || 'Unnamed map') : '—';
+
+    // "Open in Google Maps" — only when we have real coordinates to link to.
+    let mapsButtonHtml = '';
+    if (place.coordinates && place.coordinates !== 'No GPS logged') {
+        const parts = String(place.coordinates).split(',').map(c => parseFloat(c.trim()));
+        if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            const gmapsUrl = 'https://www.google.com/maps/search/?api=1&query='
+                + encodeURIComponent(parts[0] + ',' + parts[1]);
+            mapsButtonHtml = '<a href="' + gmapsUrl + '" target="_blank" rel="noopener" '
+                + 'style="display:block;text-align:center;background:#1d4ed8;color:#fff;'
+                + 'text-decoration:none;font-weight:600;padding:12px;border-radius:8px;margin-bottom:16px;">'
+                + '📍 Open in Google Maps</a>';
+        }
+    }
 
     const html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'
         + '<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -19659,6 +19679,7 @@ async function sharePlaceAsHtml(placeId, mapId) {
         + (stars ? '<tr><td>Rating</td><td>' + stars + '</td></tr>' : '')
         + '<tr><td>Coordinates</td><td>' + coordsText + '</td></tr>'
         + '</table>'
+        + mapsButtonHtml
         + '<div class="footer">Shared from Trekta – Map Your World</div>'
         + '</body></html>';
 
