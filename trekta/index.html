@@ -132,6 +132,19 @@
     0%   { transform: scale(1);   opacity: 0.7; }
     100% { transform: scale(3.5); opacity: 0; }
   }
+  /* Save-button attention ring — pulses a glow OUTWARD around the button
+     rather than fading the button's own opacity, so its fill colour stays a
+     constant, solid green at all times (matters for sunlight legibility and
+     for staying visually identical to the non-pulsing Save button on the
+     Places page). */
+  @keyframes save-btn-pulse-ring {
+    0%   { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55); }
+    70%  { box-shadow: 0 0 0 12px rgba(22, 163, 74, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+  }
+  .save-btn-pulse {
+    animation: save-btn-pulse-ring 1.6s ease-out infinite;
+  }
 </style>
 </head>
 <body class="min-h-screen">
@@ -147,7 +160,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.43
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.44
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -20140,8 +20153,7 @@ function buildQuickFormHtml(openMap) {
             </div>
             <button type="button"
                     onclick="quickSaveFormPlace()"
-                    class="w-full py-2 rounded-lg font-bold text-sm text-white shadow ${hasContent ? 'animate-pulse' : ''}"
-                    style="background-color:rgb(var(--color-primary))">
+                    class="w-full py-2 rounded-lg font-bold text-sm text-white shadow bg-green-600 hover:bg-green-700 ${hasContent ? 'save-btn-pulse' : ''}">
                 Save Place
             </button>
         </div>
@@ -20393,7 +20405,7 @@ function updateQuickSavePulse() {
     const btn = document.querySelector('#quick-form-card button[onclick="quickSaveFormPlace()"]');
     if (!btn) return;
     const hasContent = _quickFormType !== '' || _quickFormName.trim() !== '' || !!_quickFormPhotoRef || _quickFormRating !== '';
-    btn.classList.toggle('animate-pulse', hasContent);
+    btn.classList.toggle('save-btn-pulse', hasContent);
 }
 
 function refreshQuickFormInPlace() {
