@@ -147,7 +147,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.41
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.42
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -1798,6 +1798,31 @@ async function deletePlacePermanently(mapId, placeId) {
     return true;
 }
         
+/**
+ * Runs purgeDeletedEverywhere() exactly once, ever, to sweep up anything left
+ * over from before place deletion became permanent (it used to just flag
+ * "deleted" and rely on this same purge routine — which nothing ever
+ * actually called). Delayed so it runs after the app's own first render
+ * rather than racing it. Also available as a manual "Clean up deleted data"
+ * button in Settings for anyone who wants to re-run it later.
+ */
+function runOneTimeDeletedDataCleanup() {
+    try {
+        if (localStorage.getItem('trekta_purge_v1_done') === '1') return;
+        setTimeout(() => {
+            try {
+                if (typeof purgeDeletedEverywhere === 'function') {
+                    purgeDeletedEverywhere().catch(e => console.warn('One-time cleanup failed:', e));
+                }
+            } finally {
+                try { localStorage.setItem('trekta_purge_v1_done', '1'); } catch (_) {}
+            }
+        }, 1500);
+    } catch (e) {
+        console.warn('runOneTimeDeletedDataCleanup check failed:', e);
+    }
+}
+
 async function purgeDeletedEverywhere() {
 
     // Try to log somewhere sensible (safe if not found)
@@ -2401,13 +2426,19 @@ function canCreate(type, openMap = null) {
     const mapsCount = Array.isArray(maps) ? maps.length : 0;
 
     // Count places/favourites (prefer open map if supplied, else all)
+    // Deleting a place/favourite only sets a "deleted" flag on it — it isn't
+    // actually removed from the array (this is what lets Undo work) — so
+    // this must filter those out the same way every visible list already
+    // does, or the count silently includes things the user can no longer see
+    // at all, making the limit trigger long before their real, active count
+    // gets anywhere near it.
     const allPlaces = [];
     const allFavourites = [];
 
     if (Array.isArray(maps)) {
         maps.forEach(s => {
-            (Array.isArray(s.targets) ? s.targets : []).forEach(t => allPlaces.push(t));
-            (Array.isArray(s.finds) ? s.finds : []).forEach(f => allFavourites.push(f));
+            (Array.isArray(s.targets) ? s.targets : []).filter(t => !t.deleted).forEach(t => allPlaces.push(t));
+            (Array.isArray(s.finds) ? s.finds : []).filter(f => !f.deleted).forEach(f => allFavourites.push(f));
         });
     }
 
@@ -7373,7 +7404,7 @@ return `
     <time>${nowIso}</time>
   </metadata>`;
 
-        const openPlaces = Array.isArray(openMap.targets) ? openMap.targets : [];
+        const openPlaces = Array.isArray(openMap.targets) ? openMap.targets.filter(t => t && !t.deleted) : [];
 
         let wptCountPlaces = 0;
 
@@ -9776,7 +9807,11 @@ async function confirmInlinePlaceDelete(placeId, mapId) {
         }
     }
 
-    place.deleted = true;
+    // Actually remove it — the previous soft-delete flag left it lingering
+    // in the data indefinitely (nothing ever calls the purge routine that
+    // would have cleaned it up), which is exactly what caused the place-limit
+    // count to include places you could no longer even see.
+    map.targets = map.targets.filter(t => t.id !== placeId);
     expandedPlaceDeleteId = null;
     expandedPlaceIds.delete(placeId);
     saveMapsToLocalStorage();
@@ -16703,7 +16738,7 @@ return `
                           <div class="flex gap-3">
                               <button type="button" onclick="maintenanceConfirmOpen=false;render()"
                                       class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>
-                              <button type="button" onclick="(async()=>{maintenanceConfirmOpen=false;saveMapsToLocalStorage();if(typeof saveFavouritesToLocalStorage==='function')saveFavouritesToLocalStorage();showMessage('Maintenance complete.','success');render()})()"
+                              <button type="button" onclick="maintenanceConfirmOpen=false;render();purgeDeletedEverywhere()"
                                       class="flex-1 py-2 rounded-lg bg-orange-600 text-white font-semibold text-sm hover:bg-orange-700 shadow">Run Maintenance</button>
                           </div>
                       </div>
@@ -19304,6 +19339,7 @@ async function importMapWithPhotosFromFile() {
     createDemoMapIfNeeded();
     attachNavDelegationOnce();   // your delegated nav handler
     preWarmGpsIfPermitted();     // start GPS early on load if permission already granted — safe: all periodic GPS callbacks already no-op off the Compass page
+    runOneTimeDeletedDataCleanup(); // clean up anything left over from before deletion became permanent (runs once, ever)
 
     
 // ===============================
