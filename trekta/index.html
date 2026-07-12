@@ -160,7 +160,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.45
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.46
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -14362,6 +14362,26 @@ function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pin
             _mlMap.on('click', layerId, (e) => {
                 if (e.features.length > 0) {
                     handleMapPlaceClick(e.originalEvent, e.features[0].properties.id || '');
+                }
+            });
+            // Double-tap/double-click a place icon to start navigating to it
+            // directly (same nav line + pulsing ring + distance readout as
+            // the Navigate button elsewhere) — no need to open the popup and
+            // find a button first. preventDefault() stops MapLibre's default
+            // double-click-to-zoom so the two don't both fire; a dblclick is
+            // always preceded by two ordinary click events on the web, so
+            // also clear whatever popup those briefly opened.
+            _mlMap.on('dblclick', layerId, (e) => {
+                e.preventDefault();
+                if (e.features.length > 0) {
+                    const placeId = e.features[0].properties.id || '';
+                    if (placeId) {
+                        if (_mlPopup) { _mlPopup.remove(); _mlPopup = null; }
+                        navigationPlaceId = placeId;
+                        const placeName = e.features[0].properties.description || 'place';
+                        showMessage('Navigating to "' + placeName + '".', 'success');
+                        if (typeof rerenderCompassIfActive === 'function') rerenderCompassIfActive();
+                    }
                 }
             });
             _mlMap.on('mouseenter', layerId, () => { _mlMap.getCanvas().style.cursor = 'pointer'; });
