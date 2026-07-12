@@ -160,7 +160,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.44
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.45
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -8981,16 +8981,28 @@ function quickToggleRouteRecording() {
         startLiveMapLocationWatch();
         startCompassAutoRefresh();
         showMessage('Recording ' + name, 'success');
-        // Update button and recording indicator directly — no re-render needed
-        const btn = document.querySelector('#map-canvas-controls button');
+        // Update button and recording indicator directly — no re-render needed.
+        // Targeted by id, not "first button in this container" — that broke
+        // once the map-style buttons were moved to sit before this one.
+        const btn = document.getElementById('route-recording-btn');
         if (btn) {
             btn.className = btn.className.replace('bg-green-600', 'bg-red-600').replace('hover:bg-green-700', 'hover:bg-red-700');
             btn.innerHTML = '<i class="fas fa-stop-circle text-base"></i> Stop Recording ' + name;
         }
-        // Update header recording indicator directly
-        const recIndicator = document.querySelector('.animate-pulse');
+        // Update (or create — it doesn't exist in the DOM at all until a
+        // route is actively recording) the header recording indicator.
+        let recIndicator = document.getElementById('header-recording-indicator');
         if (recIndicator) {
             recIndicator.innerHTML = '<i class="fas fa-circle text-red-500"></i> ' + name + ' Recording';
+        } else {
+            const countsRow = document.getElementById('map-header-counts-row');
+            if (countsRow) {
+                recIndicator = document.createElement('span');
+                recIndicator.id = 'header-recording-indicator';
+                recIndicator.className = 'text-xs font-semibold text-red-600 flex items-center gap-1 animate-pulse';
+                recIndicator.innerHTML = '<i class="fas fa-circle text-red-500"></i> ' + name + ' Recording';
+                countsRow.appendChild(recIndicator);
+            }
         }
     }
 }
@@ -16272,11 +16284,11 @@ if (!openMap) {
                             <i class="fas fa-map mr-2 text-primary flex-shrink-0"></i>
                             <span class="truncate">${openMap.name || 'Unnamed map'}</span>
                         </h3>
-                        <div class="flex items-center gap-3 mt-0.5 pl-6">
+                        <div id="map-header-counts-row" class="flex items-center gap-3 mt-0.5 pl-6">
                             <span class="text-xs text-gray-500 flex items-center gap-1"><i class="fas fa-map-marker-alt text-primary"></i> ${(Array.isArray(openMap.targets) ? openMap.targets.filter(t => t && !t.deleted).length : 0)}</span>
                             <span class="text-xs text-gray-500 flex items-center gap-1"><span class="text-red-500 font-bold">♥</span> ${(Array.isArray(openMap.targets) ? openMap.targets.filter(t => t && !t.deleted && t.favourite).length : 0)}</span>
                             <span class="text-xs text-gray-500 flex items-center gap-1"><i class="fas fa-route text-green-600"></i> ${(Array.isArray(openMap.tracks) ? openMap.tracks.filter(t => t && !t.deleted).length : 0)}</span>
-                            ${activeRoute ? `<span class="text-xs font-semibold text-red-600 flex items-center gap-1 animate-pulse"><i class="fas fa-circle text-red-500"></i> ${activeRoute.name || 'Route'} Recording</span>` : ''}
+                            ${activeRoute ? `<span id="header-recording-indicator" class="text-xs font-semibold text-red-600 flex items-center gap-1 animate-pulse"><i class="fas fa-circle text-red-500"></i> ${activeRoute.name || 'Route'} Recording</span>` : ''}
                         </div>
                     </div>
                     <i class="fas ${mapCanvasExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400 ml-2 flex-shrink-0"></i>
@@ -16297,7 +16309,7 @@ if (!openMap) {
             </div>
             <!-- Recording toggle button -->
             <div class="mt-2 mb-2">
-                <button type="button" onclick="quickToggleRouteRecording()"
+                <button type="button" id="route-recording-btn" onclick="quickToggleRouteRecording()"
                     class="w-full h-10 rounded-xl font-semibold text-sm shadow select-none flex items-center justify-center gap-2 ${activeRoute ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'}">
                     <i class="fas ${activeRoute ? 'fa-stop-circle' : 'fa-circle'} text-base"></i>
                     ${activeRoute ? 'Stop Recording ' + (activeRoute.name || 'Route') : 'Start Recording'}
