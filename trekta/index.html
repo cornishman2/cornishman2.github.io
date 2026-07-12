@@ -160,7 +160,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.52
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.53
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -11585,6 +11585,15 @@ case 'edit': {
             .setDOMContent(div)
             .addTo(_mlMap);
     }
+
+    // Also start navigating to this place — same core logic as the Navigate
+    // button on the Places page (set the target, show the same confirmation
+    // message). No page switch or scroll needed here since we're already on
+    // the Compass page looking at the map; rerenderCompassIfActive() is what
+    // actually draws the nav line/ring/distance pill from the new state.
+    navigationPlaceId = placeId;
+    showMessage(`Navigation place set: "${place.description}".`, 'success');
+    if (typeof rerenderCompassIfActive === 'function') rerenderCompassIfActive();
 }
 
 
@@ -14216,7 +14225,6 @@ let _mlMarkers = [];     // active maplibregl.Marker instances
 let _mlUserMarker = null; // user position marker
 let _mlNavTargetMarker = null; // pulsing ring marker on the active navigation target
 let _mlPopup = null;     // active place popup
-let _mlLastPlaceTap = null; // { placeId, time } — used to detect a double-tap manually, on top of the already-reliable single click handler, rather than trusting MapLibre's own dblclick/touch double-tap detection
 
 function clearMapLibreOverlay() {
     _mlMarkers.forEach(m => m.remove());
@@ -14362,49 +14370,11 @@ function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pin
         ['trekta-places-icons', 'trekta-places-ring', 'trekta-places-hearts'].forEach(layerId => {
             _mlMap.on('click', layerId, (e) => {
                 if (e.features.length > 0) {
-                    const placeId = e.features[0].properties.id || '';
-
-                    // Manual double-tap detection: two clicks landing on the
-                    // SAME place within 500ms. Deliberately not using
-                    // MapLibre's own 'dblclick' event for this at all — every
-                    // previous attempt at this feature relied on MapLibre's
-                    // double-click/double-tap event synthesis in some way,
-                    // and it consistently misidentified the place even
-                    // though single-click, using this exact same click
-                    // handler and the exact same e.features[0] lookup, never
-                    // once got it wrong. Building double-tap on top of the
-                    // mechanism that's actually proven reliable, rather than
-                    // trusting MapLibre's separate touch/dblclick handling,
-                    // removes that as a possible source of the bug entirely.
-                    const now = Date.now();
-                    if (placeId && _mlLastPlaceTap && _mlLastPlaceTap.placeId === placeId && (now - _mlLastPlaceTap.time) < 500) {
-                        _mlLastPlaceTap = null;
-                        if (_mlPopup) { _mlPopup.remove(); _mlPopup = null; }
-                        navigationPlaceId = placeId;
-                        const placeName = e.features[0].properties.description || 'place';
-                        showMessage('Navigating to "' + placeName + '".', 'success');
-                        if (typeof rerenderCompassIfActive === 'function') rerenderCompassIfActive();
-                        return; // don't also (re)open the popup for this second tap
-                    }
-
-                    _mlLastPlaceTap = placeId ? { placeId, time: now } : null;
-                    handleMapPlaceClick(e.originalEvent, placeId);
+                    handleMapPlaceClick(e.originalEvent, e.features[0].properties.id || '');
                 }
             });
             _mlMap.on('mouseenter', layerId, () => { _mlMap.getCanvas().style.cursor = 'pointer'; });
             _mlMap.on('mouseleave', layerId, () => { _mlMap.getCanvas().style.cursor = ''; });
-        });
-
-        // Suppress the default double-click-to-zoom when a place was tapped
-        // — this is deliberately a yes/no "was there a place here at all"
-        // check, not used to decide WHICH place. Which place gets navigated
-        // to is decided entirely by the click-based double-tap detection
-        // above, so this can't reintroduce the identification bug.
-        _mlMap.on('dblclick', (e) => {
-            const hit = _mlMap.queryRenderedFeatures(e.point, {
-                layers: ['trekta-places-icons', 'trekta-places-ring', 'trekta-places-hearts']
-            });
-            if (hit.length > 0) e.preventDefault();
         });
     }
 
