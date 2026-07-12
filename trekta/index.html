@@ -160,7 +160,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.47
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.48
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -14533,10 +14533,36 @@ function updateMapLibreNavOverlay(userCoord) {
         let statsHtml = '';
         if (userCoord) {
             const dist = distanceMeters(userCoord.lat, userCoord.lon, targetLat, targetLon);
-            const bearing = initialBearingDegrees(userCoord.lat, userCoord.lon, targetLat, targetLon);
-            const compassPoint = bearingToCompassPoint(bearing, 8);
             const distLabel = dist < 1000 ? Math.round(dist) + 'm' : (dist / 1000).toFixed(1) + 'km';
-            statsHtml = `<span><i class="fas fa-location-arrow" style="transform:rotate(${bearing}deg);display:inline-block;"></i> ${distLabel} ${compassPoint}</span>`;
+            const compassPoint = bearingToCompassPoint(initialBearingDegrees(userCoord.lat, userCoord.lon, targetLat, targetLon), 8);
+
+            // Direction pointer built from actual screen pixels — project()
+            // both the user's position and the target, take the vector
+            // between them, draw a short line along it. Deliberately not a
+            // geographic bearing converted into a CSS rotate() on an icon:
+            // that approach depends on knowing the icon's own unrotated
+            // resting direction and getting the rotation sign right, and has
+            // already caused real direction bugs in this app once (the
+            // off-screen position indicator, before it was rebuilt this same
+            // way). A line from A to B in pixel space can't be backwards.
+            let arrowSvg = '';
+            try {
+                const p1 = _mlMap.project([userCoord.lon, userCoord.lat]);
+                const p2 = _mlMap.project([targetLon, targetLat]);
+                const dx = p2.x - p1.x, dy = p2.y - p1.y;
+                const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                const ux = dx / len, uy = dy / len;
+                const cx = 8, cy = 8, r = 6;
+                const ex = cx + ux * r, ey = cy + uy * r;
+                arrowSvg = '<svg width="16" height="16" viewBox="0 0 16 16" style="flex-shrink:0;overflow:visible;">'
+                    + '<line x1="' + cx + '" y1="' + cy + '" x2="' + ex + '" y2="' + ey + '" stroke="#fff" stroke-width="2" stroke-linecap="round"></line>'
+                    + '<circle cx="' + ex + '" cy="' + ey + '" r="2" fill="#fff"></circle>'
+                    + '</svg>';
+            } catch (e) {
+                arrowSvg = '';
+            }
+
+            statsHtml = `<span style="display:inline-flex;align-items:center;gap:4px;">${arrowSvg}${distLabel} ${compassPoint}</span>`;
         } else {
             statsHtml = '<span style="opacity:0.75;">waiting for GPS…</span>';
         }
