@@ -160,7 +160,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.53
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.55
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -11540,6 +11540,29 @@ case 'edit': {
     
     function handleMapPlaceClick(event, placeId) {
     if (event) event.stopPropagation();
+    if (!placeId) return;
+
+    const openMap = maps.find(s => s.status === 'Open');
+    if (!openMap) return;
+    const place = openMap.targets.find(t => t.id === placeId);
+    if (!place) return;
+
+    // Single tap only navigates — same core logic as the Navigate button on
+    // the Places page (set the target, show the same confirmation message).
+    // No page switch or scroll needed here since we're already on the
+    // Compass page looking at the map; rerenderCompassIfActive() is what
+    // actually draws the nav line/ring/distance pill from the new state.
+    navigationPlaceId = placeId;
+    showMessage(`Navigation place set: "${place.description}".`, 'success');
+    if (typeof rerenderCompassIfActive === 'function') rerenderCompassIfActive();
+}
+
+/**
+ * Shows the place info popup (description, type, status, notes) — this used
+ * to happen on every single tap, but that popup covered too much of the map,
+ * so it's now only shown on a long press instead.
+ */
+function showPlaceInfoPopup(placeId) {
     if (!placeId) {
         if (_mlPopup) { _mlPopup.remove(); _mlPopup = null; }
         return;
@@ -11585,15 +11608,6 @@ case 'edit': {
             .setDOMContent(div)
             .addTo(_mlMap);
     }
-
-    // Also start navigating to this place — same core logic as the Navigate
-    // button on the Places page (set the target, show the same confirmation
-    // message). No page switch or scroll needed here since we're already on
-    // the Compass page looking at the map; rerenderCompassIfActive() is what
-    // actually draws the nav line/ring/distance pill from the new state.
-    navigationPlaceId = placeId;
-    showMessage(`Navigation place set: "${place.description}".`, 'success');
-    if (typeof rerenderCompassIfActive === 'function') rerenderCompassIfActive();
 }
 
 
@@ -14225,6 +14239,7 @@ let _mlMarkers = [];     // active maplibregl.Marker instances
 let _mlUserMarker = null; // user position marker
 let _mlNavTargetMarker = null; // pulsing ring marker on the active navigation target
 let _mlPopup = null;     // active place popup
+let _mlLongPressTimer = null; // pending long-press timer for showing the place info popup
 
 function clearMapLibreOverlay() {
     _mlMarkers.forEach(m => m.remove());
@@ -14373,8 +14388,45 @@ function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pin
                     handleMapPlaceClick(e.originalEvent, e.features[0].properties.id || '');
                 }
             });
+
+            // Long press shows the place info popup (moved off single-tap,
+            // which now only navigates — the popup was covering too much of
+            // the map on every tap). Registered on BOTH mouse and touch
+            // press/release events explicitly: MapLibre's mousedown/mouseup
+            // are documented as firing for "usually a mouse", not guaranteed
+            // for touch, and this app is used almost entirely via touch.
+            // Relying on touchstart/touchend alongside mousedown/mouseup
+            // avoids repeating the touch/mouse event mismatch that caused
+            // the earlier double-tap feature to fail.
+            const startLongPress = (e) => {
+                if (!e.features || e.features.length === 0) return;
+                const placeId = e.features[0].properties.id || '';
+                if (!placeId) return;
+                clearTimeout(_mlLongPressTimer);
+                _mlLongPressTimer = setTimeout(() => {
+                    _mlLongPressTimer = null;
+                    showPlaceInfoPopup(placeId);
+                }, 550);
+            };
+            const cancelLongPress = () => {
+                clearTimeout(_mlLongPressTimer);
+                _mlLongPressTimer = null;
+            };
+
+            _mlMap.on('mousedown', layerId, startLongPress);
+            _mlMap.on('touchstart', layerId, startLongPress);
+            _mlMap.on('mouseup', layerId, cancelLongPress);
+            _mlMap.on('touchend', layerId, cancelLongPress);
+
             _mlMap.on('mouseenter', layerId, () => { _mlMap.getCanvas().style.cursor = 'pointer'; });
             _mlMap.on('mouseleave', layerId, () => { _mlMap.getCanvas().style.cursor = ''; });
+        });
+
+        // Cancel a pending long-press if the map starts panning — that means
+        // this became a drag, not a hold.
+        _mlMap.on('movestart', () => {
+            clearTimeout(_mlLongPressTimer);
+            _mlLongPressTimer = null;
         });
     }
 
@@ -15336,7 +15388,7 @@ const toPercent = (x, y) => {
                 data-lat="${userCoord.lat}" data-lon="${userCoord.lon}"
                 style="left:${xPct.toFixed(2)}%; top:${yPct.toFixed(2)}%; transform: translate(-50%, -50%); z-index: 20;"
                 title="${navigationPlaceId ? 'Tap to clear navigation line' : 'You'}"
-                onclick="${navigationPlaceId ? 'handleMapPlaceClick(event,&quot;&quot;)' : ''}"
+                onclick="${navigationPlaceId ? 'showPlaceInfoPopup(&quot;&quot;)' : ''}"
             >
                 <div
                 <div style="position:relative; width:20px; height:20px; transform:scale(${invZoom}); transform-origin:center;">
@@ -15530,7 +15582,7 @@ const toPercent = (x, y) => {
                 data-lat="${userCoord.lat}" data-lon="${userCoord.lon}"
                 style="left:${xPct.toFixed(2)}%; top:${yPct.toFixed(2)}%; transform: translate(-50%, -50%); z-index: 20;"
                 title="${navigationPlaceId ? 'Tap to clear navigation line' : 'You'}"
-                onclick="${navigationPlaceId ? 'handleMapPlaceClick(event,&quot;&quot;)' : ''}"
+                onclick="${navigationPlaceId ? 'showPlaceInfoPopup(&quot;&quot;)' : ''}"
             >
                 <div
                 <div style="position:relative; width:20px; height:20px; transform:scale(${invZoom}); transform-origin:center;">
