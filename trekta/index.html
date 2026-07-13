@@ -160,7 +160,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.63
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.64
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -18886,10 +18886,20 @@ async function buildMapZipBlob() {
 }
 
 async function actuallyShareMapAsZip() {
+    const buildStart = Date.now();
     showMessage('Preparing map for sharing…', 'info');
     try {
         const zipBlob = await buildMapZipBlob();
         if (!zipBlob) return;
+
+        // Visible, concrete confirmation that the ZIP itself finished
+        // building, how long it took, and how big it is — previously there
+        // was no way to tell whether a large export was slow to build, or
+        // whether the problem was specifically in the sharing step.
+        const buildSeconds = ((Date.now() - buildStart) / 1000).toFixed(1);
+        const sizeMb = (zipBlob.size / (1024 * 1024)).toFixed(1);
+        console.log(`[Share Map] ZIP built: ${sizeMb}MB in ${buildSeconds}s`);
+        showMessage(`Zip ready (${sizeMb}MB, built in ${buildSeconds}s). Opening share sheet…`, 'info');
 
         const openMap = maps.find(s => s.status === 'Open');
         const mapName = openMap?.name || 'Map';
@@ -18897,28 +18907,38 @@ async function actuallyShareMapAsZip() {
         const timestamp = new Date().toISOString().slice(0,10).replace(/-/g,'');
         const zipFilename = `trekta_${safeName}_${timestamp}.zip`;
 
-        // Share the ZIP directly — no base64 re-encoding or HTML wrapper.
-        // The previous approach converted the whole ZIP to a base64 string
-        // (~33% larger than the original) and embedded that as text inside
-        // an HTML page, then shared THAT file instead of the ZIP itself.
-        // For a small ZIP the extra size and CPU time was negligible; for a
-        // map with lots of photos, it very plausibly pushed the shared
-        // file's real size — and the time spent building that giant string
-        // — past whatever the platform's own undocumented sharing limit is,
-        // which can fail silently (the share sheet just never appears)
-        // rather than throwing an error this code could catch.
         const zipFile = new File([zipBlob], zipFilename, { type: 'application/zip' });
 
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [zipFile] })) {
-            try {
-                await navigator.share({
+            // Guard against navigator.share() hanging indefinitely. share()
+            // requires "transient user activation" — a short window after
+            // the click that started this — and the longer the ZIP took to
+            // build above, the more likely that window has already expired
+            // by the time share() is actually called here. Some platforms
+            // reject cleanly when that happens; others appear to simply
+            // never resolve the promise at all. Either way, don't leave the
+            // person stuck waiting with no feedback — after a reasonable
+            // wait, treat it as failed and fall back to a direct download.
+            const SHARE_TIMEOUT_MS = 10000;
+            const shareResult = await Promise.race([
+                navigator.share({
                     title: mapName,
                     text: `Trekta map export: ${mapName}`,
                     files: [zipFile]
-                });
+                }).then(() => 'shared').catch(err => ({ error: err })),
+                new Promise(resolve => setTimeout(() => resolve('timeout'), SHARE_TIMEOUT_MS))
+            ]);
+
+            if (shareResult === 'shared') {
                 return;
-            } catch(e) {
-                if (e.name === 'AbortError') return;
+            }
+            if (shareResult === 'timeout') {
+                console.warn(`[Share Map] navigator.share() did not respond within ${SHARE_TIMEOUT_MS}ms — falling back to download.`);
+                showMessage('Share sheet did not respond in time — downloading the ZIP instead.', 'info');
+                // fall through to download
+            } else if (shareResult && shareResult.error) {
+                if (shareResult.error.name === 'AbortError') return; // user cancelled — not an error
+                console.warn('[Share Map] navigator.share() failed:', shareResult.error);
                 // fall through to download
             }
         }
