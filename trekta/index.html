@@ -160,7 +160,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.61
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.62
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -1298,6 +1298,7 @@ let maintenanceConfirmOpen   = false;   // whether the inline maintenance confir
 let photoHealthReport = null; // results of checkPhotoHealth(), or null before it's been run
 let cleanupBrokenPhotoLinksReport = null; // results of cleanupBrokenPhotoLinks(), or null before it's been run
 let cleanupBrokenLinksConfirmOpen = false; // whether the inline confirm for cleaning up broken photo links is showing
+let galleryImportPlan = null; // dry-run plan built by analyzePhotoGalleryZip(), or null before a gallery ZIP is analyzed
 let shareMapConfirmOpen   = false;   // whether the inline share-zip confirm is showing
 let mergeMapsOpen         = false;   // whether the inline merge maps panel is showing
 let _quickFormType        = '';      // selected type in quick log form
@@ -1958,6 +1959,285 @@ async function cleanupBrokenPhotoLinks() {
         showMessage('Cleanup failed — see console.', 'error');
     }
     render();
+}
+
+/**
+ * Parses one HTML page from a Photo Gallery export (either a single map's
+ * own page, or the combined index.html containing multiple map sections)
+ * and extracts, per map section, every "Place" kind item with its metadata
+ * and photo(s) grouped back together. The export writes one .detail block
+ * per PHOTO, not per place, so multiple photos of the same place need
+ * regrouping here (matched by title within the same map section).
+ * "Favourite"/Find kind items are intentionally skipped — this only
+ * reconstructs Places, matching what was asked for.
+ */
+function parseGalleryHtmlDocument(htmlText) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+    const mapSections = Array.from(doc.querySelectorAll('.mapSection'));
+    const results = [];
+
+    for (const section of mapSections) {
+        const mapTitleEl = section.querySelector('.mapTitle');
+        const mapName = mapTitleEl ? mapTitleEl.textContent.trim() : 'Untitled map';
+
+        const details = Array.from(section.querySelectorAll('.detail'));
+        const placesByTitle = new Map();
+
+        for (const detail of details) {
+            const metaList = {};
+            detail.querySelectorAll('.metaList li').forEach(li => {
+                const strong = li.querySelector('strong');
+                if (!strong) return;
+                const label = strong.textContent.replace(':', '').trim();
+                const value = li.textContent.slice(strong.textContent.length).trim();
+                metaList[label] = value;
+            });
+
+            if ((metaList['Kind'] || 'Place') !== 'Place') continue; // Places only
+
+            const imgEl = detail.querySelector('img.full');
+            const photoDataUrl = imgEl ? imgEl.getAttribute('src') : '';
+
+            const title = metaList['Title'] || 'Unnamed place';
+            if (!placesByTitle.has(title)) {
+                placesByTitle.set(title, {
+                    title,
+                    type: metaList['Type'] || '',
+                    category: metaList['Category'] || '',
+                    rating: metaList['Rating'] || '',
+                    coords: metaList['GPS'] || '',
+                    accuracy: metaList['Accuracy'] || '',
+                    photoDataUrls: []
+                });
+            }
+            if (photoDataUrl && photoDataUrl.startsWith('data:image/')) {
+                placesByTitle.get(title).photoDataUrls.push(photoDataUrl);
+            }
+        }
+
+        if (placesByTitle.size) {
+            results.push({ mapName, places: Array.from(placesByTitle.values()) });
+        }
+    }
+    return results;
+}
+
+/**
+ * Reads a Photo Gallery export ZIP and builds a dry-run plan — this does
+ * NOT create or modify anything yet. Matching against existing data is by
+ * (map name + place description) since the export doesn't preserve the
+ * original place ID in a reliably-recoverable form.
+ */
+async function handleGalleryReconstructImport(event) {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+
+    const logBox = document.getElementById('import-gallery-log');
+    const log = (msg) => {
+        console.log('[Gallery Import]', msg);
+        if (!logBox) return;
+        logBox.value += msg + '\n';
+        logBox.scrollTop = logBox.scrollHeight;
+    };
+    if (logBox) logBox.value = '';
+    galleryImportPlan = null;
+    log('Reading ' + file.name + '...');
+
+    try {
+        if (typeof JSZip === 'undefined') {
+            log('ERROR: ZIP support (JSZip) not available.');
+            showMessage('ZIP import needs JSZip.', 'error');
+            return;
+        }
+        const zip = await JSZip.loadAsync(file);
+        const htmlFiles = zip.file(/\.html$/i);
+        if (!htmlFiles.length) {
+            log('No .html files found in this ZIP — is it really a Photo Gallery export?');
+            showMessage('No gallery HTML found in this ZIP.', 'error');
+            return;
+        }
+        log(`Found ${htmlFiles.length} gallery HTML file(s). Parsing...`);
+
+        // Aggregate across all HTML files, merging same map name + place title
+        const byMap = new Map(); // mapName -> Map(title -> place)
+        for (const entry of htmlFiles) {
+            const text = await entry.async('string');
+            const parsed = parseGalleryHtmlDocument(text);
+            for (const { mapName, places } of parsed) {
+                if (!byMap.has(mapName)) byMap.set(mapName, new Map());
+                const placeMap = byMap.get(mapName);
+                for (const p of places) {
+                    if (!placeMap.has(p.title)) {
+                        placeMap.set(p.title, p);
+                    } else {
+                        // Same place appearing again across multiple files in
+                        // this ZIP — merge photos rather than treat as new.
+                        placeMap.get(p.title).photoDataUrls.push(...p.photoDataUrls);
+                    }
+                }
+            }
+        }
+
+        if (byMap.size === 0) {
+            log('No Place records found in this gallery (it may only contain Favourites, which this tool does not reconstruct).');
+            showMessage('No places found to import.', 'error');
+            return;
+        }
+
+        // Build the plan: for each (mapName, place), decide update vs create
+        const mapPlans = [];
+        const mapsToCreate = [];
+        let totalPlaces = 0, updateCount = 0, createCount = 0;
+        let newPhotoCountForUpdates = 0, newPhotoCountForCreates = 0;
+
+        for (const [mapName, placeMap] of byMap.entries()) {
+            const existingMap = (Array.isArray(maps) ? maps : []).find(s => s && s.name === mapName);
+            if (!existingMap) mapsToCreate.push(mapName);
+
+            const placePlans = [];
+            for (const place of placeMap.values()) {
+                totalPlaces++;
+                const existingPlace = existingMap && Array.isArray(existingMap.targets)
+                    ? existingMap.targets.find(t => t && t.description === place.title)
+                    : null;
+
+                if (existingPlace) {
+                    updateCount++;
+                    newPhotoCountForUpdates += place.photoDataUrls.length;
+                    placePlans.push({ action: 'update', existingPlaceId: existingPlace.id, ...place });
+                } else {
+                    createCount++;
+                    newPhotoCountForCreates += place.photoDataUrls.length;
+                    placePlans.push({ action: 'create', ...place });
+                }
+            }
+            mapPlans.push({ mapName, mapExists: !!existingMap, placePlans });
+        }
+
+        galleryImportPlan = {
+            mapPlans, mapsToCreate, totalPlaces, updateCount, createCount,
+            newPhotoCountForUpdates, newPhotoCountForCreates
+        };
+
+        log(`Analysis complete: ${totalPlaces} place(s) found — ${updateCount} already exist, ${createCount} will be created.`);
+        log('Review the summary below and tap Proceed to continue.');
+        render();
+
+    } catch (e) {
+        console.error('Gallery import analysis failed:', e);
+        log('ERROR: ' + (e.message || e));
+        showMessage('Could not read this gallery ZIP.', 'error');
+    }
+}
+
+/**
+ * Actually performs the reconstruction described by galleryImportPlan —
+ * creates any needed maps, creates any new places, and adds photos to
+ * places that already exist. Every photo is saved into IndexedDB the same
+ * way a normal Add Photo does (via saveDataUrlsAsPhotoRefs), so reconstructed
+ * places behave identically to ones created the ordinary way.
+ */
+async function executeGalleryImportPlan() {
+    const plan = galleryImportPlan;
+    if (!plan) return;
+    galleryImportPlan = null;
+    render();
+
+    const logBox = document.getElementById('import-gallery-log');
+    const log = (msg) => {
+        console.log('[Gallery Import]', msg);
+        if (!logBox) return;
+        logBox.value += msg + '\n';
+        logBox.scrollTop = logBox.scrollHeight;
+    };
+    log('Starting import...');
+
+    let placesUpdated = 0, placesCreated = 0, photosAdded = 0, skippedDueToLimit = 0;
+
+    try {
+        for (const mapPlan of plan.mapPlans) {
+            let targetMap = (Array.isArray(maps) ? maps : []).find(s => s && s.name === mapPlan.mapName);
+            if (!targetMap) {
+                const nowStr = new Date().toISOString().slice(0, 10);
+                targetMap = {
+                    id: 'map_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                    name: mapPlan.mapName,
+                    description: '',
+                    status: 'Closed',
+                    mapType: 'General',
+                    creationDate: nowStr,
+                    dateLastChanged: nowStr,
+                    targets: [], finds: [], tracks: [],
+                    photos: [], mapPhotoRef: '', mapPhotoData: ''
+                };
+                maps.push(targetMap);
+                log(`Created map "${mapPlan.mapName}".`);
+            }
+            if (!Array.isArray(targetMap.targets)) targetMap.targets = [];
+
+            for (const p of mapPlan.placePlans) {
+                const refs = p.photoDataUrls.length ? await saveDataUrlsAsPhotoRefs(p.photoDataUrls) : [];
+
+                if (p.action === 'update') {
+                    const place = targetMap.targets.find(t => t.id === p.existingPlaceId);
+                    if (place) {
+                        if (!Array.isArray(place.photos)) place.photos = [];
+                        place.photos.push(...refs);
+                        if (!place.placePhotoRef && refs.length) place.placePhotoRef = refs[0];
+                        placesUpdated++;
+                        photosAdded += refs.length;
+                        log(`Added ${refs.length} photo(s) to existing place "${p.title}".`);
+                    }
+                } else {
+                    const r = canCreate('places');
+                    if (!r.ok) {
+                        skippedDueToLimit++;
+                        log(`SKIPPED "${p.title}" — ${r.reason}`);
+                        continue;
+                    }
+                    const newPlace = {
+                        id: generateId(),
+                        description: p.title,
+                        category: p.category || '',
+                        rating: p.rating || '',
+                        type: p.type || 'Unknown',
+                        status: 'Not visited',
+                        favourite: false,
+                        time: Date.now(),
+                        coordinates: p.coords || 'No GPS logged',
+                        accuracy: p.accuracy || 'N/A',
+                        altitude: null,
+                        user: (typeof userProfile !== 'undefined' && userProfile && userProfile.name) || '',
+                        device: '',
+                        centerOnMap: false,
+                        photos: refs,
+                        placePhotoRef: refs[0] || '',
+                        placePhotoData: ''
+                    };
+                    targetMap.targets.unshift(newPlace);
+                    placesCreated++;
+                    photosAdded += refs.length;
+                    log(`Created place "${p.title}" with ${refs.length} photo(s).`);
+                }
+            }
+        }
+
+        saveMapsToLocalStorage();
+
+        log('Done.');
+        log(`Summary: ${placesUpdated} place(s) updated, ${placesCreated} place(s) created, ${photosAdded} photo(s) added.`);
+        if (skippedDueToLimit) log(`${skippedDueToLimit} place(s) skipped due to the free-tier place limit.`);
+
+        showMessage(`Import complete: ${placesUpdated} updated, ${placesCreated} created, ${photosAdded} photos added.`, 'success');
+        render();
+    } catch (e) {
+        console.error('Gallery import execution failed:', e);
+        log('ERROR during import: ' + (e.message || e));
+        showMessage('Import failed partway through — see log.', 'error');
+        render();
+    }
 }
 
 async function checkPhotoHealth() {
@@ -7925,6 +8205,50 @@ function renderExportPage() {
                                 class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>
                         <button type="button" onclick="(async()=>{const d=importMapConfirmData;importMapConfirmData=null;render();if(d.text){d.log('Starting import...');await performMapImport(d.text,d.filename,d.log);}else{await _executeHandleMapWithPhotosImport(d.file,d.log,d.event);}})()"
                                 class="flex-1 py-2 rounded-lg bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 shadow">Import</button>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+
+            <!-- IMPORT PHOTO GALLERY (RECONSTRUCT PLACES) -->
+            <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-purple-500">
+                <h4 class="text-lg font-semibold text-purple-700 mb-2">Import Photo Gallery (Reconstruct Places)</h4>
+                <p class="text-sm text-gray-600 mb-3">
+                    Select a Photo Gallery ZIP previously exported from this app. Each place in it will be matched
+                    against your existing places by map name + description — if it already exists, the photo(s) are
+                    just added to it; if not, the place is recreated. <strong>Note:</strong> the gallery export doesn't
+                    include a place's status, notes, or original date, so recreated places default to
+                    "Not visited" and today's date — everything else (description, type, category, rating,
+                    coordinates, accuracy, photos) comes straight from the gallery.
+                </p>
+                <div class="mb-3">
+                    <input type="file" id="import-gallery-input" accept=".zip" class="hidden" onchange="handleGalleryReconstructImport(event)">
+                    <button onclick="document.getElementById('import-gallery-input').click()"
+                            class="w-full bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-purple-700 transition">
+                        <i class="fas fa-images mr-1"></i> Select Gallery ZIP
+                    </button>
+                </div>
+                <textarea id="import-gallery-log" rows="6" readonly placeholder="Import log will appear here."
+                          class="w-full p-2 border border-purple-500 rounded-md font-mono text-xs mt-2"></textarea>
+
+                ${galleryImportPlan && !galleryImportPlan.error ? `
+                <div class="mt-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                    <p class="text-sm text-gray-700 mb-2">
+                        Found <strong>${galleryImportPlan.totalPlaces}</strong> place${galleryImportPlan.totalPlaces === 1 ? '' : 's'}
+                        across ${galleryImportPlan.mapPlans.length} map${galleryImportPlan.mapPlans.length === 1 ? '' : 's'} in this gallery:
+                    </p>
+                    <ul class="text-xs text-gray-700 space-y-1 mb-3">
+                        <li>&bull; <strong>${galleryImportPlan.updateCount}</strong> already exist — will get
+                            ${galleryImportPlan.newPhotoCountForUpdates} new photo${galleryImportPlan.newPhotoCountForUpdates === 1 ? '' : 's'} added.</li>
+                        <li>&bull; <strong>${galleryImportPlan.createCount}</strong> will be newly created
+                            (${galleryImportPlan.newPhotoCountForCreates} photo${galleryImportPlan.newPhotoCountForCreates === 1 ? '' : 's'} total).</li>
+                        ${galleryImportPlan.mapsToCreate.length ? `<li>&bull; <strong>${galleryImportPlan.mapsToCreate.length}</strong> map${galleryImportPlan.mapsToCreate.length === 1 ? '' : 's'} will be created to hold them: ${galleryImportPlan.mapsToCreate.map(m => escapeHtml(m)).join(', ')}.</li>` : ''}
+                    </ul>
+                    <div class="flex gap-3">
+                        <button type="button" onclick="galleryImportPlan=null;render()"
+                                class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>
+                        <button type="button" onclick="executeGalleryImportPlan()"
+                                class="flex-1 py-2 rounded-lg bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700 shadow">Proceed</button>
                     </div>
                 </div>
                 ` : ''}
