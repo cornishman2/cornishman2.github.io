@@ -160,7 +160,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.69
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.70
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -1294,7 +1294,6 @@ let newMapPanelOpen     = false;    // whether the inline new-map form is expand
 let editMapPanelOpen    = false;    // whether the inline edit-map form is expanded on the home page
 let expandedMapDeleteId = null;     // map ID currently open for inline delete confirm (null = none)
 let exportMapConfirmOpen  = false;   // whether the inline export-zip confirm is showing
-let mapZipReadyForShare = null; // { mapId, mapName, blob, filename, sizeMb } once a ZIP has just been built and downloaded — offered as a one-tap Share option immediately after, so the Share tap itself provides fresh transient activation rather than reusing a stale one from further back
 let maintenanceConfirmOpen   = false;   // whether the inline maintenance confirm is showing
 let photoHealthReport = null; // results of checkPhotoHealth(), or null before it's been run
 let cleanupBrokenPhotoLinksReport = null; // results of cleanupBrokenPhotoLinks(), or null before it's been run
@@ -12945,26 +12944,6 @@ function renderMapCard(map, isOpen = false) {
                         </div>
                     </div>
                     ` : ''}
-                    ${mapZipReadyForShare && mapZipReadyForShare.mapId === map.id ? (
-                        mapZipReadyForShare.sizeMb > 45 ? `
-                        <div class="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                            <p class="text-sm text-amber-800">
-                                <i class="fas fa-exclamation-triangle mr-1"></i>
-                                This ZIP is ${mapZipReadyForShare.sizeMb.toFixed(1)}MB — too large to share directly (most browsers cap file sharing around 50MB). It's already saved to your Downloads — share it from your device's Files app instead.
-                            </p>
-                            <button type="button" onclick="mapZipReadyForShare=null;render()"
-                                    class="text-xs text-amber-700 underline mt-2">Dismiss</button>
-                        </div>
-                        ` : `
-                        <div class="mt-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
-                            <p class="text-sm text-gray-700 mb-2">ZIP ready (${mapZipReadyForShare.sizeMb.toFixed(1)}MB) — already saved to Downloads.</p>
-                            <button type="button" onclick="shareReadyMapZip()"
-                                    class="w-full bg-indigo-600 text-white font-semibold py-2 rounded-lg shadow hover:bg-indigo-700 transition text-sm">
-                                <i class="fas fa-share-alt mr-1"></i> Share this ZIP (${mapZipReadyForShare.sizeMb.toFixed(1)}MB)
-                            </button>
-                        </div>
-                        `
-                    ) : ''}
                 </div>
                 <div class="mt-2">
                     <button
@@ -18871,51 +18850,6 @@ function exportOpenMapWithPhotos() {
     }
 }
 
-/**
- * Immediately shares an already-built map ZIP (set on mapZipReadyForShare by
- * actuallyExportOpenMap once export+download finishes). This is deliberately
- * the ENTIRE handler for the Share button's click — no awaited work happens
- * before navigator.share() is called, so this tap itself provides the
- * "transient user activation" the Web Share API requires. The zip was
- * already built and downloaded earlier; this only shares the file that's
- * already sitting in memory.
- */
-async function shareReadyMapZip() {
-    const ready = mapZipReadyForShare;
-    if (!ready) return;
-
-    const zipFile = new File([ready.blob], ready.filename, { type: 'application/zip' });
-
-    if (!(navigator.share && navigator.canShare && navigator.canShare({ files: [zipFile] }))) {
-        showMessage('Sharing files is not supported on this device/browser — the ZIP is already in your Downloads.', 'info');
-        return;
-    }
-
-    // Guard against navigator.share() hanging indefinitely, same as
-    // elsewhere in this app — some platforms appear to never settle the
-    // promise at all in certain failure conditions.
-    const SHARE_TIMEOUT_MS = 10000;
-    const shareResult = await Promise.race([
-        navigator.share({
-            title: ready.mapName,
-            text: `Trekta map export: ${ready.mapName}`,
-            files: [zipFile]
-        }).then(() => 'shared').catch(err => ({ error: err })),
-        new Promise(resolve => setTimeout(() => resolve('timeout'), SHARE_TIMEOUT_MS))
-    ]);
-
-    if (shareResult === 'shared') {
-        showMessage('Shared.', 'success');
-    } else if (shareResult === 'timeout') {
-        showMessage('Share sheet did not respond in time — the ZIP is already in your Downloads.', 'info');
-    } else if (shareResult && shareResult.error) {
-        if (shareResult.error.name === 'AbortError') return; // user cancelled — not an error
-        const err = shareResult.error;
-        console.error('[Share Map] navigator.share() failed:', err);
-        showMessage(`Sharing failed: ${err.name || 'Error'} — ${err.message || 'no further detail'}. The ZIP is already in your Downloads.`, 'error');
-    }
-}
-
 async function actuallyExportOpenMap(opts = {}) {
     const openMap = maps.find(s => s.status === 'Open');
     if (!openMap) {
@@ -19236,34 +19170,13 @@ if (payload.map) {
         log(`Export complete. "${filename}" saved to Downloads.`);
         showMessage('Map export completed (ZIP with photos).', 'success');
 
-        // Offer an immediate follow-up Share option. Deliberately NOT
-        // calling navigator.share() here — this whole function has already
-        // done a lot of async work (reading photos, building the ZIP,
-        // downloading it), so any "transient user activation" from the
-        // original click is likely already gone. Instead, store the
-        // finished blob and let the person tap a fresh "Share" button,
-        // whose click handler calls navigator.share() immediately with no
-        // other work in between — that tap is what provides valid
-        // activation. This also lets a real, final size be shown, with an
-        // explicit warning if it's too big for the platform to share at all
-        // (Chromium enforces a hard 50MB cap on Web Share files; 45MB here
-        // is a deliberate safety margin under that, not the real ceiling).
-        const sizeMb = zipBlob.size / (1024 * 1024);
-        mapZipReadyForShare = {
-            mapId: openMap.id,
-            mapName: openMap.name || 'Map',
-            blob: zipBlob,
-            filename,
-            sizeMb
-        };
-
         // Record the export date on the live map object
         const liveMap = maps.find(s => s.id === openMap.id);
         if (liveMap) {
             liveMap.lastExportedAt = Date.now();
             saveMapsToLocalStorage();
+            if (currentPage === 'Home') render();
         }
-        render();
 
 
     } catch (e) {
