@@ -160,7 +160,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.69
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.70
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -1261,7 +1261,7 @@ document.addEventListener('visibilitychange', function() {
 //  APP META
 // =====================
 const APP_NAME = 'Trekta – Map Your World';
-const APP_VERSION = '0.1.1';         // change whenever you publish
+const APP_VERSION = '0.1.2';         // change whenever you publish
 const APP_BUILD = '2026-07-14';      // optional, you can keep as a date string
 const appVersion = APP_VERSION;      // legacy alias used by older export/report code
 
@@ -1300,10 +1300,10 @@ let cleanupBrokenPhotoLinksReport = null; // results of cleanupBrokenPhotoLinks(
 let cleanupBrokenLinksConfirmOpen = false; // whether the inline confirm for cleaning up broken photo links is showing
 let galleryImportPlan = null; // dry-run plan built by analyzePhotoGalleryZip(), or null before a gallery ZIP is analyzed
 let shareMapConfirmOpen   = false;   // whether the inline share-zip panel is showing
-let preparedMapShare      = null;    // prepared ZIP waiting for a fresh-tap Web Share call
-let mapSharePreparing     = false;   // prevents duplicate ZIP builds
+let preparedMapShare      = null;    // prepared shareable Trekta package waiting for a fresh-tap Web Share call
+let mapSharePreparing     = false;   // prevents duplicate package builds
 let mapShareBuildToken    = 0;       // invalidates a completed build if the workflow was abandoned
-const MAP_SHARE_SAFE_MAX_BYTES = 45 * 1024 * 1024; // conservative Android/Chromium file-share ceiling
+const MAP_SHARE_SAFE_MAX_BYTES = 45 * 1024 * 1024; // conservative Android/Chromium share ceiling for the final file
 let mergeMapsOpen         = false;   // whether the inline merge maps panel is showing
 let _quickFormType        = '';      // selected type in quick log form
 let _quickFormName        = '';      // entered name in quick log form
@@ -3107,7 +3107,7 @@ function renderHelpPage() {
           <div><strong>Export as ZIP</strong> — packages map, places, routes and photos. Recommended backup method.</div>
           <div><strong>Export as GPX</strong> — standard GPX format for Google Maps, OsmAnd etc.</div>
           <div><strong>Export Photo Gallery</strong> — a browsable HTML gallery of every photo across your places and finds, with full details (description, type, category, rating, coordinates) for each. Useful as a human-readable backup in its own right.</div>
-          <div><strong>Import Map (ZIP or JSON)</strong> — restores a previously exported map.</div>
+          <div><strong>Import Map (ZIP, JSON or Trekta Share File)</strong> — restores a previously exported map.</div>
           <div><strong>Import GPX</strong> — imports waypoints and routes from a GPX file.</div>
           <div><strong>Import Photo Gallery (Reconstruct Places)</strong> — select a previously exported Photo Gallery ZIP and rebuild places from it. If a place already exists (matched by map name + description), the photo(s) are added to it; if not, the place is recreated from the gallery's data. Shows a summary of what will change before doing anything. Note: the gallery doesn't preserve a place's status, notes, or original date, so recreated places default to "Not visited" and today's date.</div>
         </div>
@@ -6586,26 +6586,32 @@ async function _executeHandleMapWithPhotosImport(file, log, event) {
                 return;
             }
 
-            // ZIP import
-            if (!lower.endsWith('.zip')) {
-                showMessage('Unsupported file type. Please select a .zip or .json export.', 'error');
-                log('ERROR: Unsupported file type.');
-                return;
-            }
-
             if (typeof JSZip === 'undefined') {
-                showMessage('ZIP import needs JSZip. Add the JSZip <script> tag first.', 'error');
+                showMessage('Map import needs JSZip. Add the JSZip <script> tag first.', 'error');
                 log('ERROR: JSZip missing.');
                 return;
             }
 
+            let zipSource = file;
+            if (lower.endsWith('.html') || lower.endsWith('.htm') || lower.endsWith('.txt')) {
+                log('Reading Trekta share package...');
+                const packageText = await file.text();
+                const extracted = extractTrektaSharePackageFromText(packageText);
+                zipSource = extracted.zipBlob;
+                log(`Embedded ZIP recovered: ${extracted.zipFilename}`);
+            } else if (!lower.endsWith('.zip')) {
+                showMessage('Unsupported file type. Select a Trekta .zip, .json, .html or .txt export.', 'error');
+                log('ERROR: Unsupported file type.');
+                return;
+            }
+
             log('Loading ZIP...');
-            const zip = await JSZip.loadAsync(file);
+            const zip = await JSZip.loadAsync(zipSource);
 
             const mapJsonFile = zip.file('map.json');
             if (!mapJsonFile) {
-                showMessage('Import failed: map.json not found in the ZIP.', 'error');
-                log('ERROR: map.json not found in ZIP.');
+                showMessage('Import failed: map.json not found in the package.', 'error');
+                log('ERROR: map.json not found in package.');
                 return;
             }
 
@@ -8080,7 +8086,7 @@ function renderExportPage() {
                 <button type="button"
                         onclick="shareMapAsZip()"
                         class="w-full mt-2 bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 transition duration-150">
-                    <i class="fas fa-share-alt mr-1"></i> Share Open Map ZIP
+                    <i class="fas fa-share-alt mr-1"></i> Share Open Map
                 </button>
                 ${shareMapConfirmOpen ? buildMapSharePanelHtml(maps.find(s => s.status === 'Open')) : ''}
 
@@ -8200,13 +8206,13 @@ function renderExportPage() {
 
             <!-- IMPORT SURVEY ZIP/JSON -->
             <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-emerald-500">
-                <h4 class="text-lg font-semibold text-emerald-700 mb-2">Import Map (ZIP or JSON)</h4>
+                <h4 class="text-lg font-semibold text-emerald-700 mb-2">Import Map (ZIP, JSON or Trekta Share File)</h4>
                 <p class="text-sm text-gray-600 mb-3">
                     Import a map export file (<strong>.zip</strong> or <strong>.json</strong>).
                     The map and its favourites will be added to your existing local data.
                 </p>
                 <div class="mb-3">
-                    <input type="file" id="import-map-with-photos-input" accept=".zip,.json" class="hidden" onchange="handleMapWithPhotosImport(event)">
+                    <input type="file" id="import-map-with-photos-input" accept=".zip,.json,.html,.htm,.txt" class="hidden" onchange="handleMapWithPhotosImport(event)">
                     <button onclick="document.getElementById('import-map-with-photos-input').click()"
                             class="w-full bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-emerald-700 transition">
                         <i class="fas fa-upload mr-1"></i> Select File & Import
@@ -18891,6 +18897,94 @@ function formatMapShareSize(bytes) {
     return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function escapeStandalonePackageHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[ch]);
+}
+
+function jsonStringForStandaloneScript(value) {
+    return JSON.stringify(String(value == null ? '' : value))
+        .replace(/</g, '\\u003c')
+        .replace(/>/g, '\\u003e')
+        .replace(/&/g, '\\u0026');
+}
+
+function bytesToBase64Chunk(bytes) {
+    let binary = '';
+    const step = 8192;
+    for (let i = 0; i < bytes.length; i += step) {
+        binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + step, bytes.length)));
+    }
+    return btoa(binary);
+}
+
+async function buildTrektaSharePackageBlob(zipBlob, zipFilename, mapName) {
+    const displayMapName = escapeStandalonePackageHtml(mapName || 'Map');
+    const displayZipName = escapeStandalonePackageHtml(zipFilename || 'trekta-map.zip');
+    const jsonZipName = jsonStringForStandaloneScript(zipFilename || 'trekta-map.zip');
+    const jsonMapName = jsonStringForStandaloneScript(mapName || 'Map');
+    const closeScript = '</scr' + 'ipt>';
+
+    const header = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trekta map package — ${displayMapName}</title>
+<style>body{font-family:Arial,sans-serif;max-width:720px;margin:2rem auto;padding:0 1rem;line-height:1.5;color:#1f2937}main{border:1px solid #d1d5db;border-radius:14px;padding:1.25rem;box-shadow:0 4px 18px rgba(0,0,0,.08)}h1{color:#1d4ed8}button{border:0;border-radius:9px;padding:.8rem 1rem;background:#16a34a;color:white;font-weight:700;font-size:1rem}code{background:#f3f4f6;padding:.1rem .3rem;border-radius:4px}.small{font-size:.9rem;color:#4b5563}</style></head><body><main>
+<h1>Trekta map package</h1><p><strong>Map:</strong> ${displayMapName}</p>
+<p>This file contains a compact Trekta map export, including its photographs. In Trekta V1.69 or later, choose <strong>Data Export &amp; Import → Import Map</strong> and select this file.</p>
+<p class="small">It also contains the original ZIP named <code>${displayZipName}</code>. Use the button below when opening this package in a normal browser.</p>
+<button id="save-trekta-zip" type="button">Save original ZIP</button><p id="trekta-package-status" class="small"></p>
+<script id="trekta-share-package" type="application/json">{"format":"trekta-share-html-v1","zipFilename":${jsonZipName},"mapName":${jsonMapName},"zipBase64":"`;
+
+    const footer = `"}${closeScript}<script>(function(){
+function decodeBase64ToBlob(s){var parts=[],step=65536;for(var i=0;i<s.length;i+=step){var chunk=s.slice(i,Math.min(i+step,s.length));var bin=atob(chunk);var a=new Uint8Array(bin.length);for(var j=0;j<bin.length;j++)a[j]=bin.charCodeAt(j);parts.push(a)}return new Blob(parts,{type:'application/zip'})}
+var b=document.getElementById('save-trekta-zip'),st=document.getElementById('trekta-package-status');b.addEventListener('click',function(){try{var p=JSON.parse(document.getElementById('trekta-share-package').textContent);var blob=decodeBase64ToBlob(String(p.zipBase64||'').replace(/\\s+/g,''));var u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=p.zipFilename||'trekta-map.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},30000);st.textContent='ZIP saved.'}catch(e){st.textContent='Could not recover ZIP: '+(e.message||e)}})})();${closeScript}</main></body></html>`;
+
+    const bytes = new Uint8Array(await zipBlob.arrayBuffer());
+    const parts = [header];
+    // A multiple of three keeps separately encoded Base64 chunks concatenatable.
+    const chunkSize = 3 * 16384;
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+        parts.push(bytesToBase64Chunk(bytes.subarray(offset, Math.min(offset + chunkSize, bytes.length))));
+    }
+    parts.push(footer);
+    return new Blob(parts, { type: 'text/html' });
+}
+
+function decodeBase64ToZipBlob(base64Text) {
+    const clean = String(base64Text || '').replace(/\s+/g, '');
+    if (!clean || clean.length % 4 !== 0) throw new Error('The embedded ZIP data is incomplete.');
+    const parts = [];
+    const chunkChars = 4 * 16384;
+    for (let offset = 0; offset < clean.length; offset += chunkChars) {
+        const binary = atob(clean.slice(offset, Math.min(offset + chunkChars, clean.length)));
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        parts.push(bytes);
+    }
+    return new Blob(parts, { type: 'application/zip' });
+}
+
+function extractTrektaSharePackageFromText(text) {
+    const source = String(text || '');
+    const match = source.match(/<script\s+id=["']trekta-share-package["']\s+type=["']application\/json["']>([\s\S]*?)<\/script>/i);
+    if (!match) throw new Error('This is not a Trekta map share package.');
+    let payload;
+    try {
+        payload = JSON.parse(match[1]);
+    } catch (e) {
+        throw new Error('The Trekta package information is damaged.');
+    }
+    if (!payload || payload.format !== 'trekta-share-html-v1' || !payload.zipBase64) {
+        throw new Error('This Trekta package format is not supported.');
+    }
+    return {
+        zipBlob: decodeBase64ToZipBlob(payload.zipBase64),
+        zipFilename: String(payload.zipFilename || 'trekta-map.zip'),
+        mapName: String(payload.mapName || '')
+    };
+}
+
 function buildMapSharePanelHtml(map) {
     if (!map) {
         return `<div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">No map is open.</div>`;
@@ -18899,8 +18993,8 @@ function buildMapSharePanelHtml(map) {
     if (mapSharePreparing) {
         return `
         <div class="mt-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
-            <p class="text-sm font-semibold text-indigo-800"><i class="fas fa-spinner fa-spin mr-1"></i> Preparing the ZIP…</p>
-            <p class="text-xs text-gray-600 mt-1">Large maps can take a while. The Share button will appear when the ZIP is ready.</p>
+            <p class="text-sm font-semibold text-indigo-800"><i class="fas fa-spinner fa-spin mr-1"></i> Preparing the share package…</p>
+            <p class="text-xs text-gray-600 mt-1">Trekta is building a compact ZIP and placing it inside an Android-shareable file.</p>
         </div>`;
     }
 
@@ -18908,19 +19002,20 @@ function buildMapSharePanelHtml(map) {
     if (!prepared) {
         return `
         <div class="mt-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
-            <p class="text-sm text-gray-700 mb-2">Trekta will prepare a share-ready ZIP first. When it is ready, tap <strong>Share ZIP</strong>; that second tap opens Android's share sheet immediately.</p>
-            <p class="text-xs text-gray-500 mb-1">To keep it shareable, photographs in this copy are resized to your Photo Settings maximum (1200px by default). Your stored photographs are not changed.</p>
-            <p class="text-xs text-gray-500 mb-3">The normal Export button keeps the original photo files. Share ZIPs still above about 45 MB are offered as a download.</p>
+            <p class="text-sm text-gray-700 mb-2">Android Chrome blocks ZIP files from the Web Share API. Trekta therefore puts a compact ZIP inside a permitted <strong>Trekta HTML package</strong>.</p>
+            <p class="text-xs text-gray-500 mb-1">The recipient can import the shared .html file directly into Trekta V1.69 or later. Opening it in a browser also provides a button to recover the original ZIP.</p>
+            <p class="text-xs text-gray-500 mb-3">Photographs in this share copy are resized to your Photo Settings maximum (1200px by default). Stored photographs are not changed.</p>
             <div class="flex gap-3">
                 <button type="button" onclick="closeMapSharePanel()"
                         class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>
                 <button type="button" onclick="prepareMapShareZip()"
-                        class="flex-1 py-2 rounded-lg bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 shadow">Prepare ZIP</button>
+                        class="flex-1 py-2 rounded-lg bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 shadow">Prepare Share File</button>
             </div>
         </div>`;
     }
 
-    const sizeText = formatMapShareSize(prepared.sizeBytes);
+    const packageSizeText = formatMapShareSize(prepared.sizeBytes);
+    const zipSizeText = formatMapShareSize(prepared.zipSizeBytes);
     const tooLarge = prepared.sizeBytes > MAP_SHARE_SAFE_MAX_BYTES;
     const hasShareApi = !!(prepared.file && navigator.share && navigator.canShare);
     let canShareFile = false;
@@ -18933,27 +19028,27 @@ function buildMapSharePanelHtml(map) {
     }
 
     const statusHtml = tooLarge
-        ? `<p class="text-xs text-amber-800 mt-2"><i class="fas fa-exclamation-triangle mr-1"></i>This ZIP is above Trekta's safe direct-sharing limit. Download it and share it from the Files app.</p>`
+        ? `<p class="text-xs text-amber-800 mt-2"><i class="fas fa-exclamation-triangle mr-1"></i>The final share file is above Trekta's safe direct-sharing limit. Download the ZIP and share it from the Files app.</p>`
         : (!hasShareApi
             ? `<p class="text-xs text-amber-800 mt-2">This browser does not support sharing files directly. Download the ZIP instead.</p>`
             : (!canShareFile
-                ? `<p class="text-xs text-amber-800 mt-2">This device cannot share this ZIP directly. Download it instead.</p>`
-                : `<p class="text-xs text-green-700 mt-2"><i class="fas fa-check-circle mr-1"></i>Ready. Tap Share ZIP to open the Android share sheet.</p>`));
+                ? `<p class="text-xs text-amber-800 mt-2">Android will not share this file directly on this device. Download the ZIP instead.</p>`
+                : `<p class="text-xs text-green-700 mt-2"><i class="fas fa-check-circle mr-1"></i>Ready. Tap Share Map File to open Android's share sheet.</p>`));
 
     const shareButton = canShareFile
         ? `<button type="button" onclick="sharePreparedMapZip()"
-                   class="flex-1 py-2 rounded-lg bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 shadow"><i class="fas fa-share-alt mr-1"></i> Share ZIP</button>`
+                   class="flex-1 py-2 rounded-lg bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 shadow"><i class="fas fa-share-alt mr-1"></i> Share Map File</button>`
         : `<button type="button" disabled
                    class="flex-1 py-2 rounded-lg bg-gray-300 text-gray-500 font-semibold text-sm cursor-not-allowed"><i class="fas fa-share-alt mr-1"></i> Share unavailable</button>`;
 
     return `
     <div class="mt-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
-        <p class="text-sm font-semibold text-gray-800">ZIP ready: ${escapeHtml(prepared.filename)}</p>
-        <p class="text-xs text-gray-600 mt-1">${sizeText} · prepared in ${prepared.buildSeconds.toFixed(1)} seconds · photos max ${prepared.photoMaxWidth || 1200}px</p>
+        <p class="text-sm font-semibold text-gray-800">Share file ready: ${escapeHtml(prepared.filename)}</p>
+        <p class="text-xs text-gray-600 mt-1">Share file ${packageSizeText} · contained ZIP ${zipSizeText} · prepared in ${prepared.buildSeconds.toFixed(1)} seconds · photos max ${prepared.photoMaxWidth || 1200}px</p>
         ${statusHtml}
         <div class="flex gap-2 mt-3">
             <button type="button" onclick="downloadPreparedMapZip()"
-                    class="flex-1 py-2 rounded-lg bg-sky-600 text-white font-semibold text-sm hover:bg-sky-700"><i class="fas fa-download mr-1"></i> Download</button>
+                    class="flex-1 py-2 rounded-lg bg-sky-600 text-white font-semibold text-sm hover:bg-sky-700"><i class="fas fa-download mr-1"></i> Download ZIP</button>
             ${shareButton}
         </div>
         <div class="flex gap-2 mt-2">
@@ -18966,9 +19061,9 @@ function buildMapSharePanelHtml(map) {
 }
 
 function closeMapSharePanel() {
-    shareMapBuildToken++;
+    mapShareBuildToken++;
     shareMapConfirmOpen = false;
-    preparedMapShare = null; // release the potentially large Blob from memory
+    preparedMapShare = null; // release the potentially large package from memory
     mapSharePreparing = false;
     render();
 }
@@ -19017,7 +19112,7 @@ async function prepareMapShareZip(forceRebuild = false) {
         if (!zipBlob) throw new Error('The ZIP could not be created.');
         const stillOpenMap = maps.find(s => s.status === 'Open');
         if (buildToken !== mapShareBuildToken || !stillOpenMap || stillOpenMap.id !== openMap.id) {
-            return; // workflow was closed or the open map changed while the ZIP was building
+            return;
         }
 
         const safeName = (openMap.name || 'map')
@@ -19025,30 +19120,58 @@ async function prepareMapShareZip(forceRebuild = false) {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '') || 'map';
         const timestamp = new Date().toISOString().replace(/[:.]/g, '').replace('T', '_').replace('Z', '');
-        const filename = `trekta_${safeName}_${timestamp}.zip`;
-        const file = (typeof File === 'function') ? new File([zipBlob], filename, { type: 'application/zip' }) : null;
+        const zipFilename = `trekta_${safeName}_${timestamp}.zip`;
+        const htmlFilename = `trekta_${safeName}_${timestamp}.html`;
+        const txtFilename = `trekta_${safeName}_${timestamp}.txt`;
+
+        const packageBlob = await buildTrektaSharePackageBlob(zipBlob, zipFilename, openMap.name || 'Map');
+        let file = (typeof File === 'function') ? new File([packageBlob], htmlFilename, { type: 'text/html' }) : null;
+        let filename = htmlFilename;
+        let packageKind = 'HTML';
+
+        // Current Chromium permits HTML and plain-text files but deliberately blocks ZIP.
+        // Prefer HTML because it is self-explanatory when opened; use TXT only if this
+        // particular Android browser rejects HTML but accepts plain text.
+        if (file && navigator.canShare) {
+            let htmlAccepted = false;
+            try { htmlAccepted = navigator.canShare({ files: [file] }); } catch (_) {}
+            if (!htmlAccepted) {
+                const textFile = new File([packageBlob], txtFilename, { type: 'text/plain' });
+                let textAccepted = false;
+                try { textAccepted = navigator.canShare({ files: [textFile] }); } catch (_) {}
+                if (textAccepted) {
+                    file = textFile;
+                    filename = txtFilename;
+                    packageKind = 'Text';
+                }
+            }
+        }
 
         preparedMapShare = {
             mapId: openMap.id,
             mapName: openMap.name || 'Map',
             filename,
+            zipFilename,
             blob: zipBlob,
+            packageBlob,
             file,
-            sizeBytes: zipBlob.size,
+            packageKind,
+            sizeBytes: file ? file.size : packageBlob.size,
+            zipSizeBytes: zipBlob.size,
             buildSeconds: (performance.now() - buildStart) / 1000,
             photoMaxWidth: sharePhotoMaxWidth,
             preparedAt: Date.now()
         };
 
-        const sizeText = formatMapShareSize(zipBlob.size);
-        if (zipBlob.size > MAP_SHARE_SAFE_MAX_BYTES) {
-            showMessage(`ZIP ready (${sizeText}). It is too large for reliable browser sharing, so use Download.`, 'info');
+        const sizeText = formatMapShareSize(preparedMapShare.sizeBytes);
+        if (preparedMapShare.sizeBytes > MAP_SHARE_SAFE_MAX_BYTES) {
+            showMessage(`Share file ready (${sizeText}), but it is too large for reliable browser sharing. Use Download ZIP.`, 'info');
         } else {
-            showMessage(`ZIP ready (${sizeText}). Tap Share ZIP.`, 'success');
+            showMessage(`Share file ready (${sizeText}). Tap Share Map File.`, 'success');
         }
     } catch (e) {
         if (buildToken === mapShareBuildToken) {
-            console.error('[Share Map] ZIP preparation failed:', e);
+            console.error('[Share Map] Package preparation failed:', e);
             preparedMapShare = null;
             showMessage('Failed to prepare map share: ' + (e && e.message ? e.message : e), 'error');
         }
@@ -19069,15 +19192,15 @@ async function sharePreparedMapZip() {
     const openMap = maps.find(s => s.status === 'Open');
     const prepared = getPreparedMapShareFor(openMap);
     if (!prepared) {
-        showMessage('Prepare the ZIP first.', 'error');
+        showMessage('Prepare the share file first.', 'error');
         return;
     }
     if (prepared.sizeBytes > MAP_SHARE_SAFE_MAX_BYTES) {
-        showMessage('This ZIP is too large for reliable direct sharing. Use Download instead.', 'info');
+        showMessage('This share file is too large for reliable direct sharing. Use Download ZIP instead.', 'info');
         return;
     }
     if (!prepared.file || !navigator.share || !navigator.canShare) {
-        showMessage('File sharing is not supported here. Use Download instead.', 'info');
+        showMessage('File sharing is not supported here. Use Download ZIP instead.', 'info');
         return;
     }
 
@@ -19086,39 +19209,39 @@ async function sharePreparedMapZip() {
         canShare = navigator.canShare({ files: [prepared.file] });
     } catch (_) {}
     if (!canShare) {
-        showMessage('This device cannot share this ZIP directly. Use Download instead.', 'info');
+        showMessage('Android cannot share this map file directly. Use Download ZIP instead.', 'info');
         return;
     }
 
-    // IMPORTANT: navigator.share() is called synchronously from this button tap.
-    // Do not add an await before this line; Android requires fresh transient activation.
+    // The call is deliberately the first asynchronous action from this fresh tap.
+    // Files-only is the most interoperable Android payload.
+    console.log('[Share Map] Starting Web Share', {
+        active: navigator.userActivation ? navigator.userActivation.isActive : undefined,
+        filename: prepared.file.name,
+        type: prepared.file.type,
+        size: prepared.file.size
+    });
+
     let sharePromise;
     try {
-        sharePromise = navigator.share({
-            title: prepared.mapName,
-            text: `Trekta map export: ${prepared.mapName}`,
-            files: [prepared.file]
-        });
+        sharePromise = navigator.share({ files: [prepared.file] });
     } catch (e) {
         console.warn('[Share Map] navigator.share() could not start:', e);
-        showMessage('The share sheet could not open. Try again or use Download.', 'error');
+        showMessage(`The share sheet could not open (${e && e.name ? e.name : 'error'}). Use Download ZIP.`, 'error');
         return;
     }
 
-    showMessage('Opening share sheet…', 'info');
+    showMessage('Opening Android share sheet…', 'info');
     try {
         await sharePromise;
         preparedMapShare = null;
         shareMapConfirmOpen = false;
         render();
     } catch (e) {
-        if (e && e.name === 'AbortError') return; // user cancelled the chooser
-        console.warn('[Share Map] navigator.share() failed:', e);
-        const activationLost = e && e.name === 'NotAllowedError';
+        if (e && e.name === 'AbortError') return;
+        console.warn('[Share Map] navigator.share() failed:', e && e.name, e && e.message, e);
         showMessage(
-            activationLost
-                ? 'Android did not accept the share request. Tap Share ZIP again, or use Download.'
-                : 'Sharing failed. Try again or use Download.',
+            `Android rejected the share (${e && e.name ? e.name : 'unknown error'}). Download the ZIP and share it from Files.`,
             'error'
         );
     }
@@ -19128,10 +19251,10 @@ function downloadPreparedMapZip() {
     const openMap = maps.find(s => s.status === 'Open');
     const prepared = getPreparedMapShareFor(openMap);
     if (!prepared) {
-        showMessage('Prepare the ZIP first.', 'error');
+        showMessage('Prepare the share file first.', 'error');
         return;
     }
-    downloadBlob(prepared.filename, prepared.blob);
+    downloadBlob(prepared.zipFilename, prepared.blob);
     showMessage('Map ZIP downloaded. You can share it from the Files app.', 'success');
 
     const liveMap = maps.find(s => s.id === prepared.mapId);
