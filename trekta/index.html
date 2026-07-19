@@ -150,7 +150,11 @@
 <body class="min-h-screen">
     <!-- Persistent hidden inputs always in DOM -->
 
+<!-- [DEADCODE-FAVOURITES-P1 START: find-card-photo-input] unreachable dead input, see conversation notes -->
+<script type="text/plain" data-dead-code="find-card-photo-input">
     <input type="file" id="find-card-photo-input" accept="image/*;capture=camera" class="hidden" onchange="handleFavouriteCardPhotoSelected(event)">
+</script>
+<!-- [DEADCODE-FAVOURITES-P1 END: find-card-photo-input] -->
     <input type="file" id="place-card-photo-input" accept="image/*;capture=camera" class="hidden" onchange="handlePlaceCardPhotoSelected(event)">
     <input type="file" id="map-photo-input" accept="image/*;capture=camera" class="hidden" onchange="handleMapPhotoSelected(event)">
     <input type="file" id="quick-photo-place-input" accept="image/*" capture="environment" class="hidden" onchange="handleQuickPhotoPlaceSelected(event)">
@@ -160,7 +164,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.78
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.79
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -500,6 +504,8 @@
 
 <!-- Edit Map modal removed — editing is now inline on the map card -->
 <!-- Edit Favourite Modal (now matches Place modal structure) -->
+<!-- [DEADCODE-FAVOURITES-P1 START: edit-find-modal] unreachable dead modal, see conversation notes -->
+<script type="text/plain" data-dead-code="edit-find-modal">
 <div id="edit-find-modal" class="modal">
   <div class="modal-content bg-white p-6 shadow-2xl">
 
@@ -728,6 +734,8 @@
     </form>
   </div>
 </div>
+</script>
+<!-- [DEADCODE-FAVOURITES-P1 END: edit-find-modal] -->
     
     <div id="new-place-modal" class="modal">
         <div class="modal-content bg-white p-6 shadow-2xl">
@@ -1542,66 +1550,70 @@ function collectIndexedDbPhotoIdsInUseExcludingPlace(mapId, placeId) {
     return ids;
 }
 
-function collectIndexedDbPhotoIdsInUseExcludingFavourite(findId) {
-    const ids = new Set();
+// [DEADCODE-FAVOURITES-P1 START: collectIndexedDbPhotoIdsInUseExcludingFavourite] -- unreachable, see conversation notes
+//function collectIndexedDbPhotoIdsInUseExcludingFavourite(findId) {
+//    const ids = new Set();
+//
+//    // All maps + places
+//    const allMaps = Array.isArray(maps) ? maps : [];
+//    for (const s of allMaps) {
+//        if (!s) continue;
+//        collectIndexedDbPhotoIdsFromMap(s).forEach(id => ids.add(id));
+//    }
+//
+//    // All favourites except the one being deleted
+//    const allFavourites = Array.isArray(favourites) ? favourites : [];
+//    for (const f of allFavourites) {
+//        if (!f) continue;
+//        if (f.id === findId) continue;
+//        collectIndexedDbPhotoIdsFromFavourite(f).forEach(id => ids.add(id));
+//    }
+//
+//    return ids;
+//}
+// [DEADCODE-FAVOURITES-P1 END: collectIndexedDbPhotoIdsInUseExcludingFavourite]
 
-    // All maps + places
-    const allMaps = Array.isArray(maps) ? maps : [];
-    for (const s of allMaps) {
-        if (!s) continue;
-        collectIndexedDbPhotoIdsFromMap(s).forEach(id => ids.add(id));
-    }
 
-    // All favourites except the one being deleted
-    const allFavourites = Array.isArray(favourites) ? favourites : [];
-    for (const f of allFavourites) {
-        if (!f) continue;
-        if (f.id === findId) continue;
-        collectIndexedDbPhotoIdsFromFavourite(f).forEach(id => ids.add(id));
-    }
-
-    return ids;
-}
-
-
-async function deleteFavouritePermanently(findId) {
-    const idx = Array.isArray(favourites)
-        ? favourites.findIndex(f => f && f.id === findId)
-        : -1;
-
-    if (idx < 0) {
-        showMessage('Delete failed: find not found.', 'error');
-        return false;
-    }
-
-    const find = favourites[idx];
-
-    // 1) Photos referenced by THIS find
-    const idsThisFavourite = collectIndexedDbPhotoIdsFromFavourite(find);
-
-    // 2) Photos still used elsewhere
-    const idsStillUsedElsewhere = collectIndexedDbPhotoIdsInUseExcludingFavourite(findId);
-
-    // 3) Delete only those not used elsewhere
-    const idsToDelete = [...idsThisFavourite].filter(id => !idsStillUsedElsewhere.has(id));
-
-    if (idsToDelete.length && typeof deletePhotoBlob === 'function') {
-        for (const id of idsToDelete) {
-            try {
-                await deletePhotoBlob(id);
-            } catch (e) {
-                console.warn('Failed to delete photo blob id', id, e);
-            }
-        }
-    }
-
-    // 4) Delete the find record
-    favourites.splice(idx, 1);
-    saveFavouritesToLocalStorage();
-
-    showMessage('Favourite deleted (including photos).', 'success');
-    return true;
-}
+// [DEADCODE-FAVOURITES-P1 START: deleteFavouritePermanently] -- unreachable, see conversation notes
+//async function deleteFavouritePermanently(findId) {
+//    const idx = Array.isArray(favourites)
+//        ? favourites.findIndex(f => f && f.id === findId)
+//        : -1;
+//
+//    if (idx < 0) {
+//        showMessage('Delete failed: find not found.', 'error');
+//        return false;
+//    }
+//
+//    const find = favourites[idx];
+//
+//    // 1) Photos referenced by THIS find
+//    const idsThisFavourite = collectIndexedDbPhotoIdsFromFavourite(find);
+//
+//    // 2) Photos still used elsewhere
+//    const idsStillUsedElsewhere = collectIndexedDbPhotoIdsInUseExcludingFavourite(findId);
+//
+//    // 3) Delete only those not used elsewhere
+//    const idsToDelete = [...idsThisFavourite].filter(id => !idsStillUsedElsewhere.has(id));
+//
+//    if (idsToDelete.length && typeof deletePhotoBlob === 'function') {
+//        for (const id of idsToDelete) {
+//            try {
+//                await deletePhotoBlob(id);
+//            } catch (e) {
+//                console.warn('Failed to delete photo blob id', id, e);
+//            }
+//        }
+//    }
+//
+//    // 4) Delete the find record
+//    favourites.splice(idx, 1);
+//    saveFavouritesToLocalStorage();
+//
+//    showMessage('Favourite deleted (including photos).', 'success');
+//    return true;
+//}
+// [DEADCODE-FAVOURITES-P1 END: deleteFavouritePermanently]
  /**
  * Extract IndexedDB photo IDs from any mixture of:
  *  - "idb:123" strings
@@ -2819,22 +2831,24 @@ function getMapPlacesOnly(map) {
 }
 
 // Favourites: prefer global 'favourites' array (your app uses this) but also include map.finds if present.
-function getMapFavouritesCount(map) {
-    const sid = map?.id;
-    const fromGlobal = Array.isArray(favourites) && sid ? favourites.filter(f => f && !f.deleted && f.mapId === sid) : [];
-    const fromMap = Array.isArray(map?.finds) ? map.finds.filter(f => f && !f.deleted) : [];
-
-    // de-dupe by id (in case both exist)
-    const seen = new Set();
-    let n = 0;
-    for (const f of [...fromGlobal, ...fromMap]) {
-        const id = f?.id || JSON.stringify(f);
-        if (seen.has(id)) continue;
-        seen.add(id);
-        n++;
-    }
-    return n;
-}
+// [DEADCODE-FAVOURITES-P1 START: getMapFavouritesCount] -- unreachable, see conversation notes
+//function getMapFavouritesCount(map) {
+//    const sid = map?.id;
+//    const fromGlobal = Array.isArray(favourites) && sid ? favourites.filter(f => f && !f.deleted && f.mapId === sid) : [];
+//    const fromMap = Array.isArray(map?.finds) ? map.finds.filter(f => f && !f.deleted) : [];
+//
+//    // de-dupe by id (in case both exist)
+//    const seen = new Set();
+//    let n = 0;
+//    for (const f of [...fromGlobal, ...fromMap]) {
+//        const id = f?.id || JSON.stringify(f);
+//        if (seen.has(id)) continue;
+//        seen.add(id);
+//        n++;
+//    }
+//    return n;
+//}
+// [DEADCODE-FAVOURITES-P1 END: getMapFavouritesCount]
 
 function getAppTotals() {
     const allMaps = Array.isArray(maps) ? maps : [];
@@ -3825,191 +3839,193 @@ window.downloadTextfile = downloadTextFile;  // case/typo safety
  * - resolvePhotoBlob(ref) OR the older idb/dataURL logic you used
  * - resizeBlobToMaxWidthJpeg(blob, maxW, quality)
  */
-async function exportAllMapsGallery_DownloadSingleHtml({ includePlaces = true, includeFavourites = true, maxW = 1000 } = {}) {
-    const logBox = document.getElementById('export-photo-gallery-log');
-    const log = (msg) => {
-        console.log('[Gallery Download]', msg);
-        if (!logBox) return;
-        logBox.value += msg + '\n';
-        logBox.scrollTop = logBox.scrollHeight;
-    };
-    if (logBox) logBox.value = '';
-
-    if (!Array.isArray(maps) || maps.length === 0) {
-        showMessage('No maps to export.', 'error');
-        return;
-    }
-
-    const escapeHtml = (s) => String(s ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-
-    const blobToDataUrl = (blob) => new Promise((resolve, reject) => {
-        const r = new FileReader();
-        r.onload = () => resolve(r.result);
-        r.onerror = () => reject(r.error || new Error('File read failed'));
-        r.readAsDataURL(blob);
-    });
-
-    async function photoRefToDataUrl(photoRef) {
-        if (!photoRef) return '';
-        try {
-            const raw = await resolvePhotoBlob(photoRef); // your existing helper
-            if (!raw) return '';
-            const resized = await resizeBlobToMaxWidthJpeg(raw, maxW, 0.85);
-            if (!resized) return '';
-            return await blobToDataUrl(resized);
-        } catch {
-            return '';
-        }
-    }
-
-    // Build master cards + embedded sections
-    const cards = [];
-    const sections = [];
-
-    log(`Building single HTML gallery for ${maps.length} maps...`);
-    log(`Max width: ${maxW}px`);
-
-    for (let i = 0; i < maps.length; i++) {
-        const s = maps[i];
-        const title = s?.name || `Map ${i + 1}`;
-        const sid = `map_${String(s?.id ?? i + 1).replace(/[^a-z0-9]+/gi,'_')}`;
-
-        // Map thumb (prefer map photo)
-        const mapPhotoRef = s?.mapPhotoData || s?.mapPhotoRef || '';
-        let thumb = await photoRefToDataUrl(mapPhotoRef);
-
-        // If no map photo, fallback to first find/place photo
-        if (!thumb && includeFavourites) {
-            const sf = (Array.isArray(favourites) ? favourites : []).find(f => f && f.mapId === s.id);
-            const pref = (sf?.photos && sf.photos[0]) || sf?.photoData || sf?.placePhotoData || '';
-            thumb = await photoRefToDataUrl(pref);
-        }
-        if (!thumb && includePlaces) {
-            const t = Array.isArray(s?.targets) ? s.targets.find(x => x) : null;
-            const pref = (t?.photos && t.photos[0]) || t?.placePhotoData || t?.photoDataUrl || '';
-            thumb = await photoRefToDataUrl(pref);
-        }
-
-        cards.push(`
-          <a class="cardTop" href="#${sid}">
-            <div class="thumb">
-              ${thumb ? `<img src="${thumb}" alt="${escapeHtml(title)}">`
-                     : `<div class="noThumb">No photo</div>`}
-            </div>
-            <div class="meta">
-              <div class="title">${escapeHtml(title)}</div>
-              <div class="hint">Jump to gallery</div>
-            </div>
-          </a>
-        `);
-
-        // Build map section (simple: just show all photos in one stream)
-        const photoBlocks = [];
-
-        // Map photo
-        if (mapPhotoRef) {
-            const d = await photoRefToDataUrl(mapPhotoRef);
-            if (d) photoBlocks.push(`<img class="full" src="${d}" alt="Map photo">`);
-        }
-
-        // Favourites
-        if (includeFavourites) {
-            const sf = (Array.isArray(favourites) ? favourites : []).filter(f => f && f.mapId === s.id);
-            for (const f of sf) {
-                const refs = Array.isArray(f.photos) && f.photos.length
-                    ? f.photos
-                    : [f.findPhotoData, f.photoData, f.placePhotoData, f.photoDataUrl].filter(Boolean);
-
-                for (let p = 0; p < refs.length; p++) {
-                    const d = await photoRefToDataUrl(refs[p]);
-                    if (d) photoBlocks.push(`<img class="full" src="${d}" alt="Favourite photo">`);
-                }
-            }
-        }
-
-        // Places
-        if (includePlaces && Array.isArray(s?.targets)) {
-            for (const t of s.targets) {
-                const refs = Array.isArray(t.photos) && t.photos.length
-                    ? t.photos
-                    : [t.placePhotoData, t.photoDataUrl, t.photoRef].filter(Boolean);
-
-                for (let p = 0; p < refs.length; p++) {
-                    const d = await photoRefToDataUrl(refs[p]);
-                    if (d) photoBlocks.push(`<img class="full" src="${d}" alt="Place photo">`);
-                }
-            }
-        }
-
-        sections.push(`
-          <section class="mapSection" id="${sid}">
-            <div class="mapHeader">
-              <h2>${escapeHtml(title)}</h2>
-              <a href="#top">Back to top</a>
-            </div>
-            ${photoBlocks.length ? photoBlocks.join('\n') : `<p class="muted">No photos found.</p>`}
-          </section>
-        `);
-
-        log(`[${i + 1}/${maps.length}] Added: ${title}`);
-    }
-
-    const now = new Date();
-    const html = `
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Trekta Gallery</title>
-<style>
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f7f7f7;color:#111}
-  header{padding:18px 16px;background:#fff;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:10}
-  h1{margin:0;font-size:20px}
-  .sub{margin:6px 0 0;color:#444;font-size:13px}
-  main{padding:16px;max-width:1100px;margin:0 auto}
-  .gridTop{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:18px}
-  a.cardTop{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.05)}
-  .thumb{aspect-ratio:4/3;background:#eee;display:flex;align-items:center;justify-content:center}
-  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-  .noThumb{padding:12px;color:#666;font-size:12px;text-align:center}
-  .meta{padding:10px 12px}
-  .title{font-weight:800;font-size:14px;line-height:1.2}
-  .hint{font-size:12px;color:#666;margin-top:4px}
-  .mapSection{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin:18px 0;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
-  .mapHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-  .mapHeader h2{margin:0;font-size:18px}
-  .muted{color:#64748b;font-size:13px}
-  img.full{width:100%;height:auto;border-radius:14px;border:1px solid #e5e7eb;margin-top:12px;display:block}
-</style>
-</head>
-<body>
-<a id="top"></a>
-<header>
-  <h1>Photo Galleries</h1>
-  <p class="sub">Exported ${escapeHtml(now.toLocaleString())} — this file is self-contained (phone-safe).</p>
-</header>
-<main>
-  <div class="gridTop">
-    ${cards.join('\n')}
-  </div>
-
-  ${sections.join('\n')}
-</main>
-</body>
-</html>`.trim();
-
-    const filename = `trekta_gallery_${now.toISOString().slice(0,10)}.html`;
-    downloadTextFile(filename, html, 'text/html');
-
-    showMessage('Gallery HTML downloaded (check Downloads).', 'success');
-    log('DONE: Download triggered.');
-}
+// [DEADCODE-FAVOURITES-P1 START: exportAllMapsGallery_DownloadSingleHtml] -- unreachable, see conversation notes
+//async function exportAllMapsGallery_DownloadSingleHtml({ includePlaces = true, includeFavourites = true, maxW = 1000 } = {}) {
+//    const logBox = document.getElementById('export-photo-gallery-log');
+//    const log = (msg) => {
+//        console.log('[Gallery Download]', msg);
+//        if (!logBox) return;
+//        logBox.value += msg + '\n';
+//        logBox.scrollTop = logBox.scrollHeight;
+//    };
+//    if (logBox) logBox.value = '';
+//
+//    if (!Array.isArray(maps) || maps.length === 0) {
+//        showMessage('No maps to export.', 'error');
+//        return;
+//    }
+//
+//    const escapeHtml = (s) => String(s ?? '')
+//        .replace(/&/g, '&amp;')
+//        .replace(/</g, '&lt;')
+//        .replace(/>/g, '&gt;')
+//        .replace(/"/g, '&quot;')
+//        .replace(/'/g, '&#39;');
+//
+//    const blobToDataUrl = (blob) => new Promise((resolve, reject) => {
+//        const r = new FileReader();
+//        r.onload = () => resolve(r.result);
+//        r.onerror = () => reject(r.error || new Error('File read failed'));
+//        r.readAsDataURL(blob);
+//    });
+//
+//    async function photoRefToDataUrl(photoRef) {
+//        if (!photoRef) return '';
+//        try {
+//            const raw = await resolvePhotoBlob(photoRef); // your existing helper
+//            if (!raw) return '';
+//            const resized = await resizeBlobToMaxWidthJpeg(raw, maxW, 0.85);
+//            if (!resized) return '';
+//            return await blobToDataUrl(resized);
+//        } catch {
+//            return '';
+//        }
+//    }
+//
+//    // Build master cards + embedded sections
+//    const cards = [];
+//    const sections = [];
+//
+//    log(`Building single HTML gallery for ${maps.length} maps...`);
+//    log(`Max width: ${maxW}px`);
+//
+//    for (let i = 0; i < maps.length; i++) {
+//        const s = maps[i];
+//        const title = s?.name || `Map ${i + 1}`;
+//        const sid = `map_${String(s?.id ?? i + 1).replace(/[^a-z0-9]+/gi,'_')}`;
+//
+//        // Map thumb (prefer map photo)
+//        const mapPhotoRef = s?.mapPhotoData || s?.mapPhotoRef || '';
+//        let thumb = await photoRefToDataUrl(mapPhotoRef);
+//
+//        // If no map photo, fallback to first find/place photo
+//        if (!thumb && includeFavourites) {
+//            const sf = (Array.isArray(favourites) ? favourites : []).find(f => f && f.mapId === s.id);
+//            const pref = (sf?.photos && sf.photos[0]) || sf?.photoData || sf?.placePhotoData || '';
+//            thumb = await photoRefToDataUrl(pref);
+//        }
+//        if (!thumb && includePlaces) {
+//            const t = Array.isArray(s?.targets) ? s.targets.find(x => x) : null;
+//            const pref = (t?.photos && t.photos[0]) || t?.placePhotoData || t?.photoDataUrl || '';
+//            thumb = await photoRefToDataUrl(pref);
+//        }
+//
+//        cards.push(`
+//          <a class="cardTop" href="#${sid}">
+//            <div class="thumb">
+//              ${thumb ? `<img src="${thumb}" alt="${escapeHtml(title)}">`
+//                     : `<div class="noThumb">No photo</div>`}
+//            </div>
+//            <div class="meta">
+//              <div class="title">${escapeHtml(title)}</div>
+//              <div class="hint">Jump to gallery</div>
+//            </div>
+//          </a>
+//        `);
+//
+//        // Build map section (simple: just show all photos in one stream)
+//        const photoBlocks = [];
+//
+//        // Map photo
+//        if (mapPhotoRef) {
+//            const d = await photoRefToDataUrl(mapPhotoRef);
+//            if (d) photoBlocks.push(`<img class="full" src="${d}" alt="Map photo">`);
+//        }
+//
+//        // Favourites
+//        if (includeFavourites) {
+//            const sf = (Array.isArray(favourites) ? favourites : []).filter(f => f && f.mapId === s.id);
+//            for (const f of sf) {
+//                const refs = Array.isArray(f.photos) && f.photos.length
+//                    ? f.photos
+//                    : [f.findPhotoData, f.photoData, f.placePhotoData, f.photoDataUrl].filter(Boolean);
+//
+//                for (let p = 0; p < refs.length; p++) {
+//                    const d = await photoRefToDataUrl(refs[p]);
+//                    if (d) photoBlocks.push(`<img class="full" src="${d}" alt="Favourite photo">`);
+//                }
+//            }
+//        }
+//
+//        // Places
+//        if (includePlaces && Array.isArray(s?.targets)) {
+//            for (const t of s.targets) {
+//                const refs = Array.isArray(t.photos) && t.photos.length
+//                    ? t.photos
+//                    : [t.placePhotoData, t.photoDataUrl, t.photoRef].filter(Boolean);
+//
+//                for (let p = 0; p < refs.length; p++) {
+//                    const d = await photoRefToDataUrl(refs[p]);
+//                    if (d) photoBlocks.push(`<img class="full" src="${d}" alt="Place photo">`);
+//                }
+//            }
+//        }
+//
+//        sections.push(`
+//          <section class="mapSection" id="${sid}">
+//            <div class="mapHeader">
+//              <h2>${escapeHtml(title)}</h2>
+//              <a href="#top">Back to top</a>
+//            </div>
+//            ${photoBlocks.length ? photoBlocks.join('\n') : `<p class="muted">No photos found.</p>`}
+//          </section>
+//        `);
+//
+//        log(`[${i + 1}/${maps.length}] Added: ${title}`);
+//    }
+//
+//    const now = new Date();
+//    const html = `
+//<!doctype html>
+//<html lang="en">
+//<head>
+//<meta charset="utf-8">
+//<meta name="viewport" content="width=device-width, initial-scale=1">
+//<title>Trekta Gallery</title>
+//<style>
+//  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f7f7f7;color:#111}
+//  header{padding:18px 16px;background:#fff;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:10}
+//  h1{margin:0;font-size:20px}
+//  .sub{margin:6px 0 0;color:#444;font-size:13px}
+//  main{padding:16px;max-width:1100px;margin:0 auto}
+//  .gridTop{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:18px}
+//  a.cardTop{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+//  .thumb{aspect-ratio:4/3;background:#eee;display:flex;align-items:center;justify-content:center}
+//  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+//  .noThumb{padding:12px;color:#666;font-size:12px;text-align:center}
+//  .meta{padding:10px 12px}
+//  .title{font-weight:800;font-size:14px;line-height:1.2}
+//  .hint{font-size:12px;color:#666;margin-top:4px}
+//  .mapSection{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin:18px 0;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+//  .mapHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+//  .mapHeader h2{margin:0;font-size:18px}
+//  .muted{color:#64748b;font-size:13px}
+//  img.full{width:100%;height:auto;border-radius:14px;border:1px solid #e5e7eb;margin-top:12px;display:block}
+//</style>
+//</head>
+//<body>
+//<a id="top"></a>
+//<header>
+//  <h1>Photo Galleries</h1>
+//  <p class="sub">Exported ${escapeHtml(now.toLocaleString())} — this file is self-contained (phone-safe).</p>
+//</header>
+//<main>
+//  <div class="gridTop">
+//    ${cards.join('\n')}
+//  </div>
+//
+//  ${sections.join('\n')}
+//</main>
+//</body>
+//</html>`.trim();
+//
+//    const filename = `trekta_gallery_${now.toISOString().slice(0,10)}.html`;
+//    downloadTextFile(filename, html, 'text/html');
+//
+//    showMessage('Gallery HTML downloaded (check Downloads).', 'success');
+//    log('DONE: Download triggered.');
+//}
+// [DEADCODE-FAVOURITES-P1 END: exportAllMapsGallery_DownloadSingleHtml]
 
         
     function showProgressOverlay(title = 'Working...', message = 'Please wait.') {
@@ -7165,97 +7181,107 @@ function attachFormSubmitHandler(formId, handler) {
 }
 
         
-async function openEditFavouriteModal(findId) {
-    const find = favourites.find(f => f.id === findId);
-    if (!find) { showMessage('Favourite not found.', 'error'); return; }
+// [DEADCODE-FAVOURITES-P1 START: openEditFavouriteModal] -- unreachable, see conversation notes
+//async function openEditFavouriteModal(findId) {
+//    const find = favourites.find(f => f.id === findId);
+//    if (!find) { showMessage('Favourite not found.', 'error'); return; }
+//
+//    expandedFavouriteDeleteId = null;
+//    expandedFavouriteEditId   = findId;
+//    render();
+//
+//    // Populate fields after render
+//    const form = document.getElementById('edit-find-form');
+//    if (!form) return;
+//
+//    form['findId'].value          = find.id;
+//    form['findDescription'].value = find.description || '';
+//    form['findType'].value        = find.type || 'Unknown';
+//    form['findCoords'].value      = find.coordinates || '';
+//    form['findAccuracy'].value    = find.accuracy || '';
+//
+//    if (form['findIdentification'])   form['findIdentification'].value  = find.notes || find.identification || '';
+//    // Set star rating and highlight
+//    const _fRatingVal = find.rating ? String(find.rating) : '';
+//    document.querySelectorAll('#edit-find-form input[name="findRating"]').forEach(r => {
+//        r.checked = r.value === _fRatingVal;
+//        const span = r.nextElementSibling;
+//        if (span) {
+//            if (r.value === _fRatingVal && _fRatingVal) {
+//                span.style.borderColor = '#16a34a';
+//                span.style.color = '#16a34a';
+//                span.style.backgroundColor = '#f0fdf4';
+//            } else {
+//                span.style.borderColor = '#e5e7eb';
+//                span.style.color = '#9ca3af';
+//                span.style.backgroundColor = '';
+//            }
+//        }
+//    });
+//
+//    try {
+//        if (Array.isArray(find.photos) && find.photos.length > 0) {
+//            const first = find.photos[0];
+//            currentEditFavouritePhotos = isIndexedDbPhotoRef(first)
+//                ? await loadPhotoUrlsFromRefs(find.photos)
+//                : find.photos.slice();
+//        } else if (find.findPhotoData) {
+//            currentEditFavouritePhotos = [find.findPhotoData];
+//        } else if (find.placePhotoData) {
+//            currentEditFavouritePhotos = [find.placePhotoData];
+//        } else if (find.photoData) {
+//            currentEditFavouritePhotos = [find.photoData];
+//        } else {
+//            currentEditFavouritePhotos = [];
+//        }
+//    } catch(e) {
+//        console.error('Error preparing edit favourite photos:', e);
+//        currentEditFavouritePhotos = [];
+//    }
+//
+//    updateEditFavouritePhotoPreview();
+//    attachFormSubmitHandler('edit-find-form', handleEditFavouriteSubmit);
+//
+//    // Set logged date
+//    try {
+//        const el = document.getElementById('edit-find-logged-datetime-value');
+//        if (el) el.textContent = find.dateCreated ? new Date(find.dateCreated).toLocaleString() : 'Not recorded';
+//    } catch(e) {}
+//}
+// [DEADCODE-FAVOURITES-P1 END: openEditFavouriteModal]
 
-    expandedFavouriteDeleteId = null;
-    expandedFavouriteEditId   = findId;
-    render();
-
-    // Populate fields after render
-    const form = document.getElementById('edit-find-form');
-    if (!form) return;
-
-    form['findId'].value          = find.id;
-    form['findDescription'].value = find.description || '';
-    form['findType'].value        = find.type || 'Unknown';
-    form['findCoords'].value      = find.coordinates || '';
-    form['findAccuracy'].value    = find.accuracy || '';
-
-    if (form['findIdentification'])   form['findIdentification'].value  = find.notes || find.identification || '';
-    // Set star rating and highlight
-    const _fRatingVal = find.rating ? String(find.rating) : '';
-    document.querySelectorAll('#edit-find-form input[name="findRating"]').forEach(r => {
-        r.checked = r.value === _fRatingVal;
-        const span = r.nextElementSibling;
-        if (span) {
-            if (r.value === _fRatingVal && _fRatingVal) {
-                span.style.borderColor = '#16a34a';
-                span.style.color = '#16a34a';
-                span.style.backgroundColor = '#f0fdf4';
-            } else {
-                span.style.borderColor = '#e5e7eb';
-                span.style.color = '#9ca3af';
-                span.style.backgroundColor = '';
-            }
-        }
-    });
-
-    try {
-        if (Array.isArray(find.photos) && find.photos.length > 0) {
-            const first = find.photos[0];
-            currentEditFavouritePhotos = isIndexedDbPhotoRef(first)
-                ? await loadPhotoUrlsFromRefs(find.photos)
-                : find.photos.slice();
-        } else if (find.findPhotoData) {
-            currentEditFavouritePhotos = [find.findPhotoData];
-        } else if (find.placePhotoData) {
-            currentEditFavouritePhotos = [find.placePhotoData];
-        } else if (find.photoData) {
-            currentEditFavouritePhotos = [find.photoData];
-        } else {
-            currentEditFavouritePhotos = [];
-        }
-    } catch(e) {
-        console.error('Error preparing edit favourite photos:', e);
-        currentEditFavouritePhotos = [];
-    }
-
-    updateEditFavouritePhotoPreview();
-    attachFormSubmitHandler('edit-find-form', handleEditFavouriteSubmit);
-
-    // Set logged date
-    try {
-        const el = document.getElementById('edit-find-logged-datetime-value');
-        if (el) el.textContent = find.dateCreated ? new Date(find.dateCreated).toLocaleString() : 'Not recorded';
-    } catch(e) {}
-}
-
-function closeEditFavouriteModal() {
-    expandedFavouriteEditId = null;
-    render();
-}
+// [DEADCODE-FAVOURITES-P1 START: closeEditFavouriteModal] -- unreachable, see conversation notes
+//function closeEditFavouriteModal() {
+//    expandedFavouriteEditId = null;
+//    render();
+//}
+// [DEADCODE-FAVOURITES-P1 END: closeEditFavouriteModal]
 
 /** Open inline delete confirm for a find. */
-function openInlineFavouriteDelete(findId) {
-    expandedFavouriteEditId   = null;
-    expandedFavouriteDeleteId = findId;
-    render();
-}
+// [DEADCODE-FAVOURITES-P1 START: openInlineFavouriteDelete] -- unreachable, see conversation notes
+//function openInlineFavouriteDelete(findId) {
+//    expandedFavouriteEditId   = null;
+//    expandedFavouriteDeleteId = findId;
+//    render();
+//}
+// [DEADCODE-FAVOURITES-P1 END: openInlineFavouriteDelete]
 
 /** Cancel inline find delete. */
-function cancelInlineFavouriteDelete() {
-    expandedFavouriteDeleteId = null;
-    render();
-}
+// [DEADCODE-FAVOURITES-P1 START: cancelInlineFavouriteDelete] -- unreachable, see conversation notes
+//function cancelInlineFavouriteDelete() {
+//    expandedFavouriteDeleteId = null;
+//    render();
+//}
+// [DEADCODE-FAVOURITES-P1 END: cancelInlineFavouriteDelete]
 
 /** Confirm and execute inline find delete. */
-async function confirmInlineFavouriteDelete(findId) {
-    expandedFavouriteDeleteId = null;
-    const ok = await deleteFavouritePermanently(findId);
-    if (ok) render();
-}
+// [DEADCODE-FAVOURITES-P1 START: confirmInlineFavouriteDelete] -- unreachable, see conversation notes
+//async function confirmInlineFavouriteDelete(findId) {
+//    expandedFavouriteDeleteId = null;
+//    const ok = await deleteFavouritePermanently(findId);
+//    if (ok) render();
+//}
+// [DEADCODE-FAVOURITES-P1 END: confirmInlineFavouriteDelete]
 
 function openEditRouteModal(routeId, options = {}) {
     const found = findRouteById(routeId);
@@ -7816,106 +7842,110 @@ importedMap.mapPhotoData = '';
     }
 }
 
-    async function handleEditFavouriteSubmit(event) {
-    event.preventDefault();
-    const form = event.target;
-
-    const id = form['findId'].value;
-    const find = favourites.find(f => f.id === id);
-    if (!find) {
-        showMessage('Favourite not found.', 'error');
-        closeEditFavouriteModal();
-        return;
-    }
-
-    const desc = form['findDescription'].value.trim();
-    if (!desc) {
-        showMessage('Description is required.', 'error');
-        return;
-    }
-
-    // Core fields
-    find.description = desc;
-    find.type        = form['findType'].value || 'Unknown';
-    // rating handled below via radio
-    find.coordinates = form['findCoords'].value.trim();
-    find.accuracy    = form['findAccuracy'].value.trim();
-
-
-    // New optional fields (Favourite data model v1)
-    if (form['findIdentification'])   find.notes = (form['findIdentification'].value || '').trim();
-    const _fRatingChecked = form.querySelector('input[name="findRating"]:checked');
-    find.rating = _fRatingChecked ? _fRatingChecked.value : '';
-    // --- Photos: read JSON array from hidden field, then save into IndexedDB ---
-    let photosDataUrls = [];
-    if (form['findPhotoData']) {
-        const raw = form['findPhotoData'].value;
-
-        if (raw) {
-            try {
-                const temp = JSON.parse(raw);
-                if (Array.isArray(temp)) {
-                    photosDataUrls = temp.filter(p => typeof p === 'string' && p.length > 0);
-                } else if (typeof temp === 'string' && temp.length > 0) {
-                    photosDataUrls = [temp];
-                }
-            } catch (e) {
-                // If it's not valid JSON, fall back to treating it as a single URL
-                if (typeof raw === 'string' && raw.length > 0) {
-                    photosDataUrls = [raw];
-                }
-            }
-        }
-    }
-
-    let photoRefs = [];
-    try {
-        photoRefs = await saveDataUrlsAsPhotoRefs(photosDataUrls);
-    } catch (e) {
-        console.error('Error saving edited find photos to IndexedDB:', e);
-        photoRefs = [];
-    }
-
-    const primaryDataUrl = photosDataUrls[0] || '';
-    const primaryRef     = photoRefs[0] || '';
-
-    // Store new IndexedDB-backed structure
-    find.photos          = photoRefs;
-    find.findPhotoRef    = primaryRef;
-    // Clear ALL legacy base64 fields — IDB refs are now the source of truth.
-    // If IDB save failed (photoRefs empty), keep the first photo as a base64 fallback.
-    find.findPhotoData   = photoRefs.length > 0 ? '' : primaryDataUrl;
-    find.placePhotoData = '';
-    find.photoData       = '';
-
-    find.updatedAt = Date.now();
-
-    saveFavouritesToLocalStorage();
-
-    closeEditFavouriteModal();
-    showMessage('Favourite updated.', 'success');
-    render();
-}
+// [DEADCODE-FAVOURITES-P1 START: handleEditFavouriteSubmit] -- unreachable, see conversation notes
+//    async function handleEditFavouriteSubmit(event) {
+//    event.preventDefault();
+//    const form = event.target;
+//
+//    const id = form['findId'].value;
+//    const find = favourites.find(f => f.id === id);
+//    if (!find) {
+//        showMessage('Favourite not found.', 'error');
+//        closeEditFavouriteModal();
+//        return;
+//    }
+//
+//    const desc = form['findDescription'].value.trim();
+//    if (!desc) {
+//        showMessage('Description is required.', 'error');
+//        return;
+//    }
+//
+//    // Core fields
+//    find.description = desc;
+//    find.type        = form['findType'].value || 'Unknown';
+//    // rating handled below via radio
+//    find.coordinates = form['findCoords'].value.trim();
+//    find.accuracy    = form['findAccuracy'].value.trim();
+//
+//
+//    // New optional fields (Favourite data model v1)
+//    if (form['findIdentification'])   find.notes = (form['findIdentification'].value || '').trim();
+//    const _fRatingChecked = form.querySelector('input[name="findRating"]:checked');
+//    find.rating = _fRatingChecked ? _fRatingChecked.value : '';
+//    // --- Photos: read JSON array from hidden field, then save into IndexedDB ---
+//    let photosDataUrls = [];
+//    if (form['findPhotoData']) {
+//        const raw = form['findPhotoData'].value;
+//
+//        if (raw) {
+//            try {
+//                const temp = JSON.parse(raw);
+//                if (Array.isArray(temp)) {
+//                    photosDataUrls = temp.filter(p => typeof p === 'string' && p.length > 0);
+//                } else if (typeof temp === 'string' && temp.length > 0) {
+//                    photosDataUrls = [temp];
+//                }
+//            } catch (e) {
+//                // If it's not valid JSON, fall back to treating it as a single URL
+//                if (typeof raw === 'string' && raw.length > 0) {
+//                    photosDataUrls = [raw];
+//                }
+//            }
+//        }
+//    }
+//
+//    let photoRefs = [];
+//    try {
+//        photoRefs = await saveDataUrlsAsPhotoRefs(photosDataUrls);
+//    } catch (e) {
+//        console.error('Error saving edited find photos to IndexedDB:', e);
+//        photoRefs = [];
+//    }
+//
+//    const primaryDataUrl = photosDataUrls[0] || '';
+//    const primaryRef     = photoRefs[0] || '';
+//
+//    // Store new IndexedDB-backed structure
+//    find.photos          = photoRefs;
+//    find.findPhotoRef    = primaryRef;
+//    // Clear ALL legacy base64 fields — IDB refs are now the source of truth.
+//    // If IDB save failed (photoRefs empty), keep the first photo as a base64 fallback.
+//    find.findPhotoData   = photoRefs.length > 0 ? '' : primaryDataUrl;
+//    find.placePhotoData = '';
+//    find.photoData       = '';
+//
+//    find.updatedAt = Date.now();
+//
+//    saveFavouritesToLocalStorage();
+//
+//    closeEditFavouriteModal();
+//    showMessage('Favourite updated.', 'success');
+//    render();
+//}
+// [DEADCODE-FAVOURITES-P1 END: handleEditFavouriteSubmit]
         
-function deleteFavourite(findId) {
-    const find = favourites.find(f => f && f.id === findId);
-    if (!find) {
-        showMessage('Favourite not found.', 'error');
-        return;
-    }
-
-    const executeDelete = async () => {
-        const ok = await deleteFavouritePermanently(findId);
-        if (ok) render();
-    };
-
-    showConfirmationModal(
-        `Confirm Delete Favourite: ${find.description || 'this find'}`,
-        `Are you sure you want to permanently delete this find?<br>
-         <span class="text-sm text-gray-600">This will also delete any IndexedDB photos linked ONLY to this find. This cannot be undone.</span>`,
-        executeDelete
-    );
-}
+// [DEADCODE-FAVOURITES-P1 START: deleteFavourite] -- unreachable, see conversation notes
+//function deleteFavourite(findId) {
+//    const find = favourites.find(f => f && f.id === findId);
+//    if (!find) {
+//        showMessage('Favourite not found.', 'error');
+//        return;
+//    }
+//
+//    const executeDelete = async () => {
+//        const ok = await deleteFavouritePermanently(findId);
+//        if (ok) render();
+//    };
+//
+//    showConfirmationModal(
+//        `Confirm Delete Favourite: ${find.description || 'this find'}`,
+//        `Are you sure you want to permanently delete this find?<br>
+//         <span class="text-sm text-gray-600">This will also delete any IndexedDB photos linked ONLY to this find. This cannot be undone.</span>`,
+//        executeDelete
+//    );
+//}
+// [DEADCODE-FAVOURITES-P1 END: deleteFavourite]
         /** Generates a simple unique ID. */
         function generateId() {
             return Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
@@ -7992,10 +8022,12 @@ function saveFavouritesToLocalStorage() {
     // No-op: favourites are now stored as place.favourite = true in map.targets
 }
 
-function createFavouriteFromPlace(place, map) {
-    // No-op: use place.favourite = true instead
-    return true;
-}
+// [DEADCODE-FAVOURITES-P1 START: createFavouriteFromPlace] -- unreachable, see conversation notes
+//function createFavouriteFromPlace(place, map) {
+//    // No-op: use place.favourite = true instead
+//    return true;
+//}
+// [DEADCODE-FAVOURITES-P1 END: createFavouriteFromPlace]
 
 function saveMapsToLocalStorage() {
     try {
@@ -11172,55 +11204,57 @@ let refsForGallery = [];
     openPhotoGallery(photos, 0);
 }
 // Also async, to be ready for IndexedDB-backed find photos
-async function openFavouritePhotoGallery(findId) {
-    const find = favourites.find(f => f.id === findId);
-    if (!find) {
-        showMessage('Favourite not found.', 'error');
-        return;
-    }
-
-    let photos = [];
-    let refsForGallery = [];
-
-    if (Array.isArray(find.photos) && find.photos.length) {
-        const first = find.photos[0];
-
-        if (isIndexedDbPhotoRef(first)) {
-            try {
-                const aligned = await loadPhotoUrlsAndRefsAligned(find.photos);
-                photos = aligned.urls;
-                refsForGallery = aligned.refs;
-            } catch (e) {
-                console.error('Error loading find photos from IndexedDB:', e);
-                photos = [];
-                refsForGallery = [];
-            }
-        } else {
-            // Old style: direct data URLs
-            photos = find.photos.slice();
-            refsForGallery = find.photos.slice();
-        }
-    } else if (find.findPhotoData || find.placePhotoData || find.photoData) {
-        const basePhoto = find.findPhotoData || find.placePhotoData || find.photoData;
-        if (basePhoto) {
-            photos = [basePhoto];
-            refsForGallery = [basePhoto];
-        }
-    }
-
-    if (!photos.length) {
-        showMessage('This find has no photos yet.', 'info');
-        return;
-    }
-
-    // Without setting these, a delete tapped from inside this gallery would
-    // act on whatever place/map gallery was last open instead of this find.
-    currentGalleryPhotoRefs = refsForGallery;
-    currentGalleryPlaceId = null;
-    currentGalleryFindId = findId;
-    currentGalleryMapId = find.mapId || null;
-    openPhotoGallery(photos, 0);
-}
+// [DEADCODE-FAVOURITES-P1 START: openFavouritePhotoGallery] -- unreachable, see conversation notes
+//async function openFavouritePhotoGallery(findId) {
+//    const find = favourites.find(f => f.id === findId);
+//    if (!find) {
+//        showMessage('Favourite not found.', 'error');
+//        return;
+//    }
+//
+//    let photos = [];
+//    let refsForGallery = [];
+//
+//    if (Array.isArray(find.photos) && find.photos.length) {
+//        const first = find.photos[0];
+//
+//        if (isIndexedDbPhotoRef(first)) {
+//            try {
+//                const aligned = await loadPhotoUrlsAndRefsAligned(find.photos);
+//                photos = aligned.urls;
+//                refsForGallery = aligned.refs;
+//            } catch (e) {
+//                console.error('Error loading find photos from IndexedDB:', e);
+//                photos = [];
+//                refsForGallery = [];
+//            }
+//        } else {
+//            // Old style: direct data URLs
+//            photos = find.photos.slice();
+//            refsForGallery = find.photos.slice();
+//        }
+//    } else if (find.findPhotoData || find.placePhotoData || find.photoData) {
+//        const basePhoto = find.findPhotoData || find.placePhotoData || find.photoData;
+//        if (basePhoto) {
+//            photos = [basePhoto];
+//            refsForGallery = [basePhoto];
+//        }
+//    }
+//
+//    if (!photos.length) {
+//        showMessage('This find has no photos yet.', 'info');
+//        return;
+//    }
+//
+//    // Without setting these, a delete tapped from inside this gallery would
+//    // act on whatever place/map gallery was last open instead of this find.
+//    currentGalleryPhotoRefs = refsForGallery;
+//    currentGalleryPlaceId = null;
+//    currentGalleryFindId = findId;
+//    currentGalleryMapId = find.mapId || null;
+//    openPhotoGallery(photos, 0);
+//}
+// [DEADCODE-FAVOURITES-P1 END: openFavouritePhotoGallery]
 function openPhotoGallery(photos, startIndex) {
     if (!Array.isArray(photos) || !photos.length) return;
 
@@ -12127,73 +12161,81 @@ function openEditPlacePhotoGallery(startIndex) {
 
 // --- EDIT FIND PHOTO HELPERS ---
 
-function triggerEditFavouritePhotoInput() {
-    triggerPhotoInput('edit-find-photo-input');
-}
+// [DEADCODE-FAVOURITES-P1 START: triggerEditFavouritePhotoInput] -- unreachable, see conversation notes
+//function triggerEditFavouritePhotoInput() {
+//    triggerPhotoInput('edit-find-photo-input');
+//}
+// [DEADCODE-FAVOURITES-P1 END: triggerEditFavouritePhotoInput]
 
-function removeEditFavouritePhoto(index) {
-    if (!Array.isArray(currentEditFavouritePhotos)) return;
-    currentEditFavouritePhotos.splice(index, 1);
-    updateEditFavouritePhotoPreview();
-}
+// [DEADCODE-FAVOURITES-P1 START: removeEditFavouritePhoto] -- unreachable, see conversation notes
+//function removeEditFavouritePhoto(index) {
+//    if (!Array.isArray(currentEditFavouritePhotos)) return;
+//    currentEditFavouritePhotos.splice(index, 1);
+//    updateEditFavouritePhotoPreview();
+//}
+// [DEADCODE-FAVOURITES-P1 END: removeEditFavouritePhoto]
 
-function openEditFavouritePhotoGallery(startIndex) {
-    if (!currentEditFavouritePhotos.length) return;
-    openPhotoGallery(currentEditFavouritePhotos, startIndex || 0);
-}
+// [DEADCODE-FAVOURITES-P1 START: openEditFavouritePhotoGallery] -- unreachable, see conversation notes
+//function openEditFavouritePhotoGallery(startIndex) {
+//    if (!currentEditFavouritePhotos.length) return;
+//    openPhotoGallery(currentEditFavouritePhotos, startIndex || 0);
+//}
+// [DEADCODE-FAVOURITES-P1 END: openEditFavouritePhotoGallery]
 
         
 // === MULTI-PHOTO SUPPORT FOR EDIT FIND MODAL ===
 
-function updateEditFavouritePhotoPreview() {
-    const statusSpan  = document.getElementById('edit-find-photo-status');
-    const wrapper     = document.getElementById('edit-find-photo-preview-wrapper');
-    const hiddenField = document.getElementById('edit-find-photo-data');
-
-    if (!statusSpan || !wrapper || !hiddenField) return;
-
-    const photos = currentEditFavouritePhotos || [];
-
-    // Store the array as JSON in the hidden field
-    hiddenField.value = JSON.stringify(photos);
-
-    if (!photos.length) {
-        statusSpan.textContent = 'No photo captured yet.';
-        wrapper.classList.add('hidden');
-        wrapper.innerHTML = '';
-        return;
-    }
-
-    statusSpan.textContent = photos.length === 1
-        ? '1 photo selected.'
-        : `${photos.length} photos selected.`;
-
-    const thumbsHtml = photos.map((src, index) => `
-        <div class="relative mb-2 flex justify-center">
-            <img
-                src="${src}"
-                alt="Favourite photo ${index + 1}"
-                class="w-11/12 max-h-64 object-cover rounded-lg border border-gray-300 cursor-pointer"
-                onclick="openEditFavouritePhotoGallery(${index})"
-            />
-            <button
-                type="button"
-                class="absolute top-2 right-6 bg-black bg-opacity-60 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs"
-                onclick="event.stopPropagation(); removeEditFavouritePhoto(${index});"
-                title="Delete photo"
-            >
-                <i class="fas fa-trash-alt"></i>
-            </button>
-        </div>
-    `).join('');
-
-    wrapper.innerHTML = `
-        <div class="flex flex-col items-center w-full">
-            ${thumbsHtml}
-        </div>
-    `;
-    wrapper.classList.remove('hidden');
-}
+// [DEADCODE-FAVOURITES-P1 START: updateEditFavouritePhotoPreview] -- unreachable, see conversation notes
+//function updateEditFavouritePhotoPreview() {
+//    const statusSpan  = document.getElementById('edit-find-photo-status');
+//    const wrapper     = document.getElementById('edit-find-photo-preview-wrapper');
+//    const hiddenField = document.getElementById('edit-find-photo-data');
+//
+//    if (!statusSpan || !wrapper || !hiddenField) return;
+//
+//    const photos = currentEditFavouritePhotos || [];
+//
+//    // Store the array as JSON in the hidden field
+//    hiddenField.value = JSON.stringify(photos);
+//
+//    if (!photos.length) {
+//        statusSpan.textContent = 'No photo captured yet.';
+//        wrapper.classList.add('hidden');
+//        wrapper.innerHTML = '';
+//        return;
+//    }
+//
+//    statusSpan.textContent = photos.length === 1
+//        ? '1 photo selected.'
+//        : `${photos.length} photos selected.`;
+//
+//    const thumbsHtml = photos.map((src, index) => `
+//        <div class="relative mb-2 flex justify-center">
+//            <img
+//                src="${src}"
+//                alt="Favourite photo ${index + 1}"
+//                class="w-11/12 max-h-64 object-cover rounded-lg border border-gray-300 cursor-pointer"
+//                onclick="openEditFavouritePhotoGallery(${index})"
+//            />
+//            <button
+//                type="button"
+//                class="absolute top-2 right-6 bg-black bg-opacity-60 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs"
+//                onclick="event.stopPropagation(); removeEditFavouritePhoto(${index});"
+//                title="Delete photo"
+//            >
+//                <i class="fas fa-trash-alt"></i>
+//            </button>
+//        </div>
+//    `).join('');
+//
+//    wrapper.innerHTML = `
+//        <div class="flex flex-col items-center w-full">
+//            ${thumbsHtml}
+//        </div>
+//    `;
+//    wrapper.classList.remove('hidden');
+//}
+// [DEADCODE-FAVOURITES-P1 END: updateEditFavouritePhotoPreview]
 
         // --- NEW SURVEY PHOTO HELPERS ---
 // ================================
@@ -12314,40 +12356,42 @@ async function handleNewMapPhotoSelected(event) {
     updateNewMapPhotoPreview();
 }
 
-async function handleEditFavouritePhotoSelected(event) {
-    const files = Array.from(event.target.files || []);
-    if (!files.length) return;
-
-    // Allow selecting the same file again later
-    event.target.value = '';
-
-    const findIdEl = document.getElementById('edit-find-id');
-    const editingFind = findIdEl && findIdEl.value
-        ? (Array.isArray(favourites) ? favourites.find(f => String(f.id) === String(findIdEl.value)) : null)
-        : null;
-    const findMap = editingFind && editingFind.mapId
-        ? (Array.isArray(maps) ? maps.find(s => String(s.id) === String(editingFind.mapId)) : null)
-        : null;
-    const descEl = document.getElementById('edit-find-description');
-    const context = {
-        mapName: findMap ? findMap.name : '',
-        placeName: descEl ? descEl.value.trim() : (editingFind ? editingFind.description : '')
-    };
-
-    try {
-        for (const file of files) {
-            const resized = await fileToResizedDataUrl(file, context);
-            if (typeof resized === 'string' && resized.startsWith('data:image/')) {
-                currentEditFavouritePhotos.push(resized);
-            }
-        }
-    } catch (e) {
-        console.error('Error reading/resizing find photo file:', e);
-        showMessage('One or more photos could not be processed.', 'error');
-    }
-
-    updateEditFavouritePhotoPreview();
-}
+// [DEADCODE-FAVOURITES-P1 START: handleEditFavouritePhotoSelected] -- unreachable, see conversation notes
+//async function handleEditFavouritePhotoSelected(event) {
+//    const files = Array.from(event.target.files || []);
+//    if (!files.length) return;
+//
+//    // Allow selecting the same file again later
+//    event.target.value = '';
+//
+//    const findIdEl = document.getElementById('edit-find-id');
+//    const editingFind = findIdEl && findIdEl.value
+//        ? (Array.isArray(favourites) ? favourites.find(f => String(f.id) === String(findIdEl.value)) : null)
+//        : null;
+//    const findMap = editingFind && editingFind.mapId
+//        ? (Array.isArray(maps) ? maps.find(s => String(s.id) === String(editingFind.mapId)) : null)
+//        : null;
+//    const descEl = document.getElementById('edit-find-description');
+//    const context = {
+//        mapName: findMap ? findMap.name : '',
+//        placeName: descEl ? descEl.value.trim() : (editingFind ? editingFind.description : '')
+//    };
+//
+//    try {
+//        for (const file of files) {
+//            const resized = await fileToResizedDataUrl(file, context);
+//            if (typeof resized === 'string' && resized.startsWith('data:image/')) {
+//                currentEditFavouritePhotos.push(resized);
+//            }
+//        }
+//    } catch (e) {
+//        console.error('Error reading/resizing find photo file:', e);
+//        showMessage('One or more photos could not be processed.', 'error');
+//    }
+//
+//    updateEditFavouritePhotoPreview();
+//}
+// [DEADCODE-FAVOURITES-P1 END: handleEditFavouritePhotoSelected]
         
 async function showEditPlaceModal(placeId, mapId) {
     // Removed — editing is now done inline on the place card
@@ -12802,19 +12846,23 @@ function togglePlaceCard(placeId) {
     render();
 }
 
-function toggleFavouriteCard(findId) {
-    if (expandedFavouriteIds.has(findId)) {
-        expandedFavouriteIds.delete(findId);
-    } else {
-        expandedFavouriteIds.add(findId);
-    }
-    render();
-}
+// [DEADCODE-FAVOURITES-P1 START: toggleFavouriteCard] -- unreachable, see conversation notes
+//function toggleFavouriteCard(findId) {
+//    if (expandedFavouriteIds.has(findId)) {
+//        expandedFavouriteIds.delete(findId);
+//    } else {
+//        expandedFavouriteIds.add(findId);
+//    }
+//    render();
+//}
+// [DEADCODE-FAVOURITES-P1 END: toggleFavouriteCard]
 
-function toggleFavouritesFilter() {
-    favouritesFilterExpanded = !favouritesFilterExpanded;
-    render();
-}
+// [DEADCODE-FAVOURITES-P1 START: toggleFavouritesFilter] -- unreachable, see conversation notes
+//function toggleFavouritesFilter() {
+//    favouritesFilterExpanded = !favouritesFilterExpanded;
+//    render();
+//}
+// [DEADCODE-FAVOURITES-P1 END: toggleFavouritesFilter]
 
 function toggleMapPanel(panel) {
     if (panel === 'layers') {
@@ -14504,579 +14552,581 @@ const filterBarHtml = `
             `;
         }
 
-function renderFavouritesPage() {
-    const hasFavourites = Array.isArray(favourites) && favourites.length > 0;
-
-    // Build distinct Type options
-    const typeSet = new Set();
-    favourites.forEach(f => {
-        if (f.type) typeSet.add(f.type);
-    });
-    const typeOptions = Array.from(typeSet).sort();
-
-    // Build distinct Map options — merge from the maps array AND from favourites,
-    // so maps with no favourites yet (e.g. demo map before first GPS open) still appear.
-    const mapMap = new Map();
-
-    // First, add every non-deleted map from the maps array
-    if (Array.isArray(maps)) {
-        maps.forEach(s => {
-            if (s && !s.deleted && s.id) {
-                mapMap.set(String(s.id), s.name || 'Unnamed map');
-            }
-        });
-    }
-
-    // Then overlay any mapName stored on favourites (in case it differs from current map.name)
-    favourites.forEach(f => {
-        const id   = f.mapId   ? String(f.mapId) : 'unknown';
-        const name = f.mapName || 'Unknown map';
-        if (!mapMap.has(id)) {
-            mapMap.set(id, name);
-        }
-    });
-    const mapOptions = Array.from(mapMap.entries())
-        .map(([id, name]) => ({ id, name }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-    // Build distinct Logged Date options (based on find.dateCreated/time/createdAt/dateLastChanged)
-    const dateMap = new Map(); // key: YYYY-MM-DD, value: DD/MM/YY
-    const getFavouriteTimestamp = (f) => {
-        const t = f?.dateCreated ?? f?.createdAt ?? f?.time ?? f?.dateLastChanged ?? 0;
-        return (typeof t === 'number' && isFinite(t) && t > 0) ? t : 0;
-    };
-    const toDateKeyLocal = (ts) => {
-        if (!ts) return '';
-        const d = new Date(ts);
-        if (!isFinite(d)) return '';
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
-    };
-    const toDateLabelGb = (ts) => {
-        if (!ts) return '';
-        try {
-            return new Date(ts).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
-        } catch {
-            return '';
-        }
-    };
-
-    favourites.forEach(f => {
-        const ts = getFavouriteTimestamp(f);
-        const key = toDateKeyLocal(ts);
-        if (!key) return;
-        if (!dateMap.has(key)) {
-            const label = toDateLabelGb(ts) || key;
-            dateMap.set(key, label);
-        }
-    });
-
-    const dateOptions = Array.from(dateMap.entries())
-        .map(([key, label]) => ({ key, label }))
-        .sort((a, b) => (a.key < b.key ? 1 : -1)); // newest first
-
-    // Apply filters
-    const filteredFavourites = favourites.filter(f => {
-        // Text search (in several fields)
-        if (favouritesFilter.query) {
-            const q = favouritesFilter.query.toLowerCase();
-            const haystack = [
-                f.description,
-                f.category,
-                f.rating,
-                f.type,
-                f.mapName,
-                f.mapDescription
-            ]
-                .filter(Boolean)
-                .join(' ')
-                .toLowerCase();
-
-            if (!haystack.includes(q)) return false;
-        }
-
-        // Type filter
-        if (favouritesFilter.type !== 'All') {
-            const t = f.type || 'Unknown';
-            if (t !== favouritesFilter.type) return false;
-        }
-
-        // Map filter
-        if (favouritesFilter.mapId !== 'All') {
-            const id = f.mapId ? String(f.mapId) : 'unknown';
-            if (id !== String(favouritesFilter.mapId)) return false;
-        }
-
-
-        // Date filter (Logged date)
-        if (favouritesFilter.date && favouritesFilter.date !== 'All') {
-            const ts = (f?.dateCreated ?? f?.createdAt ?? f?.time ?? f?.dateLastChanged ?? 0);
-            const key = (typeof ts === 'number' && isFinite(ts) && ts > 0)
-                ? (() => { const d = new Date(ts); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; })()
-                : '';
-            if (!key || key !== favouritesFilter.date) return false;
-        }
-        return true;
-    });
-
-    const totalCount    = favourites.length;
-    const filteredCount = filteredFavourites.length;
-
-    const cardsHtml = filteredFavourites.map(find => {
-        const tsRaw = (find.dateCreated ?? find.createdAt ?? find.time ?? find.dateLastChanged ?? null);
-        let ts = null;
-        if (typeof tsRaw === 'number') {
-            ts = tsRaw;
-        } else if (typeof tsRaw === 'string' && tsRaw.trim()) {
-            const parsed = Date.parse(tsRaw);
-            if (!Number.isNaN(parsed)) ts = parsed;
-        }
-
-        const dateText = ts
-            ? new Date(ts).toLocaleString('en-GB', {
-                day: '2-digit',
-                month: '2-digit',
-                year: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-              })
-            : 'Not recorded';
-        const typeLabel = find.type || 'Unknown';
-
-        // --- Thumbnail + photo count (IndexedDB-aware, like Places) ---
-        let thumbRef    = '';
-        let photosCount = 0;
-
-        if (Array.isArray(find.photos) && find.photos.length) {
-            // New style: array of refs or data URLs
-            thumbRef    = find.photos[0];
-            photosCount = find.photos.length;
-        } else if (find.findPhotoData || find.placePhotoData || find.photoData) {
-            // Legacy / fallback
-            thumbRef    = find.findPhotoData || find.placePhotoData || find.photoData;
-            photosCount = thumbRef ? 1 : 0;
-        }
-
-        const photoHtml = thumbRef
-            ? `
-                <div class="mt-3">
-                    <div class="flex justify-center">
-                        <img
-                            src=""
-                            data-photo-ref="${thumbRef}"
-                            data-photo-kind="find"
-                            data-find-id="${find.id}"
-                            alt="Favourite photo"
-                            class="w-11/12 h-auto object-contain rounded-lg border border-gray-200 cursor-pointer"
-                            onclick="openFavouritePhotoGallery('${find.id}')"
-                        />
-                    </div>
-                    ${
-                        photosCount > 1
-                            ? `<p class="mt-1 text-xs text-gray-600 text-center">
-                                   ${photosCount} photos — tap to view gallery.
-                               </p>`
-                            : ''
-                    }
-                </div>
-              `
-            : '';
-
-        const coordsText = find.coordinates || 'No GPS logged';
-        const accText    = find.accuracy   || 'N/A';
-
-        const extraLines = [];
-        if (find.notes) extraLines.push(`<div><span class="font-semibold">ID:</span> ${escapeHtml(find.notes)}</div>`);
-        if (find.type) extraLines.push(`<div><span class="font-semibold">Type:</span> ${escapeHtml(find.type)}</div>`);
-        if (find.rating) extraLines.push(`<div><span class="font-semibold">Rating:</span> ${escapeHtml(find.rating)}</div>`);
-        if (find.theme) extraLines.push(`<div><span class="font-semibold">Period:</span> ${escapeHtml(find.theme)}</div>`);
-        if (find.weightG) extraLines.push(`<div><span class="font-semibold">Weight:</span> ${escapeHtml(find.weightG)} g</div>`);
-        if (find.dimensionsMm) extraLines.push(`<div><span class="font-semibold">Size:</span> ${escapeHtml(find.dimensionsMm)}</div>`);
-        if (find.notes) extraLines.push(`<div><span class="font-semibold">Kept:</span> ${escapeHtml(find.notes)}</div>`);
-
-        if (find.visitStatus) extraLines.push(`<div><span class="font-semibold">Status:</span> ${escapeHtml(find.visitStatus)}</div>`);
-        const extraHtml = extraLines.length ? `<div class="mt-3 text-xs text-gray-700 space-y-1">${extraLines.join('')}</div>` : '';
-
-        const isExpanded = expandedFavouriteIds.has(find.id);
-        const chevron = isExpanded
-            ? `<i class="fas fa-chevron-up text-gray-400"></i>`
-            : `<i class="fas fa-chevron-down text-gray-400"></i>`;
-
-        return `
-            <div class="bg-white rounded-xl shadow-sm mb-3 border border-gray-200 overflow-hidden">
-
-                <!-- Always-visible header — tap to expand/collapse -->
-                <div class="flex items-center justify-between p-4 cursor-pointer select-none"
-                     onclick="toggleFavouriteCard('${find.id}')">
-                    <div class="min-w-0 flex-1">
-                        <h3 class="text-lg font-bold text-primary truncate">
-                            ${find.description || 'Unnamed Favourite'}
-                        </h3>
-                        <p class="text-xs text-gray-500 mt-0.5">
-                            ${find.mapName || 'Unknown map'} · ${dateText}
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-2 ml-2 flex-shrink-0">
-                        <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                            ${typeLabel}
-                        </span>
-                        ${chevron}
-                    </div>
-                </div>
-
-                <!-- Expandable body -->
-                ${isExpanded ? `
-                <div class="px-4 pb-4 border-t border-gray-100">
-
-                    ${photoHtml}
-
-                    ${extraHtml}
-
-                    <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-700">
-                        <div>
-                            <span class="font-semibold">Type:</span> ${find.type || '—'}
-                        </div>
-                        <div>
-                            <span class="font-semibold">Rating:</span> ${find.rating || '—'}
-                        </div>
-                        <div>
-                            <span class="font-semibold">Coords:</span>
-                            <span class="break-all">${coordsText}</span>
-                        </div>
-                        <div>
-                            <span class="font-semibold">Accuracy:</span> ${accText}
-                        </div>
-                    </div>
-
-                    <!-- Actions row: Edit / Delete -->
-                    <div class="mt-4 grid grid-cols-2 gap-2">
-                        <button
-                            type="button"
-                            onclick="openEditFavouriteModal('${find.id}')"
-                            class="w-full inline-flex items-center justify-center px-3 py-3 rounded-md
-                                   bg-purple-100 text-purple-800 hover:bg-purple-200
-                                   border border-purple-300
-                                   text-xs sm:text-sm font-semibold">
-                            Edit details
-                        </button>
-                        <button
-                            type="button"
-                            onclick="openInlineFavouriteDelete('${find.id}')"
-                            class="w-full inline-flex items-center justify-center px-3 py-3 rounded-md
-                                   bg-red-600 text-white hover:bg-red-700
-                                   text-xs sm:text-sm font-semibold">
-                            Delete Favourite
-                        </button>
-                    </div>
-
-                    ${expandedFavouriteDeleteId === find.id ? `
-                    <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <p class="text-sm text-gray-700 mb-3">Permanently delete <strong>${(find.description || 'this find').replace(/`/g, '')}</strong>? This cannot be undone.</p>
-                        <div class="flex gap-3">
-                            <button type="button" onclick="cancelInlineFavouriteDelete()"
-                                    class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>
-                            <button type="button" onclick="confirmInlineFavouriteDelete('${find.id}')"
-                                    class="flex-1 py-2 rounded-lg bg-red-600 text-white font-semibold text-sm hover:bg-red-700 shadow">Delete</button>
-                        </div>
-                    </div>
-                    ` : ''}
-
-                    ${expandedFavouriteEditId === find.id ? `
-                    <div class="mt-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <h4 class="text-base font-semibold text-gray-800 mb-1">Edit Favourite</h4>
-                        <p class="text-xs text-gray-500 mb-3">Logged: <span id="edit-find-logged-datetime-value" class="font-semibold text-gray-700">Not recorded</span></p>
-                        <form id="edit-find-form" class="space-y-3">
-                            <input type="hidden" id="edit-find-id" name="findId">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Description / Favourite Name</label>
-                                <textarea id="edit-find-description" name="findDescription" rows="3"
-                                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" required></textarea>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Favourite Photograph</label>
-                                <input type="file" id="edit-find-photo-input" accept="image/*;capture=camera" multiple class="hidden" onchange="handleEditFavouritePhotoSelected(event)">
-                                <input type="hidden" id="edit-find-photo-data" name="findPhotoData">
-                                <div class="flex items-center gap-3">
-                                    <button type="button" onclick="triggerEditFavouritePhotoInput()"
-                                            class="px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm font-semibold">
-                                        <i class="fas fa-camera mr-1"></i> Take / Choose Photo
-                                    </button>
-                                    <span id="edit-find-photo-status" class="text-xs text-gray-500">No photo captured yet.</span>
-                                </div>
-                                <div id="edit-find-photo-preview-wrapper" class="mt-2 hidden">
-                                    <img id="edit-find-photo-preview" class="w-full h-auto rounded-md border border-gray-300 object-cover" alt="Favourite photo preview">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Type</label>
-                                <select id="edit-find-type" name="findType" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                                    <option value="">— select type —</option>
-                <optgroup label="Access &amp; Navigation">
-                <option value="Bridge">Bridge</option>
-                <option value="Dead End">Dead End</option>
-                <option value="Gate">Gate</option>
-                <option value="One Way">One Way</option>
-                </optgroup>
-                <optgroup label="Accommodation">
-                <option value="Camping Barn">Camping Barn</option>
-                <option value="Campsite">Campsite</option>
-                <option value="Hostel">Hostel</option>
-                <option value="Hotel">Hotel</option>
-                </optgroup>
-                <optgroup label="Food &amp; Drink">
-                <option value="Bakery">Bakery</option>
-                <option value="Bar">Bar</option>
-                <option value="Café">Café</option>
-                <option value="Fast Food">Fast Food</option>
-                <option value="Pub">Pub</option>
-                <option value="Restaurant">Restaurant</option>
-                <option value="Shop">Shop</option>
-                <option value="Supermarket">Supermarket</option>
-                </optgroup>
-                <optgroup label="Nature &amp; Landscape">
-                <option value="Beach">Beach</option>
-                <option value="Cliff Edge">Cliff Edge</option>
-                <option value="Field">Field</option>
-                <option value="Forest / Wood">Forest / Wood</option>
-                <option value="Hill / Summit">Hill / Summit</option>
-                <option value="Lake / Reservoir">Lake / Reservoir</option>
-                <option value="Mountain">Mountain</option>
-                <option value="Moorland">Moorland</option>
-                <option value="Quarry">Quarry</option>
-                <option value="Standing Stones">Standing Stones</option>
-                <option value="River">River</option>
-                <option value="Stile">Stile</option>
-                <option value="Stream">Stream</option>
-                <option value="Trig Point">Trig Point</option>
-                <option value="Valley">Valley</option>
-                <option value="Viewpoint">Viewpoint</option>
-                <option value="Woods">Woods</option>
-                </optgroup>
-                <optgroup label="Places of Interest">
-                <option value="Castle / Ruins">Castle / Ruins</option>
-                <option value="Church / Chapel">Church / Chapel</option>
-                <option value="Cinema">Cinema</option>
-                <option value="City Centre">City Centre</option>
-<option value="Historic Site">Historic Site</option>
-                <option value="Museum">Museum</option>
-<option value="Old Town">Old Town</option>
-                <option value="Park">Park</option>
-                <option value="Playground">Playground</option>
-<option value="Shopping Centre / Mall">Shopping Centre / Mall</option>
-                <option value="Sports Field">Sports Field</option>
-<option value="Town Centre">Town Centre</option>
-<option value="Town Square">Town Square</option>
-                </optgroup>
-                <optgroup label="Services">
-                <option value="ATM">ATM</option>
-                <option value="Bank">Bank</option>
-                <option value="Dentist">Dentist</option>
-                <option value="Emergency Department">Emergency Department</option>
-                <option value="GP Surgery">GP Surgery</option>
-                <option value="Hospital">Hospital</option>
-                <option value="Information Point">Information Point</option>
-                <option value="Minor Injuries Unit">Minor Injuries Unit</option>
-                <option value="Pharmacy">Pharmacy</option>
-                <option value="Police Station">Police Station</option>
-                <option value="Public Toilet">Public Toilet</option>
-<option value="Town Hall">Town Hall</option>
-                </optgroup>
-                <optgroup label="Transport">
-                <option value="Airport">Airport</option>
-                <option value="Bus Stop">Bus Stop</option>
-                <option value="Ferry Terminal">Ferry Terminal</option>
-                <option value="Free Parking">Free Parking</option>
-                <option value="Long Stay Parking">Long Stay Parking</option>
-<option value="Metro / Underground">Metro / Underground</option>
-                <option value="Petrol Station">Petrol Station</option>
-                <option value="Short Stay Parking">Short Stay Parking</option>
-                <option value="Train Station">Train Station</option>
-                </optgroup>
-                <optgroup label="Other">
-                <option value="Something else">Something else</option>
-                </optgroup>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Rating</label>
-                                <div class="flex gap-2">
-                                    <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="1" class="sr-only" onclick="onStarRatingClick(this,'findRating')"><span class="block py-2 rounded-lg border-2 border-gray-300 text-gray-600 text-lg font-bold" style="transition:all 0.15s">★</span></label>
-                                    <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="2" class="sr-only" onclick="onStarRatingClick(this,'findRating')"><span class="block py-2 rounded-lg border-2 border-gray-300 text-gray-600 text-lg font-bold" style="transition:all 0.15s">★★</span></label>
-                                    <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="3" class="sr-only" onclick="onStarRatingClick(this,'findRating')"><span class="block py-2 rounded-lg border-2 border-gray-300 text-gray-600 text-lg font-bold" style="transition:all 0.15s">★★★</span></label>
-                                    <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="4" class="sr-only" onclick="onStarRatingClick(this,'findRating')"><span class="block py-2 rounded-lg border-2 border-gray-300 text-gray-600 text-lg font-bold" style="transition:all 0.15s">★★★★</span></label>
-                                    <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="5" class="sr-only" onclick="onStarRatingClick(this,'findRating')"><span class="block py-2 rounded-lg border-2 border-gray-300 text-gray-600 text-lg font-bold" style="transition:all 0.15s">★★★★★</span></label>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Notes</label>
-                                <input type="text" id="edit-find-notes" name="findIdentification"
-                                       class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" placeholder="Any additional notes about this favourite">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Coordinates</label>
-                                <input type="text" id="edit-find-coords" name="findCoords" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Accuracy</label>
-                                <input type="text" id="edit-find-accuracy" name="findAccuracy" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                            </div>
-                            <div class="flex gap-3 pt-2">
-                                <button type="button" onclick="closeEditFavouriteModal()"
-                                        class="flex-1 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300">Cancel</button>
-                                <button type="submit"
-                                        class="flex-1 py-2 text-white font-semibold rounded-lg shadow-md hover:opacity-90"
-                                        style="background-color: rgb(var(--color-secondary));">Save changes</button>
-                            </div>
-                        </form>
-                    </div>
-                    ` : ''}
-                    <!-- Row 2: Add Photo -->
-                    <div class="mt-2">
-                        <button type="button"
-                            class="w-full inline-flex items-center justify-center px-3 py-3 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 text-xs sm:text-sm font-semibold"
-                            onclick="triggerFavouritePhotoCapture('${find.id}')">
-                            <i class="fas fa-camera mr-1"></i> Add Photo
-                        </button>
-                    </div>
-                    <!-- Row 3: Share Favourite -->
-                    <div class="mt-2">
-                        <button type="button"
-                            class="w-full inline-flex items-center justify-center px-3 py-3 rounded-md bg-sky-600 text-white hover:bg-sky-700 text-xs sm:text-sm font-semibold"
-                            onclick="shareFavouriteAsHtml('${find.id}')">
-                            <i class="fas fa-share-alt mr-1"></i> Share Favourite
-                        </button>
-                        <p class="text-xs text-amber-700 mt-1 text-center"><i class="fas fa-exclamation-triangle mr-1"></i>Sharing includes your name, GPS location, and stamped photos.</p>
-                    </div>
-                </div>
-                ` : ''}
-            </div>
-        `;
-    }).join('');
-
-    const typesOptionsHtml = [
-        '<option value="All">All Types</option>',
-        ...typeOptions.map(t =>
-            `<option value="${t}" ${favouritesFilter.type === t ? 'selected' : ''}>${t}</option>`
-        )
-    ].join('');
-
-    const mapOptionsHtml = [
-        '<option value="All">All Maps</option>',
-        ...mapOptions.map(({ id, name }) =>
-            `<option value="${id}" ${favouritesFilter.mapId === id ? 'selected' : ''}>${name}</option>`
-        )
-    ].join('');
-
-    const dateOptionsHtml = [
-        '<option value="All">All Dates</option>',
-        ...dateOptions.map(d =>
-            `<option value="${d.key}" ${favouritesFilter.date === d.key ? 'selected' : ''}>${d.label}</option>`
-        )
-    ].join('');
-
-    return `
-        <div class="p-4">
-            <h2 class="text-3xl font-bold text-primary mb-2">Favourites</h2>
-            <p class="text-sm text-gray-600 mb-4">
-             ${
-                 hasFavourites
-                ? `Showing ${filteredCount} of ${totalCount} favourites.`
-                : 'No favourites have been saved yet.'
-                }
-
-            </p>
-
-            <div class="mb-4 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <!-- Filter panel header — tap to expand/collapse -->
-                <div class="flex items-center justify-between px-3 py-3 cursor-pointer select-none"
-                     onclick="toggleFavouritesFilter()">
-                    <div class="flex items-center gap-2 min-w-0">
-                        <i class="fas fa-filter text-gray-400 text-sm flex-shrink-0"></i>
-                        <span class="text-sm font-semibold text-gray-700">Search &amp; Filter</span>
-                        ${!favouritesFilterExpanded && (favouritesFilter.query || favouritesFilter.type !== 'All' || favouritesFilter.mapId !== 'All' || favouritesFilter.date !== 'All') ? `
-                        <span class="text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5 font-semibold">Active</span>
-                        ` : ''}
-                    </div>
-                    <i class="fas ${favouritesFilterExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400"></i>
-                </div>
-
-                <!-- Expandable filter body -->
-                ${favouritesFilterExpanded ? `
-                <div class="px-3 pb-3 border-t border-gray-100">
-                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center mt-3">
-                        <div class="flex-1">
-                            <label class="block text-xs font-semibold text-gray-600 mb-1" for="favourites-search-input">
-                                Search description / notes
-                            </label>
-                            <input
-                                id="favourites-search-input"
-                                type="text"
-                                class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                                placeholder="Search favourites..."
-                                value="${favouritesFilter.query || ''}"
-                            />
-                        </div>
-                        <div class="flex-1">
-                            <label class="block text-xs font-semibold text-gray-600 mb-1" for="favourites-map-select">
-                                Filter by map
-                            </label>
-                            <select
-                                id="favourites-map-select"
-                                class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                            >
-                                ${mapOptionsHtml}
-                            </select>
-                        </div>
-                        <div class="flex-1">
-                            <label class="block text-xs font-semibold text-gray-600 mb-1" for="favourites-type-select">
-                                Filter by type
-                            </label>
-                            <select
-                                id="favourites-type-select"
-                                class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                            >
-                                ${typesOptionsHtml}
-                            </select>
-                        </div>
-                        <div class="flex-1">
-                            <label class="block text-xs font-semibold text-gray-600 mb-1" for="favourites-date-select">
-                                Filter by date
-                            </label>
-                            <select
-                                id="favourites-date-select"
-                                class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                            >
-                                ${dateOptionsHtml}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mt-3 flex justify-end">
-                        <button
-                            id="clear-favourites-filters-btn"
-                            type="button"
-                            class="px-3 py-1 rounded-lg text-xs font-semibold border border-gray-300 text-gray-700 hover:bg-gray-100"
-                        >
-                            Clear filters
-                        </button>
-                    </div>
-                </div>
-                ` : ''}
-            </div>
-
-            <div id="favourites-list">
-                ${
-                    cardsHtml
-                        || (hasFavourites
-                            ? buildEmptyStateHtml('fa-heart', 'No matches', 'No favourites match your filters.')
-                            : buildEmptyStateHtml('fa-heart', 'No favourites yet', 'Tap the heart on any place to add it here.')
-                           )
-                }
-            </div>
-        </div>
-    `;
-}
+// [DEADCODE-FAVOURITES-P1 START: renderFavouritesPage] -- unreachable, see conversation notes
+//function renderFavouritesPage() {
+//    const hasFavourites = Array.isArray(favourites) && favourites.length > 0;
+//
+//    // Build distinct Type options
+//    const typeSet = new Set();
+//    favourites.forEach(f => {
+//        if (f.type) typeSet.add(f.type);
+//    });
+//    const typeOptions = Array.from(typeSet).sort();
+//
+//    // Build distinct Map options — merge from the maps array AND from favourites,
+//    // so maps with no favourites yet (e.g. demo map before first GPS open) still appear.
+//    const mapMap = new Map();
+//
+//    // First, add every non-deleted map from the maps array
+//    if (Array.isArray(maps)) {
+//        maps.forEach(s => {
+//            if (s && !s.deleted && s.id) {
+//                mapMap.set(String(s.id), s.name || 'Unnamed map');
+//            }
+//        });
+//    }
+//
+//    // Then overlay any mapName stored on favourites (in case it differs from current map.name)
+//    favourites.forEach(f => {
+//        const id   = f.mapId   ? String(f.mapId) : 'unknown';
+//        const name = f.mapName || 'Unknown map';
+//        if (!mapMap.has(id)) {
+//            mapMap.set(id, name);
+//        }
+//    });
+//    const mapOptions = Array.from(mapMap.entries())
+//        .map(([id, name]) => ({ id, name }))
+//        .sort((a, b) => a.name.localeCompare(b.name));
+//
+//    // Build distinct Logged Date options (based on find.dateCreated/time/createdAt/dateLastChanged)
+//    const dateMap = new Map(); // key: YYYY-MM-DD, value: DD/MM/YY
+//    const getFavouriteTimestamp = (f) => {
+//        const t = f?.dateCreated ?? f?.createdAt ?? f?.time ?? f?.dateLastChanged ?? 0;
+//        return (typeof t === 'number' && isFinite(t) && t > 0) ? t : 0;
+//    };
+//    const toDateKeyLocal = (ts) => {
+//        if (!ts) return '';
+//        const d = new Date(ts);
+//        if (!isFinite(d)) return '';
+//        const y = d.getFullYear();
+//        const m = String(d.getMonth() + 1).padStart(2, '0');
+//        const day = String(d.getDate()).padStart(2, '0');
+//        return `${y}-${m}-${day}`;
+//    };
+//    const toDateLabelGb = (ts) => {
+//        if (!ts) return '';
+//        try {
+//            return new Date(ts).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
+//        } catch {
+//            return '';
+//        }
+//    };
+//
+//    favourites.forEach(f => {
+//        const ts = getFavouriteTimestamp(f);
+//        const key = toDateKeyLocal(ts);
+//        if (!key) return;
+//        if (!dateMap.has(key)) {
+//            const label = toDateLabelGb(ts) || key;
+//            dateMap.set(key, label);
+//        }
+//    });
+//
+//    const dateOptions = Array.from(dateMap.entries())
+//        .map(([key, label]) => ({ key, label }))
+//        .sort((a, b) => (a.key < b.key ? 1 : -1)); // newest first
+//
+//    // Apply filters
+//    const filteredFavourites = favourites.filter(f => {
+//        // Text search (in several fields)
+//        if (favouritesFilter.query) {
+//            const q = favouritesFilter.query.toLowerCase();
+//            const haystack = [
+//                f.description,
+//                f.category,
+//                f.rating,
+//                f.type,
+//                f.mapName,
+//                f.mapDescription
+//            ]
+//                .filter(Boolean)
+//                .join(' ')
+//                .toLowerCase();
+//
+//            if (!haystack.includes(q)) return false;
+//        }
+//
+//        // Type filter
+//        if (favouritesFilter.type !== 'All') {
+//            const t = f.type || 'Unknown';
+//            if (t !== favouritesFilter.type) return false;
+//        }
+//
+//        // Map filter
+//        if (favouritesFilter.mapId !== 'All') {
+//            const id = f.mapId ? String(f.mapId) : 'unknown';
+//            if (id !== String(favouritesFilter.mapId)) return false;
+//        }
+//
+//
+//        // Date filter (Logged date)
+//        if (favouritesFilter.date && favouritesFilter.date !== 'All') {
+//            const ts = (f?.dateCreated ?? f?.createdAt ?? f?.time ?? f?.dateLastChanged ?? 0);
+//            const key = (typeof ts === 'number' && isFinite(ts) && ts > 0)
+//                ? (() => { const d = new Date(ts); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; })()
+//                : '';
+//            if (!key || key !== favouritesFilter.date) return false;
+//        }
+//        return true;
+//    });
+//
+//    const totalCount    = favourites.length;
+//    const filteredCount = filteredFavourites.length;
+//
+//    const cardsHtml = filteredFavourites.map(find => {
+//        const tsRaw = (find.dateCreated ?? find.createdAt ?? find.time ?? find.dateLastChanged ?? null);
+//        let ts = null;
+//        if (typeof tsRaw === 'number') {
+//            ts = tsRaw;
+//        } else if (typeof tsRaw === 'string' && tsRaw.trim()) {
+//            const parsed = Date.parse(tsRaw);
+//            if (!Number.isNaN(parsed)) ts = parsed;
+//        }
+//
+//        const dateText = ts
+//            ? new Date(ts).toLocaleString('en-GB', {
+//                day: '2-digit',
+//                month: '2-digit',
+//                year: '2-digit',
+//                hour: '2-digit',
+//                minute: '2-digit'
+//              })
+//            : 'Not recorded';
+//        const typeLabel = find.type || 'Unknown';
+//
+//        // --- Thumbnail + photo count (IndexedDB-aware, like Places) ---
+//        let thumbRef    = '';
+//        let photosCount = 0;
+//
+//        if (Array.isArray(find.photos) && find.photos.length) {
+//            // New style: array of refs or data URLs
+//            thumbRef    = find.photos[0];
+//            photosCount = find.photos.length;
+//        } else if (find.findPhotoData || find.placePhotoData || find.photoData) {
+//            // Legacy / fallback
+//            thumbRef    = find.findPhotoData || find.placePhotoData || find.photoData;
+//            photosCount = thumbRef ? 1 : 0;
+//        }
+//
+//        const photoHtml = thumbRef
+//            ? `
+//                <div class="mt-3">
+//                    <div class="flex justify-center">
+//                        <img
+//                            src=""
+//                            data-photo-ref="${thumbRef}"
+//                            data-photo-kind="find"
+//                            data-find-id="${find.id}"
+//                            alt="Favourite photo"
+//                            class="w-11/12 h-auto object-contain rounded-lg border border-gray-200 cursor-pointer"
+//                            onclick="openFavouritePhotoGallery('${find.id}')"
+//                        />
+//                    </div>
+//                    ${
+//                        photosCount > 1
+//                            ? `<p class="mt-1 text-xs text-gray-600 text-center">
+//                                   ${photosCount} photos — tap to view gallery.
+//                               </p>`
+//                            : ''
+//                    }
+//                </div>
+//              `
+//            : '';
+//
+//        const coordsText = find.coordinates || 'No GPS logged';
+//        const accText    = find.accuracy   || 'N/A';
+//
+//        const extraLines = [];
+//        if (find.notes) extraLines.push(`<div><span class="font-semibold">ID:</span> ${escapeHtml(find.notes)}</div>`);
+//        if (find.type) extraLines.push(`<div><span class="font-semibold">Type:</span> ${escapeHtml(find.type)}</div>`);
+//        if (find.rating) extraLines.push(`<div><span class="font-semibold">Rating:</span> ${escapeHtml(find.rating)}</div>`);
+//        if (find.theme) extraLines.push(`<div><span class="font-semibold">Period:</span> ${escapeHtml(find.theme)}</div>`);
+//        if (find.weightG) extraLines.push(`<div><span class="font-semibold">Weight:</span> ${escapeHtml(find.weightG)} g</div>`);
+//        if (find.dimensionsMm) extraLines.push(`<div><span class="font-semibold">Size:</span> ${escapeHtml(find.dimensionsMm)}</div>`);
+//        if (find.notes) extraLines.push(`<div><span class="font-semibold">Kept:</span> ${escapeHtml(find.notes)}</div>`);
+//
+//        if (find.visitStatus) extraLines.push(`<div><span class="font-semibold">Status:</span> ${escapeHtml(find.visitStatus)}</div>`);
+//        const extraHtml = extraLines.length ? `<div class="mt-3 text-xs text-gray-700 space-y-1">${extraLines.join('')}</div>` : '';
+//
+//        const isExpanded = expandedFavouriteIds.has(find.id);
+//        const chevron = isExpanded
+//            ? `<i class="fas fa-chevron-up text-gray-400"></i>`
+//            : `<i class="fas fa-chevron-down text-gray-400"></i>`;
+//
+//        return `
+//            <div class="bg-white rounded-xl shadow-sm mb-3 border border-gray-200 overflow-hidden">
+//
+//                <!-- Always-visible header — tap to expand/collapse -->
+//                <div class="flex items-center justify-between p-4 cursor-pointer select-none"
+//                     onclick="toggleFavouriteCard('${find.id}')">
+//                    <div class="min-w-0 flex-1">
+//                        <h3 class="text-lg font-bold text-primary truncate">
+//                            ${find.description || 'Unnamed Favourite'}
+//                        </h3>
+//                        <p class="text-xs text-gray-500 mt-0.5">
+//                            ${find.mapName || 'Unknown map'} · ${dateText}
+//                        </p>
+//                    </div>
+//                    <div class="flex items-center gap-2 ml-2 flex-shrink-0">
+//                        <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+//                            ${typeLabel}
+//                        </span>
+//                        ${chevron}
+//                    </div>
+//                </div>
+//
+//                <!-- Expandable body -->
+//                ${isExpanded ? `
+//                <div class="px-4 pb-4 border-t border-gray-100">
+//
+//                    ${photoHtml}
+//
+//                    ${extraHtml}
+//
+//                    <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-700">
+//                        <div>
+//                            <span class="font-semibold">Type:</span> ${find.type || '—'}
+//                        </div>
+//                        <div>
+//                            <span class="font-semibold">Rating:</span> ${find.rating || '—'}
+//                        </div>
+//                        <div>
+//                            <span class="font-semibold">Coords:</span>
+//                            <span class="break-all">${coordsText}</span>
+//                        </div>
+//                        <div>
+//                            <span class="font-semibold">Accuracy:</span> ${accText}
+//                        </div>
+//                    </div>
+//
+//                    <!-- Actions row: Edit / Delete -->
+//                    <div class="mt-4 grid grid-cols-2 gap-2">
+//                        <button
+//                            type="button"
+//                            onclick="openEditFavouriteModal('${find.id}')"
+//                            class="w-full inline-flex items-center justify-center px-3 py-3 rounded-md
+//                                   bg-purple-100 text-purple-800 hover:bg-purple-200
+//                                   border border-purple-300
+//                                   text-xs sm:text-sm font-semibold">
+//                            Edit details
+//                        </button>
+//                        <button
+//                            type="button"
+//                            onclick="openInlineFavouriteDelete('${find.id}')"
+//                            class="w-full inline-flex items-center justify-center px-3 py-3 rounded-md
+//                                   bg-red-600 text-white hover:bg-red-700
+//                                   text-xs sm:text-sm font-semibold">
+//                            Delete Favourite
+//                        </button>
+//                    </div>
+//
+//                    ${expandedFavouriteDeleteId === find.id ? `
+//                    <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+//                        <p class="text-sm text-gray-700 mb-3">Permanently delete <strong>${(find.description || 'this find').replace(/`/g, '')}</strong>? This cannot be undone.</p>
+//                        <div class="flex gap-3">
+//                            <button type="button" onclick="cancelInlineFavouriteDelete()"
+//                                    class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>
+//                            <button type="button" onclick="confirmInlineFavouriteDelete('${find.id}')"
+//                                    class="flex-1 py-2 rounded-lg bg-red-600 text-white font-semibold text-sm hover:bg-red-700 shadow">Delete</button>
+//                        </div>
+//                    </div>
+//                    ` : ''}
+//
+//                    ${expandedFavouriteEditId === find.id ? `
+//                    <div class="mt-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+//                        <h4 class="text-base font-semibold text-gray-800 mb-1">Edit Favourite</h4>
+//                        <p class="text-xs text-gray-500 mb-3">Logged: <span id="edit-find-logged-datetime-value" class="font-semibold text-gray-700">Not recorded</span></p>
+//                        <form id="edit-find-form" class="space-y-3">
+//                            <input type="hidden" id="edit-find-id" name="findId">
+//                            <div>
+//                                <label class="block text-xs font-semibold text-gray-600 mb-1">Description / Favourite Name</label>
+//                                <textarea id="edit-find-description" name="findDescription" rows="3"
+//                                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" required></textarea>
+//                            </div>
+//                            <div>
+//                                <label class="block text-xs font-semibold text-gray-600 mb-1">Favourite Photograph</label>
+//                                <input type="file" id="edit-find-photo-input" accept="image/*;capture=camera" multiple class="hidden" onchange="handleEditFavouritePhotoSelected(event)">
+//                                <input type="hidden" id="edit-find-photo-data" name="findPhotoData">
+//                                <div class="flex items-center gap-3">
+//                                    <button type="button" onclick="triggerEditFavouritePhotoInput()"
+//                                            class="px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm font-semibold">
+//                                        <i class="fas fa-camera mr-1"></i> Take / Choose Photo
+//                                    </button>
+//                                    <span id="edit-find-photo-status" class="text-xs text-gray-500">No photo captured yet.</span>
+//                                </div>
+//                                <div id="edit-find-photo-preview-wrapper" class="mt-2 hidden">
+//                                    <img id="edit-find-photo-preview" class="w-full h-auto rounded-md border border-gray-300 object-cover" alt="Favourite photo preview">
+//                                </div>
+//                            </div>
+//                            <div>
+//                                <label class="block text-xs font-semibold text-gray-600 mb-1">Type</label>
+//                                <select id="edit-find-type" name="findType" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+//                                    <option value="">— select type —</option>
+//                <optgroup label="Access &amp; Navigation">
+//                <option value="Bridge">Bridge</option>
+//                <option value="Dead End">Dead End</option>
+//                <option value="Gate">Gate</option>
+//                <option value="One Way">One Way</option>
+//                </optgroup>
+//                <optgroup label="Accommodation">
+//                <option value="Camping Barn">Camping Barn</option>
+//                <option value="Campsite">Campsite</option>
+//                <option value="Hostel">Hostel</option>
+//                <option value="Hotel">Hotel</option>
+//                </optgroup>
+//                <optgroup label="Food &amp; Drink">
+//                <option value="Bakery">Bakery</option>
+//                <option value="Bar">Bar</option>
+//                <option value="Café">Café</option>
+//                <option value="Fast Food">Fast Food</option>
+//                <option value="Pub">Pub</option>
+//                <option value="Restaurant">Restaurant</option>
+//                <option value="Shop">Shop</option>
+//                <option value="Supermarket">Supermarket</option>
+//                </optgroup>
+//                <optgroup label="Nature &amp; Landscape">
+//                <option value="Beach">Beach</option>
+//                <option value="Cliff Edge">Cliff Edge</option>
+//                <option value="Field">Field</option>
+//                <option value="Forest / Wood">Forest / Wood</option>
+//                <option value="Hill / Summit">Hill / Summit</option>
+//                <option value="Lake / Reservoir">Lake / Reservoir</option>
+//                <option value="Mountain">Mountain</option>
+//                <option value="Moorland">Moorland</option>
+//                <option value="Quarry">Quarry</option>
+//                <option value="Standing Stones">Standing Stones</option>
+//                <option value="River">River</option>
+//                <option value="Stile">Stile</option>
+//                <option value="Stream">Stream</option>
+//                <option value="Trig Point">Trig Point</option>
+//                <option value="Valley">Valley</option>
+//                <option value="Viewpoint">Viewpoint</option>
+//                <option value="Woods">Woods</option>
+//                </optgroup>
+//                <optgroup label="Places of Interest">
+//                <option value="Castle / Ruins">Castle / Ruins</option>
+//                <option value="Church / Chapel">Church / Chapel</option>
+//                <option value="Cinema">Cinema</option>
+//                <option value="City Centre">City Centre</option>
+//<option value="Historic Site">Historic Site</option>
+//                <option value="Museum">Museum</option>
+//<option value="Old Town">Old Town</option>
+//                <option value="Park">Park</option>
+//                <option value="Playground">Playground</option>
+//<option value="Shopping Centre / Mall">Shopping Centre / Mall</option>
+//                <option value="Sports Field">Sports Field</option>
+//<option value="Town Centre">Town Centre</option>
+//<option value="Town Square">Town Square</option>
+//                </optgroup>
+//                <optgroup label="Services">
+//                <option value="ATM">ATM</option>
+//                <option value="Bank">Bank</option>
+//                <option value="Dentist">Dentist</option>
+//                <option value="Emergency Department">Emergency Department</option>
+//                <option value="GP Surgery">GP Surgery</option>
+//                <option value="Hospital">Hospital</option>
+//                <option value="Information Point">Information Point</option>
+//                <option value="Minor Injuries Unit">Minor Injuries Unit</option>
+//                <option value="Pharmacy">Pharmacy</option>
+//                <option value="Police Station">Police Station</option>
+//                <option value="Public Toilet">Public Toilet</option>
+//<option value="Town Hall">Town Hall</option>
+//                </optgroup>
+//                <optgroup label="Transport">
+//                <option value="Airport">Airport</option>
+//                <option value="Bus Stop">Bus Stop</option>
+//                <option value="Ferry Terminal">Ferry Terminal</option>
+//                <option value="Free Parking">Free Parking</option>
+//                <option value="Long Stay Parking">Long Stay Parking</option>
+//<option value="Metro / Underground">Metro / Underground</option>
+//                <option value="Petrol Station">Petrol Station</option>
+//                <option value="Short Stay Parking">Short Stay Parking</option>
+//                <option value="Train Station">Train Station</option>
+//                </optgroup>
+//                <optgroup label="Other">
+//                <option value="Something else">Something else</option>
+//                </optgroup>
+//                                </select>
+//                            </div>
+//                            <div>
+//                                <label class="block text-xs font-semibold text-gray-600 mb-1">Rating</label>
+//                                <div class="flex gap-2">
+//                                    <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="1" class="sr-only" onclick="onStarRatingClick(this,'findRating')"><span class="block py-2 rounded-lg border-2 border-gray-300 text-gray-600 text-lg font-bold" style="transition:all 0.15s">★</span></label>
+//                                    <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="2" class="sr-only" onclick="onStarRatingClick(this,'findRating')"><span class="block py-2 rounded-lg border-2 border-gray-300 text-gray-600 text-lg font-bold" style="transition:all 0.15s">★★</span></label>
+//                                    <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="3" class="sr-only" onclick="onStarRatingClick(this,'findRating')"><span class="block py-2 rounded-lg border-2 border-gray-300 text-gray-600 text-lg font-bold" style="transition:all 0.15s">★★★</span></label>
+//                                    <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="4" class="sr-only" onclick="onStarRatingClick(this,'findRating')"><span class="block py-2 rounded-lg border-2 border-gray-300 text-gray-600 text-lg font-bold" style="transition:all 0.15s">★★★★</span></label>
+//                                    <label class="flex-1 text-center cursor-pointer"><input type="radio" name="findRating" value="5" class="sr-only" onclick="onStarRatingClick(this,'findRating')"><span class="block py-2 rounded-lg border-2 border-gray-300 text-gray-600 text-lg font-bold" style="transition:all 0.15s">★★★★★</span></label>
+//                                </div>
+//                            </div>
+//                            <div>
+//                                <label class="block text-xs font-semibold text-gray-600 mb-1">Notes</label>
+//                                <input type="text" id="edit-find-notes" name="findIdentification"
+//                                       class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" placeholder="Any additional notes about this favourite">
+//                            </div>
+//                            <div>
+//                                <label class="block text-xs font-semibold text-gray-600 mb-1">Coordinates</label>
+//                                <input type="text" id="edit-find-coords" name="findCoords" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+//                            </div>
+//                            <div>
+//                                <label class="block text-xs font-semibold text-gray-600 mb-1">Accuracy</label>
+//                                <input type="text" id="edit-find-accuracy" name="findAccuracy" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+//                            </div>
+//                            <div class="flex gap-3 pt-2">
+//                                <button type="button" onclick="closeEditFavouriteModal()"
+//                                        class="flex-1 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300">Cancel</button>
+//                                <button type="submit"
+//                                        class="flex-1 py-2 text-white font-semibold rounded-lg shadow-md hover:opacity-90"
+//                                        style="background-color: rgb(var(--color-secondary));">Save changes</button>
+//                            </div>
+//                        </form>
+//                    </div>
+//                    ` : ''}
+//                    <!-- Row 2: Add Photo -->
+//                    <div class="mt-2">
+//                        <button type="button"
+//                            class="w-full inline-flex items-center justify-center px-3 py-3 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 text-xs sm:text-sm font-semibold"
+//                            onclick="triggerFavouritePhotoCapture('${find.id}')">
+//                            <i class="fas fa-camera mr-1"></i> Add Photo
+//                        </button>
+//                    </div>
+//                    <!-- Row 3: Share Favourite -->
+//                    <div class="mt-2">
+//                        <button type="button"
+//                            class="w-full inline-flex items-center justify-center px-3 py-3 rounded-md bg-sky-600 text-white hover:bg-sky-700 text-xs sm:text-sm font-semibold"
+//                            onclick="shareFavouriteAsHtml('${find.id}')">
+//                            <i class="fas fa-share-alt mr-1"></i> Share Favourite
+//                        </button>
+//                        <p class="text-xs text-amber-700 mt-1 text-center"><i class="fas fa-exclamation-triangle mr-1"></i>Sharing includes your name, GPS location, and stamped photos.</p>
+//                    </div>
+//                </div>
+//                ` : ''}
+//            </div>
+//        `;
+//    }).join('');
+//
+//    const typesOptionsHtml = [
+//        '<option value="All">All Types</option>',
+//        ...typeOptions.map(t =>
+//            `<option value="${t}" ${favouritesFilter.type === t ? 'selected' : ''}>${t}</option>`
+//        )
+//    ].join('');
+//
+//    const mapOptionsHtml = [
+//        '<option value="All">All Maps</option>',
+//        ...mapOptions.map(({ id, name }) =>
+//            `<option value="${id}" ${favouritesFilter.mapId === id ? 'selected' : ''}>${name}</option>`
+//        )
+//    ].join('');
+//
+//    const dateOptionsHtml = [
+//        '<option value="All">All Dates</option>',
+//        ...dateOptions.map(d =>
+//            `<option value="${d.key}" ${favouritesFilter.date === d.key ? 'selected' : ''}>${d.label}</option>`
+//        )
+//    ].join('');
+//
+//    return `
+//        <div class="p-4">
+//            <h2 class="text-3xl font-bold text-primary mb-2">Favourites</h2>
+//            <p class="text-sm text-gray-600 mb-4">
+//             ${
+//                 hasFavourites
+//                ? `Showing ${filteredCount} of ${totalCount} favourites.`
+//                : 'No favourites have been saved yet.'
+//                }
+//
+//            </p>
+//
+//            <div class="mb-4 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+//                <!-- Filter panel header — tap to expand/collapse -->
+//                <div class="flex items-center justify-between px-3 py-3 cursor-pointer select-none"
+//                     onclick="toggleFavouritesFilter()">
+//                    <div class="flex items-center gap-2 min-w-0">
+//                        <i class="fas fa-filter text-gray-400 text-sm flex-shrink-0"></i>
+//                        <span class="text-sm font-semibold text-gray-700">Search &amp; Filter</span>
+//                        ${!favouritesFilterExpanded && (favouritesFilter.query || favouritesFilter.type !== 'All' || favouritesFilter.mapId !== 'All' || favouritesFilter.date !== 'All') ? `
+//                        <span class="text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5 font-semibold">Active</span>
+//                        ` : ''}
+//                    </div>
+//                    <i class="fas ${favouritesFilterExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400"></i>
+//                </div>
+//
+//                <!-- Expandable filter body -->
+//                ${favouritesFilterExpanded ? `
+//                <div class="px-3 pb-3 border-t border-gray-100">
+//                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center mt-3">
+//                        <div class="flex-1">
+//                            <label class="block text-xs font-semibold text-gray-600 mb-1" for="favourites-search-input">
+//                                Search description / notes
+//                            </label>
+//                            <input
+//                                id="favourites-search-input"
+//                                type="text"
+//                                class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+//                                placeholder="Search favourites..."
+//                                value="${favouritesFilter.query || ''}"
+//                            />
+//                        </div>
+//                        <div class="flex-1">
+//                            <label class="block text-xs font-semibold text-gray-600 mb-1" for="favourites-map-select">
+//                                Filter by map
+//                            </label>
+//                            <select
+//                                id="favourites-map-select"
+//                                class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+//                            >
+//                                ${mapOptionsHtml}
+//                            </select>
+//                        </div>
+//                        <div class="flex-1">
+//                            <label class="block text-xs font-semibold text-gray-600 mb-1" for="favourites-type-select">
+//                                Filter by type
+//                            </label>
+//                            <select
+//                                id="favourites-type-select"
+//                                class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+//                            >
+//                                ${typesOptionsHtml}
+//                            </select>
+//                        </div>
+//                        <div class="flex-1">
+//                            <label class="block text-xs font-semibold text-gray-600 mb-1" for="favourites-date-select">
+//                                Filter by date
+//                            </label>
+//                            <select
+//                                id="favourites-date-select"
+//                                class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+//                            >
+//                                ${dateOptionsHtml}
+//                            </select>
+//                        </div>
+//                    </div>
+//                    <div class="mt-3 flex justify-end">
+//                        <button
+//                            id="clear-favourites-filters-btn"
+//                            type="button"
+//                            class="px-3 py-1 rounded-lg text-xs font-semibold border border-gray-300 text-gray-700 hover:bg-gray-100"
+//                        >
+//                            Clear filters
+//                        </button>
+//                    </div>
+//                </div>
+//                ` : ''}
+//            </div>
+//
+//            <div id="favourites-list">
+//                ${
+//                    cardsHtml
+//                        || (hasFavourites
+//                            ? buildEmptyStateHtml('fa-heart', 'No matches', 'No favourites match your filters.')
+//                            : buildEmptyStateHtml('fa-heart', 'No favourites yet', 'Tap the heart on any place to add it here.')
+//                           )
+//                }
+//            </div>
+//        </div>
+//    `;
+//}
+// [DEADCODE-FAVOURITES-P1 END: renderFavouritesPage]
         
 /** Renders a single place card. */
 
@@ -20870,34 +20920,36 @@ function attachNavDelegationOnce() {
  * Format a find's logged timestamp as "dd/mm/yy, hh:mm" (UK).
  * Uses dateCreated, createdAt, time, or dateLastChanged (in that order).
  */
-function formatFavouriteLoggedDateTime(find) {
-    if (!find) return 'Not recorded';
-    let ts = find.dateCreated ?? find.createdAt ?? find.time ?? find.dateLastChanged ?? null;
-
-    // ISO string
-    if (typeof ts === 'string') {
-        const s = ts.trim();
-        if (!s) return 'Not recorded';
-        const d = new Date(s);
-        if (!isFinite(d)) return 'Not recorded';
-        return d.toLocaleString('en-GB', {
-            day: '2-digit', month: '2-digit', year: '2-digit',
-            hour: '2-digit', minute: '2-digit'
-        });
-    }
-
-    // epoch ms number
-    if (typeof ts === 'number' && isFinite(ts) && ts > 0) {
-        const d = new Date(ts);
-        if (!isFinite(d)) return 'Not recorded';
-        return d.toLocaleString('en-GB', {
-            day: '2-digit', month: '2-digit', year: '2-digit',
-            hour: '2-digit', minute: '2-digit'
-        });
-    }
-
-    return 'Not recorded';
-}
+// [DEADCODE-FAVOURITES-P1 START: formatFavouriteLoggedDateTime] -- unreachable, see conversation notes
+//function formatFavouriteLoggedDateTime(find) {
+//    if (!find) return 'Not recorded';
+//    let ts = find.dateCreated ?? find.createdAt ?? find.time ?? find.dateLastChanged ?? null;
+//
+//    // ISO string
+//    if (typeof ts === 'string') {
+//        const s = ts.trim();
+//        if (!s) return 'Not recorded';
+//        const d = new Date(s);
+//        if (!isFinite(d)) return 'Not recorded';
+//        return d.toLocaleString('en-GB', {
+//            day: '2-digit', month: '2-digit', year: '2-digit',
+//            hour: '2-digit', minute: '2-digit'
+//        });
+//    }
+//
+//    // epoch ms number
+//    if (typeof ts === 'number' && isFinite(ts) && ts > 0) {
+//        const d = new Date(ts);
+//        if (!isFinite(d)) return 'Not recorded';
+//        return d.toLocaleString('en-GB', {
+//            day: '2-digit', month: '2-digit', year: '2-digit',
+//            hour: '2-digit', minute: '2-digit'
+//        });
+//    }
+//
+//    return 'Not recorded';
+//}
+// [DEADCODE-FAVOURITES-P1 END: formatFavouriteLoggedDateTime]
 
 function attachPageEventListeners() {
 
@@ -21484,11 +21536,13 @@ function getQuickPlaceRangesEffective() {
 
 let _findCardPhotoPending = null;
 
-function triggerFavouritePhotoCapture(findId) {
-    _findCardPhotoPending = findId;
-    const inp = document.getElementById('find-card-photo-input');
-    if (inp) { inp.value = ''; inp.click(); }
-}
+// [DEADCODE-FAVOURITES-P1 START: triggerFavouritePhotoCapture] -- unreachable, see conversation notes
+//function triggerFavouritePhotoCapture(findId) {
+//    _findCardPhotoPending = findId;
+//    const inp = document.getElementById('find-card-photo-input');
+//    if (inp) { inp.value = ''; inp.click(); }
+//}
+// [DEADCODE-FAVOURITES-P1 END: triggerFavouritePhotoCapture]
 
 function switchRouteType(type) {
     if (!type) return;
@@ -21721,199 +21775,203 @@ async function sharePlaceAsHtml(placeId, mapId) {
     showMessage('Place report downloaded.', 'success');
 }
 
-async function shareFavouriteAsHtml(findId) {
-    const find = Array.isArray(favourites) ? favourites.find(f => String(f.id) === String(findId)) : null;
-    if (!find) { showMessage('Favourite not found.', 'error'); return; }
+// [DEADCODE-FAVOURITES-P1 START: shareFavouriteAsHtml] -- unreachable, see conversation notes
+//async function shareFavouriteAsHtml(findId) {
+//    const find = Array.isArray(favourites) ? favourites.find(f => String(f.id) === String(findId)) : null;
+//    if (!find) { showMessage('Favourite not found.', 'error'); return; }
+//
+//    showMessage('Preparing find report…', 'info');
+//
+//    // Collect all photo refs (new IDB style + legacy base64)
+//    const allRefs = [];
+//    if (Array.isArray(find.photos) && find.photos.length) {
+//        allRefs.push(...find.photos);
+//    } else if (find.findPhotoData || find.placePhotoData || find.photoData) {
+//        allRefs.push(find.findPhotoData || find.placePhotoData || find.photoData);
+//    }
+//
+//    // Resolve every ref to an embedded base64 data URL
+//    const photoDataUrls = [];
+//    for (const ref of allRefs) {
+//        try {
+//            if (typeof ref === 'string' && ref.startsWith('data:image/')) {
+//                photoDataUrls.push(ref);
+//            } else if (typeof ref === 'string' && ref.startsWith('idb:')) {
+//                const id   = parsePhotoRef(ref);
+//                const blob = id != null ? await loadPhotoBlob(id) : null;
+//                if (blob) photoDataUrls.push(await blobToDataUrl(blob));
+//            }
+//        } catch(e) { /* skip unloadable photos */ }
+//    }
+//
+//    const dateText = (() => {
+//        const tsRaw = find.dateCreated ?? find.createdAt ?? find.time ?? find.dateLastChanged ?? null;
+//        const ts = typeof tsRaw === 'number' ? tsRaw : (tsRaw ? Date.parse(tsRaw) : null);
+//        return ts && !isNaN(ts)
+//            ? new Date(ts).toLocaleString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
+//            : 'Not recorded';
+//    })();
+//
+//    const esc = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+//
+//    const row = (label, value) => value
+//        ? `<tr><td style="font-weight:600;padding:6px 10px 6px 0;color:#555;white-space:nowrap;vertical-align:top">${esc(label)}</td><td style="padding:6px 0 6px 10px">${esc(value)}</td></tr>`
+//        : '';
+//
+//    const photosHtml = photoDataUrls.length
+//        ? photoDataUrls.map(url =>
+//            `<div style="margin-top:16px"><img src="${url}" style="max-width:100%;border-radius:8px;border:1px solid #ddd" alt="Favourite photo"></div>`
+//          ).join('')
+//        : '';
+//
+//    const html = `<!DOCTYPE html>
+//<html lang="en">
+//<head>
+//<meta charset="UTF-8">
+//<meta name="viewport" content="width=device-width,initial-scale=1">
+//<title>${esc(find.description || 'Favourite Report')} — Trekta</title>
+//<style>
+//  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #f5f5f5; color: #222; }
+//  .card { background: #fff; max-width: 600px; margin: 24px auto; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.1); padding: 24px; }
+//  .badge { display: inline-block; background: #e5e7eb; color: #374151; border-radius: 9999px; padding: 2px 12px; font-size: 12px; font-weight: 600; }
+//  h1 { font-size: 22px; margin: 0 0 4px; color: #1e3a5f; }
+//  .meta { font-size: 12px; color: #888; margin-bottom: 16px; }
+//  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+//  .section { margin-top: 20px; border-top: 1px solid #eee; padding-top: 16px; }
+//  .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #888; margin-bottom: 8px; }
+//  .footer { margin-top: 24px; font-size: 11px; color: #aaa; text-align: center; }
+//</style>
+//</head>
+//<body>
+//<div class="card">
+//  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+//    <div>
+//      <h1>${esc(find.description || 'Unnamed Favourite')}</h1>
+//      <div class="meta">${esc(find.mapName || 'Unknown map')} &nbsp;·&nbsp; Logged: ${dateText}</div>
+//    </div>
+//    <span class="badge">${esc(find.type || 'Unknown')}</span>
+//  </div>
+//
+//  ${photosHtml}
+//
+//  <div class="section">
+//    <div class="section-title">Details</div>
+//    <table>
+//      ${row('Identification', find.notes)}
+//      ${row('Category', find.category)}
+//      ${row('Rating', find.rating)}
+//      ${row('Period', find.theme)}
+//      ${row('Weight', find.weightG ? find.weightG + ' g' : '')}
+//      ${row('Dimensions', find.dimensionsMm)}
+//      ${row('Kept', find.notes)}
+//      ${row('Status', find.visitStatus)}
+//    </table>
+//  </div>
+//
+//  <div class="section">
+//    <div class="section-title">Recovery</div>
+//    <table>
+//      ${row('Category', find.category)}
+//      ${row('Rating', find.rating)}
+//      ${row('Coordinates', find.coordinates)}
+//      ${row('GPS accuracy', find.accuracy)}
+//      ${row('Device', find.device)}
+//      ${row('Found by', find.user)}
+//    </table>
+//  </div>
+//
+//  <div class="footer">Generated by Trekta &nbsp;·&nbsp; ${new Date().toLocaleDateString('en-GB')}</div>
+//</div>
+//</body>
+//</html>`;
+//
+//    const filename = `${(find.description || 'find').replace(/[^a-z0-9]/gi,'_').toLowerCase()}_trekta.html`;
+//    const blob = new Blob([html], { type: 'text/html' });
+//    const file = new File([blob], filename, { type: 'text/html' });
+//
+//    // Try Web Share API with file support first (works on iOS/Android)
+//    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+//        try {
+//            await navigator.share({
+//                title: find.description || 'Favourite Report',
+//                text: `Favourite report from Trekta: ${find.description || 'Unnamed Favourite'}`,
+//                files: [file]
+//            });
+//            return;
+//        } catch(e) {
+//            if (e.name === 'AbortError') return; // user cancelled — do nothing
+//            // fall through to download fallback
+//        }
+//    }
+//
+//    // Fallback: trigger a download
+//    const url = URL.createObjectURL(blob);
+//    const a = document.createElement('a');
+//    a.href = url;
+//    a.download = filename;
+//    document.body.appendChild(a);
+//    a.click();
+//    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+//    showMessage('Report downloaded. File sharing requires HTTPS — attach the file to share it manually.', 'info');
+//}
+// [DEADCODE-FAVOURITES-P1 END: shareFavouriteAsHtml]
 
-    showMessage('Preparing find report…', 'info');
-
-    // Collect all photo refs (new IDB style + legacy base64)
-    const allRefs = [];
-    if (Array.isArray(find.photos) && find.photos.length) {
-        allRefs.push(...find.photos);
-    } else if (find.findPhotoData || find.placePhotoData || find.photoData) {
-        allRefs.push(find.findPhotoData || find.placePhotoData || find.photoData);
-    }
-
-    // Resolve every ref to an embedded base64 data URL
-    const photoDataUrls = [];
-    for (const ref of allRefs) {
-        try {
-            if (typeof ref === 'string' && ref.startsWith('data:image/')) {
-                photoDataUrls.push(ref);
-            } else if (typeof ref === 'string' && ref.startsWith('idb:')) {
-                const id   = parsePhotoRef(ref);
-                const blob = id != null ? await loadPhotoBlob(id) : null;
-                if (blob) photoDataUrls.push(await blobToDataUrl(blob));
-            }
-        } catch(e) { /* skip unloadable photos */ }
-    }
-
-    const dateText = (() => {
-        const tsRaw = find.dateCreated ?? find.createdAt ?? find.time ?? find.dateLastChanged ?? null;
-        const ts = typeof tsRaw === 'number' ? tsRaw : (tsRaw ? Date.parse(tsRaw) : null);
-        return ts && !isNaN(ts)
-            ? new Date(ts).toLocaleString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
-            : 'Not recorded';
-    })();
-
-    const esc = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-    const row = (label, value) => value
-        ? `<tr><td style="font-weight:600;padding:6px 10px 6px 0;color:#555;white-space:nowrap;vertical-align:top">${esc(label)}</td><td style="padding:6px 0 6px 10px">${esc(value)}</td></tr>`
-        : '';
-
-    const photosHtml = photoDataUrls.length
-        ? photoDataUrls.map(url =>
-            `<div style="margin-top:16px"><img src="${url}" style="max-width:100%;border-radius:8px;border:1px solid #ddd" alt="Favourite photo"></div>`
-          ).join('')
-        : '';
-
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(find.description || 'Favourite Report')} — Trekta</title>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #f5f5f5; color: #222; }
-  .card { background: #fff; max-width: 600px; margin: 24px auto; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.1); padding: 24px; }
-  .badge { display: inline-block; background: #e5e7eb; color: #374151; border-radius: 9999px; padding: 2px 12px; font-size: 12px; font-weight: 600; }
-  h1 { font-size: 22px; margin: 0 0 4px; color: #1e3a5f; }
-  .meta { font-size: 12px; color: #888; margin-bottom: 16px; }
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .section { margin-top: 20px; border-top: 1px solid #eee; padding-top: 16px; }
-  .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #888; margin-bottom: 8px; }
-  .footer { margin-top: 24px; font-size: 11px; color: #aaa; text-align: center; }
-</style>
-</head>
-<body>
-<div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
-    <div>
-      <h1>${esc(find.description || 'Unnamed Favourite')}</h1>
-      <div class="meta">${esc(find.mapName || 'Unknown map')} &nbsp;·&nbsp; Logged: ${dateText}</div>
-    </div>
-    <span class="badge">${esc(find.type || 'Unknown')}</span>
-  </div>
-
-  ${photosHtml}
-
-  <div class="section">
-    <div class="section-title">Details</div>
-    <table>
-      ${row('Identification', find.notes)}
-      ${row('Category', find.category)}
-      ${row('Rating', find.rating)}
-      ${row('Period', find.theme)}
-      ${row('Weight', find.weightG ? find.weightG + ' g' : '')}
-      ${row('Dimensions', find.dimensionsMm)}
-      ${row('Kept', find.notes)}
-      ${row('Status', find.visitStatus)}
-    </table>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Recovery</div>
-    <table>
-      ${row('Category', find.category)}
-      ${row('Rating', find.rating)}
-      ${row('Coordinates', find.coordinates)}
-      ${row('GPS accuracy', find.accuracy)}
-      ${row('Device', find.device)}
-      ${row('Found by', find.user)}
-    </table>
-  </div>
-
-  <div class="footer">Generated by Trekta &nbsp;·&nbsp; ${new Date().toLocaleDateString('en-GB')}</div>
-</div>
-</body>
-</html>`;
-
-    const filename = `${(find.description || 'find').replace(/[^a-z0-9]/gi,'_').toLowerCase()}_trekta.html`;
-    const blob = new Blob([html], { type: 'text/html' });
-    const file = new File([blob], filename, { type: 'text/html' });
-
-    // Try Web Share API with file support first (works on iOS/Android)
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-            await navigator.share({
-                title: find.description || 'Favourite Report',
-                text: `Favourite report from Trekta: ${find.description || 'Unnamed Favourite'}`,
-                files: [file]
-            });
-            return;
-        } catch(e) {
-            if (e.name === 'AbortError') return; // user cancelled — do nothing
-            // fall through to download fallback
-        }
-    }
-
-    // Fallback: trigger a download
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
-    showMessage('Report downloaded. File sharing requires HTTPS — attach the file to share it manually.', 'info');
-}
-
-async function handleFavouriteCardPhotoSelected(event) {
-    const file = event.target.files && event.target.files[0];
-    if (!file || !_findCardPhotoPending) return;
-
-    const findId = _findCardPhotoPending;
-    _findCardPhotoPending = null;
-    try { event.target.value = ''; } catch(e) {}
-
-    const find = Array.isArray(favourites) ? favourites.find(f => String(f.id) === String(findId)) : null;
-    if (!find) { showMessage('Favourite not found.', 'error'); return; }
-
-    const findMap = find.mapId ? (Array.isArray(maps) ? maps.find(s => String(s.id) === String(find.mapId)) : null) : null;
-    const photoMeta = { mapId: findMap ? findMap.id : null, mapName: findMap ? findMap.name : '', placeId: find.id, placeName: find.description };
-
-    showMessage('Processing photo...', 'info');
-
-    let photoData = '';
-    try {
-        photoData = await fileToResizedDataUrl(file, photoMeta);
-    } catch(err) {
-        showMessage('Photo could not be processed.', 'error');
-        return;
-    }
-
-    if (!Array.isArray(find.photos)) find.photos = [];
-
-    // Migrate any existing legacy single-photo fields into find.photos first,
-    // so the new photo is added alongside them rather than hiding them.
-    const legacyUrl = find.findPhotoData || find.placePhotoData || find.photoData || '';
-    if (legacyUrl && find.photos.length === 0) {
-        try {
-            const legacyRefs = await saveDataUrlsAsPhotoRefs([legacyUrl], photoMeta);
-            find.photos = legacyRefs.length > 0 ? legacyRefs : [legacyUrl];
-            if (legacyRefs.length > 0) find.findPhotoRef = legacyRefs[0];
-        } catch (_) {
-            find.photos = [legacyUrl];
-        }
-        find.findPhotoData   = '';
-        find.placePhotoData = '';
-        find.photoData       = '';
-    }
-
-    // Save the new photo to IDB and append
-    try {
-        const newRefs = await saveDataUrlsAsPhotoRefs([photoData], photoMeta);
-        find.photos.push(newRefs.length > 0 ? newRefs[0] : photoData);
-    } catch (_) {
-        find.photos.push(photoData);
-    }
-
-    saveFavouritesToLocalStorage();
-    showMessage('Photo added to find.', 'success');
-    if (typeof render === 'function') render();
-}
+// [DEADCODE-FAVOURITES-P1 START: handleFavouriteCardPhotoSelected] -- unreachable, see conversation notes
+//async function handleFavouriteCardPhotoSelected(event) {
+//    const file = event.target.files && event.target.files[0];
+//    if (!file || !_findCardPhotoPending) return;
+//
+//    const findId = _findCardPhotoPending;
+//    _findCardPhotoPending = null;
+//    try { event.target.value = ''; } catch(e) {}
+//
+//    const find = Array.isArray(favourites) ? favourites.find(f => String(f.id) === String(findId)) : null;
+//    if (!find) { showMessage('Favourite not found.', 'error'); return; }
+//
+//    const findMap = find.mapId ? (Array.isArray(maps) ? maps.find(s => String(s.id) === String(find.mapId)) : null) : null;
+//    const photoMeta = { mapId: findMap ? findMap.id : null, mapName: findMap ? findMap.name : '', placeId: find.id, placeName: find.description };
+//
+//    showMessage('Processing photo...', 'info');
+//
+//    let photoData = '';
+//    try {
+//        photoData = await fileToResizedDataUrl(file, photoMeta);
+//    } catch(err) {
+//        showMessage('Photo could not be processed.', 'error');
+//        return;
+//    }
+//
+//    if (!Array.isArray(find.photos)) find.photos = [];
+//
+//    // Migrate any existing legacy single-photo fields into find.photos first,
+//    // so the new photo is added alongside them rather than hiding them.
+//    const legacyUrl = find.findPhotoData || find.placePhotoData || find.photoData || '';
+//    if (legacyUrl && find.photos.length === 0) {
+//        try {
+//            const legacyRefs = await saveDataUrlsAsPhotoRefs([legacyUrl], photoMeta);
+//            find.photos = legacyRefs.length > 0 ? legacyRefs : [legacyUrl];
+//            if (legacyRefs.length > 0) find.findPhotoRef = legacyRefs[0];
+//        } catch (_) {
+//            find.photos = [legacyUrl];
+//        }
+//        find.findPhotoData   = '';
+//        find.placePhotoData = '';
+//        find.photoData       = '';
+//    }
+//
+//    // Save the new photo to IDB and append
+//    try {
+//        const newRefs = await saveDataUrlsAsPhotoRefs([photoData], photoMeta);
+//        find.photos.push(newRefs.length > 0 ? newRefs[0] : photoData);
+//    } catch (_) {
+//        find.photos.push(photoData);
+//    }
+//
+//    saveFavouritesToLocalStorage();
+//    showMessage('Photo added to find.', 'success');
+//    if (typeof render === 'function') render();
+//}
+// [DEADCODE-FAVOURITES-P1 END: handleFavouriteCardPhotoSelected]
 
 
 let _placeCardPhotoPending = null;
