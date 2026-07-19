@@ -160,7 +160,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.75
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.76
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -5048,6 +5048,16 @@ async function resizeDataUrlToMaxWidth(dataUrl, maxWidth) {
  * Draw a Trekta stamp bar onto a dataUrl canvas and return the stamped dataUrl.
  * stampInfo: { datetime: string, coords: string|null }
  */
+function _fitStampLineWidth(ctx, text, maxWidth) {
+    if (!text) return '';
+    if (ctx.measureText(text).width <= maxWidth) return text;
+    let t = text;
+    while (t.length > 1 && ctx.measureText(t + '…').width > maxWidth) {
+        t = t.slice(0, -1);
+    }
+    return t + '…';
+}
+
 async function stampDataUrlTrekta(dataUrl, stampInfo) {
     if (!dataUrl || !stampInfo) return dataUrl;
 
@@ -5069,22 +5079,36 @@ async function stampDataUrlTrekta(dataUrl, stampInfo) {
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0, w, h);
 
-    // Two-line stamp: line1 = identity, line2 = coordinates
-    // Font size scales with image width for readability at any resolution
+    // Stamp text — up to three lines. Font size scales with image width.
     const fontSize  = Math.max(18, Math.min(42, Math.round(w * 0.032)));
     const lineGap   = Math.round(fontSize * 0.35);  // space between lines
     const pad       = Math.round(fontSize * 0.5);   // left/bottom margin
-    const barH      = fontSize * 2 + lineGap * 2 + pad * 2;
 
-    // Line 1: Trekta | name | device | datetime
+    ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+    const maxTextWidth = w - pad * 2;
+
+    // Line 1: Trekta | name | datetime
     const line1Parts = ['Trekta'];
     if (stampInfo.name)     line1Parts.push(stampInfo.name);
-    // device removed
     line1Parts.push(stampInfo.datetime);
-    const line1 = line1Parts.join('  |  ');
+    const line1 = _fitStampLineWidth(ctx, line1Parts.join('  |  '), maxTextWidth);
 
     // Line 2: coordinates (or blank if no fix)
-    const line2 = stampInfo.coords || '';
+    const line2 = stampInfo.coords ? _fitStampLineWidth(ctx, stampInfo.coords, maxTextWidth) : '';
+
+    // Line 3: which Map / Place this photo belongs to. This is the key
+    // defensive addition — burned into the pixels, so even if the database
+    // link between this photo and its place is ever lost or corrupted
+    // again, the photo itself still states in plain text where it came
+    // from, and can be matched back up by eye (or by the OCR recovery
+    // tool) instead of becoming an unrecoverable orphan.
+    const line3Parts = [];
+    if (stampInfo.mapName)   line3Parts.push(`Map: ${stampInfo.mapName}`);
+    if (stampInfo.placeName) line3Parts.push(`Place: ${stampInfo.placeName}`);
+    const line3 = line3Parts.length ? _fitStampLineWidth(ctx, line3Parts.join('   '), maxTextWidth) : '';
+
+    const lines = [line1, line2, line3].filter(Boolean);
+    const barH = fontSize * lines.length + lineGap * (lines.length - 1) + pad * 2;
 
     // Semi-transparent dark bar across the bottom
     ctx.fillStyle = 'rgba(0, 0, 0, 0.60)';
@@ -5092,16 +5116,15 @@ async function stampDataUrlTrekta(dataUrl, stampInfo) {
 
     // White text
     ctx.fillStyle    = 'rgba(255, 255, 255, 0.95)';
-    ctx.font         = `bold ${fontSize}px Arial, sans-serif`;
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign    = 'left';
 
-    // Position lines from the bottom up
-    const line2Y = h - pad;
-    const line1Y = line2Y - fontSize - lineGap;
-
-    ctx.fillText(line1, pad, line1Y);
-    if (line2) ctx.fillText(line2, pad, line2Y);
+    // Draw bottom-up: the last line sits right above the bottom margin.
+    for (let i = 0; i < lines.length; i++) {
+        const fromBottom = lines.length - 1 - i;
+        const y = h - pad - fromBottom * (fontSize + lineGap);
+        ctx.fillText(lines[i], pad, y);
+    }
 
     const result = canvas.toDataURL('image/jpeg', 0.88);
 
@@ -5114,8 +5137,11 @@ async function stampDataUrlTrekta(dataUrl, stampInfo) {
 
 /**
  * Full pipeline: File -> dataUrl -> resized dataUrl -> stamped dataUrl (based on Settings)
+ * `context` is optional best-effort info about where this photo is being
+ * added — { mapName, placeName } — burned into the stamp so the photo is
+ * still self-identifying even if its database record is ever lost.
  */
-async function fileToResizedDataUrl(file) {
+async function fileToResizedDataUrl(file, context = {}) {
     const dataUrl = await fileToDataUrl(file);
     const maxW = getMaxPhotoWidth();
     const resized = await resizeDataUrlToMaxWidth(dataUrl, maxW);
@@ -5132,7 +5158,11 @@ async function fileToResizedDataUrl(file) {
     const name     = (typeof userProfile !== 'undefined' && userProfile.name     && userProfile.name     !== "A. Person")        ? userProfile.name     : null;
     const device = null; // device removed from profile
 
-    return await stampDataUrlTrekta(resized, { name, device, datetime: dt, coords });
+    return await stampDataUrlTrekta(resized, {
+        name, device, datetime: dt, coords,
+        mapName: (context && context.mapName) || '',
+        placeName: (context && context.placeName) || ''
+    });
 }
 
 // No smoothing - use raw GPS directly for zero lag
@@ -5757,7 +5787,7 @@ function ensureTesseractLoaded() {
  * onto a canvas, ready for OCR. Generously sized so it works across the
  * range of stamp bar heights the app has ever produced.
  */
-async function _cropBottomOfBlobToCanvas(blob, fraction = 0.25) {
+async function _cropBottomOfBlobToCanvas(blob, fraction = 0.32) {
     const url = URL.createObjectURL(blob);
     try {
         const img = await loadImageFromDataUrl(url); // works with blob: URLs too
@@ -5934,7 +5964,7 @@ async function scanForOrphanedPhotos() {
                             let autoAttachedThisOne = false;
                             try {
                                 const blob = await loadPhotoBlob(photo.id);
-                                const canvas = blob ? await _cropBottomOfBlobToCanvas(blob, 0.25) : null;
+                                const canvas = blob ? await _cropBottomOfBlobToCanvas(blob) : null;
                                 if (canvas) {
                                     const { data } = await worker.recognize(canvas);
                                     const coords = _parseStampedCoordsFromText(data && data.text);
@@ -11127,7 +11157,7 @@ async function handleInlinePlacePhoto(event, placeId, mapId) {
     }
 
     try {
-        const dataUrl = await fileToResizedDataUrl(file);
+        const dataUrl = await fileToResizedDataUrl(file, { mapName: map.name, placeName: place.description });
         const refs    = await saveDataUrlsAsPhotoRefs([dataUrl]);
         const ref     = refs[0] || dataUrl;
 
@@ -11542,9 +11572,14 @@ async function handleEditMapPhotoSelected(event) {
     window.currentEditMapPhotos = window.currentEditMapPhotos || [];
     window.currentEditMapPhotoRefs = window.currentEditMapPhotoRefs || [];
 
+    // Use whatever's currently in the map name field of the edit form —
+    // covers both "still the saved name" and "just renamed it, about to save".
+    const nameEl = document.querySelector('#edit-map-form [name="mapName"]');
+    const context = { mapName: nameEl ? nameEl.value.trim() : '' };
+
     try {
         for (const file of files) {
-            const resized = await fileToResizedDataUrl(file);
+            const resized = await fileToResizedDataUrl(file, context);
             if (typeof resized === 'string' && resized.startsWith('data:image/')) {
                 // New photos are data URLs and have no ref yet
                 window.currentEditMapPhotos.push(resized);
@@ -11617,9 +11652,18 @@ async function handleNewPlacePhotoSelected(event) {
     // Allow selecting the same file again later
     event.target.value = '';
 
+    // Best-effort context: the place isn't saved yet, so use whatever's
+    // currently typed in the description field and the currently open map.
+    const openMap = maps.find(s => s.status === 'Open');
+    const descEl = document.getElementById('place-description');
+    const context = {
+        mapName: openMap ? openMap.name : '',
+        placeName: descEl ? descEl.value.trim() : ''
+    };
+
     try {
         for (const file of files) {
-            const resized = await fileToResizedDataUrl(file);
+            const resized = await fileToResizedDataUrl(file, context);
             if (typeof resized === 'string' && resized.startsWith('data:image/')) {
                 currentNewPlacePhotos.push(resized);
             }
@@ -11920,9 +11964,14 @@ async function handleNewMapPhotoSelected(event) {
     // Allow selecting the same file again later
     event.target.value = '';
 
+    // Best-effort context: the map isn't saved yet, so use whatever's
+    // currently typed in the map name field.
+    const nameEl = document.getElementById('map-name');
+    const context = { mapName: nameEl ? nameEl.value.trim() : '' };
+
     try {
         for (const file of files) {
-            const resized = await fileToResizedDataUrl(file);
+            const resized = await fileToResizedDataUrl(file, context);
             if (typeof resized === 'string' && resized.startsWith('data:image/')) {
                 window.currentNewMapPhotos.push(resized);
             }
@@ -11942,9 +11991,22 @@ async function handleEditFavouritePhotoSelected(event) {
     // Allow selecting the same file again later
     event.target.value = '';
 
+    const findIdEl = document.getElementById('edit-find-id');
+    const editingFind = findIdEl && findIdEl.value
+        ? (Array.isArray(favourites) ? favourites.find(f => String(f.id) === String(findIdEl.value)) : null)
+        : null;
+    const findMap = editingFind && editingFind.mapId
+        ? (Array.isArray(maps) ? maps.find(s => String(s.id) === String(editingFind.mapId)) : null)
+        : null;
+    const descEl = document.getElementById('edit-find-description');
+    const context = {
+        mapName: findMap ? findMap.name : '',
+        placeName: descEl ? descEl.value.trim() : (editingFind ? editingFind.description : '')
+    };
+
     try {
         for (const file of files) {
-            const resized = await fileToResizedDataUrl(file);
+            const resized = await fileToResizedDataUrl(file, context);
             if (typeof resized === 'string' && resized.startsWith('data:image/')) {
                 currentEditFavouritePhotos.push(resized);
             }
@@ -21450,11 +21512,13 @@ async function handleFavouriteCardPhotoSelected(event) {
     const find = Array.isArray(favourites) ? favourites.find(f => String(f.id) === String(findId)) : null;
     if (!find) { showMessage('Favourite not found.', 'error'); return; }
 
+    const findMap = find.mapId ? (Array.isArray(maps) ? maps.find(s => String(s.id) === String(find.mapId)) : null) : null;
+
     showMessage('Processing photo...', 'info');
 
     let photoData = '';
     try {
-        photoData = await fileToResizedDataUrl(file);
+        photoData = await fileToResizedDataUrl(file, { mapName: findMap ? findMap.name : '', placeName: find.description });
     } catch(err) {
         showMessage('Photo could not be processed.', 'error');
         return;
@@ -21579,7 +21643,7 @@ async function handleMapPhotoSelected(event) {
 
     let photoData = '';
     try {
-        photoData = await fileToResizedDataUrl(file);
+        photoData = await fileToResizedDataUrl(file, { mapName: map.name });
     } catch(err) {
         showMessage('Photo could not be processed.', 'error');
         return;
@@ -22006,7 +22070,9 @@ async function handleQuickFormPhotoSelected(event) {
 
     showMessage('Processing photo...', 'info');
     try {
-        const dataUrl = await fileToResizedDataUrl(file);
+        const openMap = maps.find(s => s.status === 'Open');
+        const { name: quickName } = (typeof _getQuickFormNameAndType === 'function') ? _getQuickFormNameAndType() : { name: '' };
+        const dataUrl = await fileToResizedDataUrl(file, { mapName: openMap ? openMap.name : '', placeName: quickName });
         const refs    = await saveDataUrlsAsPhotoRefs([dataUrl]);
         _quickFormPhotoRef = refs[0] || dataUrl;
         showMessage('Photo ready — tap Save Place.', 'success');
