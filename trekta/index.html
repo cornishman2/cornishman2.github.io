@@ -5549,9 +5549,15 @@ function openPhotoDB() {
 
 /**
  * Save a Blob (photo) into IndexedDB.
+ * `meta` is optional best-effort provenance info — { mapId, mapName,
+ * placeId, placeName } — a second, independent line of defence alongside
+ * the pixel stamp: even if the place/map record's own `photos` array link
+ * is ever lost or corrupted again, the photo's own storage record still
+ * says which map and place it belongs to, and verifyMapPhotoLinksOnOpen()
+ * can use that to notice and offer to repair the mismatch.
  * Resolves to the numeric ID.
  */
-async function savePhotoBlob(blob) {
+async function savePhotoBlob(blob, meta = {}) {
     const db = await openPhotoDB();
     return new Promise((resolve, reject) => {
         const tx    = db.transaction(PHOTO_STORE_NAME, 'readwrite');
@@ -5559,11 +5565,43 @@ async function savePhotoBlob(blob) {
 
         const request = store.add({
             blob,
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            mapId: meta.mapId || null,
+            mapName: meta.mapName || '',
+            placeId: meta.placeId || null,
+            placeName: meta.placeName || ''
         });
 
         request.onsuccess = () => resolve(request.result); // numeric ID
         request.onerror   = () => reject(request.error);
+    });
+}
+
+/**
+ * Update the map/place provenance fields on an existing photo record
+ * without touching its blob. Used to backfill photos saved before this
+ * feature existed, and to repair drift when verifyMapPhotoLinksOnOpen()
+ * finds a photo's stored provenance no longer matches where it's actually
+ * linked from.
+ */
+async function updatePhotoMeta(id, meta = {}) {
+    const db = await openPhotoDB();
+    return new Promise((resolve, reject) => {
+        const tx    = db.transaction(PHOTO_STORE_NAME, 'readwrite');
+        const store = tx.objectStore(PHOTO_STORE_NAME);
+        const getReq = store.get(id);
+        getReq.onsuccess = () => {
+            const record = getReq.result;
+            if (!record) { resolve(false); return; }
+            if (meta.mapId !== undefined)     record.mapId = meta.mapId;
+            if (meta.mapName !== undefined)   record.mapName = meta.mapName;
+            if (meta.placeId !== undefined)   record.placeId = meta.placeId;
+            if (meta.placeName !== undefined) record.placeName = meta.placeName;
+            const putReq = store.put(record);
+            putReq.onsuccess = () => resolve(true);
+            putReq.onerror   = () => reject(putReq.error);
+        };
+        getReq.onerror = () => reject(getReq.error);
     });
 }
 
@@ -5641,13 +5679,15 @@ async function dataUrlToBlob(dataUrl) {
 /**
  * Given an array of data URLs, store them in IndexedDB and
  * return an array of references, e.g. ["idb:1", "idb:2"].
+ * `meta` (optional) — { mapId, mapName, placeId, placeName } — is stored
+ * alongside each photo as provenance; see savePhotoBlob().
  */
-async function saveDataUrlsAsPhotoRefs(dataUrls) {
+async function saveDataUrlsAsPhotoRefs(dataUrls, meta = {}) {
     const refs = [];
     for (const url of dataUrls) {
         if (typeof url !== 'string' || !url) continue;
         const blob = await dataUrlToBlob(url);
-        const id   = await savePhotoBlob(blob);
+        const id   = await savePhotoBlob(blob, meta);
         refs.push(makePhotoRef(id));
     }
     return refs;
@@ -5885,6 +5925,14 @@ async function _attachOrphanPhotoIdToPlace(photoId, mapId, placeId) {
 
     map.dateLastChanged = Date.now();
     saveMapsToLocalStorage();
+
+    // Keep the photo's own provenance record in sync with its new home.
+    try {
+        await updatePhotoMeta(photoId, { mapId: map.id, mapName: map.name || '', placeId: place.id, placeName: place.description || '' });
+    } catch (e) {
+        console.warn('Could not update provenance for reattached photo', photoId, e);
+    }
+
     return true;
 }
 
@@ -6184,6 +6232,145 @@ async function deleteOrphanPhotoPermanently(photoId) {
 
     showMessage('Photo deleted.', 'success');
     render();
+}
+
+// ================================
+//  MAP-OPEN PHOTO LINK VERIFICATION
+// ================================
+// Runs automatically whenever a map is opened. Checks the link between
+// places and their photos in BOTH directions:
+//   Forward  (place -> photo): does every photo ref a place holds still
+//             point at a photo that actually exists in storage?
+//   Backward (photo -> place): does storage hold any photo that thinks it
+//             belongs to this map, but isn't actually linked from any of
+//             the map's live places right now?
+// A mismatch in either direction is exactly the pattern that caused the
+// original data loss, caught the moment it happens (or the next time the
+// map is opened) instead of being discovered later as "missing photos".
+// While checking, it also repairs each photo's own stored map/place
+// metadata to match its current, live link — so that record stays
+// trustworthy for next time, and for photos saved before this feature
+// existed.
+
+let mapPhotoLinkWarning = null;        // {mapId, mapName, missingCount, unlinkedCount, missingLabels} for the last problem found, else null
+let mapPhotoLinkCheckInProgress = false;
+
+async function verifyMapPhotoLinksOnOpen(map) {
+    if (!map || typeof indexedDB === 'undefined') return;
+    mapPhotoLinkCheckInProgress = true;
+
+    try {
+        const db = await openPhotoDB();
+
+        const getRecord = (id) => new Promise((resolve) => {
+            try {
+                const tx = db.transaction(PHOTO_STORE_NAME, 'readonly');
+                const store = tx.objectStore(PHOTO_STORE_NAME);
+                const req = store.get(id);
+                req.onsuccess = () => resolve(req.result || null);
+                req.onerror = () => resolve(null);
+            } catch (e) { resolve(null); }
+        });
+
+        const livePlaces = Array.isArray(map.targets) ? map.targets.filter(t => t && t.deleted !== true) : [];
+
+        // ---- Forward: place -> photo ----
+        const missingRefs = []; // { placeLabel }
+        const linkedPhotoIds = new Set();
+
+        for (const t of livePlaces) {
+            const refs = Array.isArray(t.photos) && t.photos.length
+                ? t.photos
+                : (t.placePhotoRef ? [t.placePhotoRef] : []);
+            for (const ref of refs) {
+                if (!isIndexedDbPhotoRef(ref)) continue;
+                const id = parsePhotoRef(ref);
+                if (id == null) continue;
+
+                const record = await getRecord(id);
+                if (!record) {
+                    missingRefs.push({ placeLabel: t.description || 'Unnamed place' });
+                    continue;
+                }
+
+                linkedPhotoIds.add(id);
+
+                // Repair drifted or missing provenance now that we know the truth.
+                if (record.mapId !== map.id || record.placeId !== t.id) {
+                    try {
+                        await updatePhotoMeta(id, {
+                            mapId: map.id, mapName: map.name || '',
+                            placeId: t.id, placeName: t.description || ''
+                        });
+                    } catch (e) {
+                        console.warn('Could not repair photo provenance for', id, e);
+                    }
+                }
+            }
+        }
+
+        // ---- Backward: photo -> place ----
+        const allRecords = await new Promise((resolve, reject) => {
+            try {
+                const tx = db.transaction(PHOTO_STORE_NAME, 'readonly');
+                const store = tx.objectStore(PHOTO_STORE_NAME);
+                const req = store.getAll();
+                req.onsuccess = () => resolve(req.result || []);
+                req.onerror = () => reject(req.error);
+            } catch (e) { reject(e); }
+        });
+
+        try { db.close(); } catch (_) {}
+
+        const unlinkedForThisMap = allRecords.filter(r => r && r.mapId === map.id && !linkedPhotoIds.has(r.id));
+
+        if (missingRefs.length || unlinkedForThisMap.length) {
+            mapPhotoLinkWarning = {
+                mapId: map.id,
+                mapName: map.name || 'this map',
+                missingCount: missingRefs.length,
+                unlinkedCount: unlinkedForThisMap.length,
+                missingLabels: [...new Set(missingRefs.map(m => m.placeLabel))].slice(0, 10)
+            };
+        } else if (mapPhotoLinkWarning && mapPhotoLinkWarning.mapId === map.id) {
+            mapPhotoLinkWarning = null;
+        }
+    } catch (e) {
+        console.warn('verifyMapPhotoLinksOnOpen failed:', e);
+    } finally {
+        mapPhotoLinkCheckInProgress = false;
+        render();
+    }
+}
+
+function dismissMapPhotoLinkWarning() {
+    mapPhotoLinkWarning = null;
+    render();
+}
+
+function buildMapPhotoLinkWarningBannerHtml() {
+    if (!mapPhotoLinkWarning) return '';
+    const w = mapPhotoLinkWarning;
+
+    const parts = [];
+    if (w.missingCount) {
+        parts.push(`${w.missingCount} photo link${w.missingCount === 1 ? '' : 's'} on this map lead${w.missingCount === 1 ? 's' : ''} nowhere (${escapeHtml(w.missingLabels.join(', '))}${w.missingLabels.length < w.missingCount ? '…' : ''})`);
+    }
+    if (w.unlinkedCount) {
+        parts.push(`${w.unlinkedCount} photo${w.unlinkedCount === 1 ? '' : 's'} in storage claim${w.unlinkedCount === 1 ? 's' : ''} to belong to this map but ${w.unlinkedCount === 1 ? "isn't" : "aren't"} linked from any place right now`);
+    }
+
+    return `
+    <div class="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-lg">
+        <div class="flex items-start justify-between gap-2">
+            <p class="text-sm text-amber-800">
+                <i class="fas fa-triangle-exclamation mr-1"></i>
+                <strong>Photo link check for "${escapeHtml(w.mapName)}":</strong> ${parts.join('; ')}.
+            </p>
+            <button type="button" onclick="dismissMapPhotoLinkWarning()" class="text-xs text-amber-700 hover:text-amber-900 flex-shrink-0">Dismiss</button>
+        </div>
+        <p class="text-xs text-amber-700 mt-2">Go to <strong>Settings → Danger Zone</strong> and run <strong>Check Photo Health</strong> and <strong>Find &amp; Reattach Orphaned Photos</strong> to see the details and fix this.</p>
+    </div>`;
 }
 
  // ======================================
@@ -11157,8 +11344,9 @@ async function handleInlinePlacePhoto(event, placeId, mapId) {
     }
 
     try {
-        const dataUrl = await fileToResizedDataUrl(file, { mapName: map.name, placeName: place.description });
-        const refs    = await saveDataUrlsAsPhotoRefs([dataUrl]);
+        const photoMeta = { mapId: map.id, mapName: map.name, placeId: place.id, placeName: place.description };
+        const dataUrl = await fileToResizedDataUrl(file, photoMeta);
+        const refs    = await saveDataUrlsAsPhotoRefs([dataUrl], photoMeta);
         const ref     = refs[0] || dataUrl;
 
         if (!Array.isArray(place.photos)) place.photos = [];
@@ -12652,6 +12840,11 @@ async function handleMapAction(button) {
                 saveMapsToLocalStorage();
                 showMessage(`Map '${name}' is now OPEN.`, 'success');
                 render();
+
+                // Runs in the background — doesn't block or slow down opening.
+                if (typeof verifyMapPhotoLinksOnOpen === 'function') {
+                    verifyMapPhotoLinksOnOpen(map);
+                }
                 break;
 
             case 'close':
@@ -13371,7 +13564,10 @@ function renderHomePage() {
         <img src="assets/London.png" alt="Trekta — Map Your World" class="w-full rounded-xl shadow-md" style="max-height:200px;object-fit:cover;object-position:center top;">
     </div>
 
+    ${buildMapPhotoLinkWarningBannerHtml()}
+
     <h2 class="text-3xl font-bold text-primary mb-2">Maps</h2>
+
 
     <!-- Open Map (rendered like any other card, just highlighted) -->
     ${openMap
@@ -20961,6 +21157,22 @@ async function importMapWithPhotosFromFile() {
     // permanently deleted — see runOneTimeDeletedDataCleanup()'s comment.
     // Cleanup remains available, but only as an explicit action via the
     // Settings "Run Maintenance" button, never automatically and silently.
+    //
+    // The photo LINK check below is different in kind from that: it is
+    // strictly read-only (plus a harmless metadata repair on records that
+    // are already confirmed intact) and never deletes anything, so it's
+    // safe to run automatically — including here, on load, for whichever
+    // map was already open when the app was last closed.
+    (function () {
+        try {
+            const alreadyOpenMap = Array.isArray(maps) ? maps.find(s => s && s.status === 'Open') : null;
+            if (alreadyOpenMap && typeof verifyMapPhotoLinksOnOpen === 'function') {
+                verifyMapPhotoLinksOnOpen(alreadyOpenMap);
+            }
+        } catch (e) {
+            console.warn('Startup photo link check failed:', e);
+        }
+    })();
 
     
 // ===============================
@@ -21513,12 +21725,13 @@ async function handleFavouriteCardPhotoSelected(event) {
     if (!find) { showMessage('Favourite not found.', 'error'); return; }
 
     const findMap = find.mapId ? (Array.isArray(maps) ? maps.find(s => String(s.id) === String(find.mapId)) : null) : null;
+    const photoMeta = { mapId: findMap ? findMap.id : null, mapName: findMap ? findMap.name : '', placeId: find.id, placeName: find.description };
 
     showMessage('Processing photo...', 'info');
 
     let photoData = '';
     try {
-        photoData = await fileToResizedDataUrl(file, { mapName: findMap ? findMap.name : '', placeName: find.description });
+        photoData = await fileToResizedDataUrl(file, photoMeta);
     } catch(err) {
         showMessage('Photo could not be processed.', 'error');
         return;
@@ -21531,7 +21744,7 @@ async function handleFavouriteCardPhotoSelected(event) {
     const legacyUrl = find.findPhotoData || find.placePhotoData || find.photoData || '';
     if (legacyUrl && find.photos.length === 0) {
         try {
-            const legacyRefs = await saveDataUrlsAsPhotoRefs([legacyUrl]);
+            const legacyRefs = await saveDataUrlsAsPhotoRefs([legacyUrl], photoMeta);
             find.photos = legacyRefs.length > 0 ? legacyRefs : [legacyUrl];
             if (legacyRefs.length > 0) find.findPhotoRef = legacyRefs[0];
         } catch (_) {
@@ -21544,7 +21757,7 @@ async function handleFavouriteCardPhotoSelected(event) {
 
     // Save the new photo to IDB and append
     try {
-        const newRefs = await saveDataUrlsAsPhotoRefs([photoData]);
+        const newRefs = await saveDataUrlsAsPhotoRefs([photoData], photoMeta);
         find.photos.push(newRefs.length > 0 ? newRefs[0] : photoData);
     } catch (_) {
         find.photos.push(photoData);
