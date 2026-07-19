@@ -160,7 +160,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.74
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.75
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -1635,7 +1635,13 @@ function collectIndexedDbPhotoIdsFromMap(map) {
 
     if (!map) return ids;
 
-    // Map photo
+    // Map photo(s) — modern maps can hold several via map.photos; mapPhotoRef
+    // is only the first/primary one. Missing the array here meant every map
+    // photo after the first looked unreferenced to anything that trusted
+    // this function to decide what's safe to delete.
+    if (Array.isArray(map.photos) && map.photos.length) {
+        collectIndexedDbPhotoIdsFromRefs(map.photos).forEach(id => ids.add(id));
+    }
     if (map.mapPhotoRef) {
         collectIndexedDbPhotoIdsFromRefs(map.mapPhotoRef).forEach(id => ids.add(id));
     }
@@ -1911,8 +1917,8 @@ async function cleanupBrokenPhotoLinks() {
         if (Array.isArray(item.photos) && item.photos.length) {
             refs = item.photos;
             usingPhotosArray = true;
-        } else if (item.placePhotoRef || item.findPhotoRef) {
-            refs = [item.placePhotoRef || item.findPhotoRef];
+        } else if (item.placePhotoRef || item.findPhotoRef || item.mapPhotoRef) {
+            refs = [item.placePhotoRef || item.findPhotoRef || item.mapPhotoRef];
             usingPhotosArray = false;
         } else {
             return; // nothing to clean
@@ -1934,12 +1940,14 @@ async function cleanupBrokenPhotoLinks() {
             }
             if (item.placePhotoRef !== undefined) item.placePhotoRef = kept[0] || '';
             if (item.findPhotoRef !== undefined) item.findPhotoRef = kept[0] || '';
+            if (item.mapPhotoRef !== undefined) item.mapPhotoRef = kept[0] || '';
             affectedLabels.push({ label, mapName });
         }
     }
 
     try {
         for (const s of (Array.isArray(maps) ? maps : [])) {
+            await cleanItem(s, s.name || 'Untitled map', '(map photo)');
             for (const t of (Array.isArray(s.targets) ? s.targets : [])) {
                 await cleanItem(t, t.description || 'Unnamed place', s.name || 'Untitled map');
             }
@@ -2257,6 +2265,10 @@ async function checkPhotoHealth() {
 
         (Array.isArray(maps) ? maps : []).forEach(s => {
             if (!s || s.deleted === true) return;
+            const mapRefs = Array.isArray(s.photos) && s.photos.length
+                ? s.photos
+                : (s.mapPhotoRef ? [s.mapPhotoRef] : []);
+            if (mapRefs.length) items.push({ label: s.name || 'Untitled map', mapName: '(map photo)', refs: mapRefs });
             (Array.isArray(s.targets) ? s.targets : []).forEach(t => {
                 if (!t || t.deleted === true) return;
                 const refs = Array.isArray(t.photos) && t.photos.length
@@ -2443,6 +2455,14 @@ async function purgeDeletedEverywhere() {
         const ids = new Set();
         if (!s) return ids;
 
+        // Map photo(s) — s.photos holds multiple; mapPhotoRef is only the
+        // first/primary one. This mirrors the "finds" gap fixed above: missing
+        // the array here meant every map photo after the first looked
+        // unreferenced to the orphan-cleanup step below, and would be
+        // permanently deleted even while still live in s.photos.
+        if (Array.isArray(s.photos) && s.photos.length) {
+            collectIdsFromRefs(s.photos).forEach(id => ids.add(id));
+        }
         if (s.mapPhotoRef) {
             collectIdsFromRefs(s.mapPhotoRef).forEach(id => ids.add(id));
         }
@@ -5664,6 +5684,7 @@ function collectAllReferencedPhotoIdsAppWide() {
     for (const m of allMaps) {
         if (!m || m.deleted === true) continue;
 
+        if (Array.isArray(m.photos) && m.photos.length) addRefs(m.photos);
         if (m.mapPhotoRef) addRefs(m.mapPhotoRef);
 
         const places = Array.isArray(m.targets) ? m.targets : [];
