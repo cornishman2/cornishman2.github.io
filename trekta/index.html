@@ -1908,9 +1908,18 @@ async function executeGalleryImportPlan() {
             if (!Array.isArray(targetMap.targets)) targetMap.targets = [];
 
             for (const p of mapPlan.placePlans) {
-                const refs = p.photoDataUrls.length ? await saveDataUrlsAsPhotoRefs(p.photoDataUrls) : [];
+                // Work out which place these photos belong to BEFORE saving them,
+                // so their storage record can carry accurate provenance either way.
+                const isUpdate = p.action === 'update';
+                const placeIdForMeta = isUpdate ? p.existingPlaceId : generateId();
+                const refs = p.photoDataUrls.length
+                    ? await saveDataUrlsAsPhotoRefs(p.photoDataUrls, {
+                        mapId: targetMap.id, mapName: targetMap.name || '',
+                        placeId: placeIdForMeta, placeName: p.title || ''
+                      })
+                    : [];
 
-                if (p.action === 'update') {
+                if (isUpdate) {
                     const place = targetMap.targets.find(t => t.id === p.existingPlaceId);
                     if (place) {
                         if (!Array.isArray(place.photos)) place.photos = [];
@@ -1928,7 +1937,7 @@ async function executeGalleryImportPlan() {
                         continue;
                     }
                     const newPlace = {
-                        id: generateId(),
+                        id: placeIdForMeta,
                         description: p.title,
                         category: p.category || '',
                         rating: p.rating || '',
@@ -7094,7 +7103,7 @@ if (mapPhotoPaths.length) {
         const zf = zip.file(path);
         if (!zf) continue;
         const blob = await zf.async('blob');
-        const id = await savePhotoBlob(blob);
+        const id = await savePhotoBlob(blob, { mapId: importedMap.id, mapName: importedMap.name || '' });
         importedMap.photos.push(makePhotoRef(id));
         donePhotos++;
         updateProgressOverlay(
@@ -7155,7 +7164,10 @@ importedMap.mapPhotoData = '';
                 const zf = zip.file(path);
                 if (!zf) continue;
                 const blob = await zf.async('blob');
-                const id = await savePhotoBlob(blob);
+                const id = await savePhotoBlob(blob, {
+                    mapId: importedMap.id, mapName: importedMap.name || '',
+                    placeId: t.id, placeName: t.description || ''
+                });
                 refs.push(makePhotoRef(id));
 
                 donePhotos++;
@@ -7194,7 +7206,10 @@ importedMap.mapPhotoData = '';
                 const zf = zip.file(path);
                 if (!zf) continue;
                 const blob = await zf.async('blob');
-                const id = await savePhotoBlob(blob);
+                const id = await savePhotoBlob(blob, {
+                    mapId: importedMap.id, mapName: importedMap.name || '',
+                    placeId: f.id, placeName: f.description || ''
+                });
                 refs.push(makePhotoRef(id));
 
                 donePhotos++;
@@ -9878,8 +9893,12 @@ async function handleNewMapSubmit(event) {
 
     // Save these data URLs into IndexedDB and get back lightweight references
     let photoRefs = [];
+    // Pre-generate the id now so freshly-saved photos can carry accurate
+    // provenance immediately, rather than waiting for the map-open/close
+    // self-heal to backfill it.
+    const _newMapId = generateId();
     try {
-        photoRefs = await saveDataUrlsAsPhotoRefs(photosDataUrls);
+        photoRefs = await saveDataUrlsAsPhotoRefs(photosDataUrls, { mapId: _newMapId, mapName: name });
     } catch (e) {
         console.error('Error saving map photos to IndexedDB:', e);
         photoRefs = [];
@@ -9931,7 +9950,7 @@ const permissionNotes = (document.getElementById('map-permission-notes')?.value 
     const mapObservations = (document.getElementById('map-observations')?.value || '').trim();
 
     const newMap = {
-        id: generateId(),
+        id: _newMapId,
         name: name,
         description: description,
         status: 'Open',
@@ -10180,7 +10199,7 @@ const permissionNotes = (document.getElementById('edit-map-permission-notes')?.v
     let newRefs = [];
     if (newDataUrls.length) {
         try {
-            newRefs = await saveDataUrlsAsPhotoRefs(newDataUrls);
+            newRefs = await saveDataUrlsAsPhotoRefs(newDataUrls, { mapId: map.id, mapName: name });
         } catch (e) {
             console.error('Error saving new map photos to IndexedDB:', e);
             newRefs = [];
@@ -10377,19 +10396,26 @@ async function handleNewPlaceSubmit(event) {
 
     // Save these data URLs into IndexedDB and get back lightweight references
     let photoRefs = [];
+    // Pre-generate the id now so freshly-saved photos can carry accurate
+    // provenance immediately, rather than waiting for the map-open/close
+    // self-heal to backfill it.
+    const _newPlaceId = generateId();
     try {
-        photoRefs = await saveDataUrlsAsPhotoRefs(photosDataUrls);
+        photoRefs = await saveDataUrlsAsPhotoRefs(photosDataUrls, {
+            mapId: map.id, mapName: map.name || '',
+            placeId: _newPlaceId, placeName: newDescription
+        });
     } catch (e) {
         console.error('Error saving photos to IndexedDB:', e);
         // We can still proceed, just without IDB refs.
         photoRefs = [];
     }
 
- const primaryDataUrl = photosDataUrls[0] || '';
+const primaryDataUrl = photosDataUrls[0] || '';
 const primaryRef     = photoRefs[0] || '';
 
 const newPlace = {
-    id: generateId(),
+    id: _newPlaceId,
     description: newDescription,
     category: newCategory,
     rating: newRating,
@@ -19311,14 +19337,15 @@ async function performMapImport(text, filename, log) {
         log('Restoring map photo(s)...');
 // New multi-photo export: exportMapPhotoDataUrls (array)
 // Legacy export: exportMapPhotoDataUrl (single)
+const _importMapPhotoMeta = { mapId: importedMap.id, mapName: importedMap.name || '' };
 if (Array.isArray(importedMap.exportMapPhotoDataUrls) && importedMap.exportMapPhotoDataUrls.length) {
-    const refs = await saveDataUrlsAsPhotoRefs(importedMap.exportMapPhotoDataUrls);
+    const refs = await saveDataUrlsAsPhotoRefs(importedMap.exportMapPhotoDataUrls, _importMapPhotoMeta);
     importedMap.photos          = refs.filter(Boolean);
     importedMap.mapPhotoRef  = importedMap.photos[0] || '';
     importedMap.mapPhotoData = '';
     delete importedMap.exportMapPhotoDataUrls;
 } else if (importedMap.exportMapPhotoDataUrl) {
-    const refs = await saveDataUrlsAsPhotoRefs([importedMap.exportMapPhotoDataUrl]);
+    const refs = await saveDataUrlsAsPhotoRefs([importedMap.exportMapPhotoDataUrl], _importMapPhotoMeta);
     importedMap.photos          = refs.filter(Boolean);
     importedMap.mapPhotoRef  = importedMap.photos[0] || '';
     importedMap.mapPhotoData = refs.length > 0 ? '' : importedMap.exportMapPhotoDataUrl;
@@ -19351,21 +19378,24 @@ for (const tr of importedMap.tracks) {
             tIndex++;
             log(`  Place ${tIndex}/${importedMap.targets.length}: ${t.description || t.id || ''}`);
 
+            if (!t.id) {
+                t.id = generateId();
+            }
+
             const dataUrls = Array.isArray(t.exportPhotosDataUrls) ? t.exportPhotosDataUrls : [];
             let refs = [];
 
             if (dataUrls.length) {
-                refs = await saveDataUrlsAsPhotoRefs(dataUrls);
+                refs = await saveDataUrlsAsPhotoRefs(dataUrls, {
+                    mapId: importedMap.id, mapName: importedMap.name || '',
+                    placeId: t.id, placeName: t.description || ''
+                });
             }
 
             t.photos         = refs;
             t.placePhotoRef = refs[0] || '';
             t.placePhotoData = refs.length > 0 ? '' : (dataUrls[0] || '');
             delete t.exportPhotosDataUrls;
-
-            if (!t.id) {
-                t.id = generateId();
-            }
         }
 
         // 3) Favourites: convert exportPhotosDataUrls -> IndexedDB refs
@@ -19375,24 +19405,27 @@ for (const tr of importedMap.tracks) {
             fIndex++;
             log(`  Favourite ${fIndex}/${importedFavourites.length}: ${f.description || f.id || ''}`);
 
-            const dataUrls = Array.isArray(f.exportPhotosDataUrls) ? f.exportPhotosDataUrls : [];
-            let refs = [];
-
-            if (dataUrls.length) {
-                refs = await saveDataUrlsAsPhotoRefs(dataUrls);
-            }
-
-            f.photos          = refs;
-            f.findPhotoRef    = refs[0] || '';
-            f.placePhotoData = refs.length > 0 ? '' : (dataUrls[0] || '');
-            delete f.exportPhotosDataUrls;
-
             if (!f.id) {
                 f.id = generateId();
             }
             if (!f.mapId) {
                 f.mapId = importedMap.id;
             }
+
+            const dataUrls = Array.isArray(f.exportPhotosDataUrls) ? f.exportPhotosDataUrls : [];
+            let refs = [];
+
+            if (dataUrls.length) {
+                refs = await saveDataUrlsAsPhotoRefs(dataUrls, {
+                    mapId: importedMap.id, mapName: importedMap.name || '',
+                    placeId: f.id, placeName: f.description || ''
+                });
+            }
+
+            f.photos          = refs;
+            f.findPhotoRef    = refs[0] || '';
+            f.placePhotoData = refs.length > 0 ? '' : (dataUrls[0] || '');
+            delete f.exportPhotosDataUrls;
         }
 
               // 4) Merge into live data (ADD, do not overwrite existing)
