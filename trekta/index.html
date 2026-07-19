@@ -160,7 +160,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.70
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.71
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -1124,7 +1124,7 @@
                 </div>
 
                 <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" onclick="closeEditPlaceModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
+                    <button type="button" onclick="closeModal('edit-place-modal')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
                     <button type="submit" class="px-4 py-2 text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition duration-150"
                             style="background-color: rgb(var(--color-secondary));">
                         Save Place Changes
@@ -10780,11 +10780,15 @@ async function initialiseCardThumbnails() {
             if (url) {
                 img.src = url;
             } else {
-                // If we couldn't resolve anything, hide the broken image
-                const container = img.closest('.mt-3');
-                if (container) {
-                    container.classList.add('hidden');
-                }
+                // Could not resolve this specific photo (e.g. its IndexedDB blob
+                // is missing). Hide only this one broken photo — NOT any shared
+                // ancestor. In the multi-photo grid, ".mt-3" is the wrapper around
+                // ALL of a place's/map's photos, so hiding it here used to make
+                // every other (perfectly valid) photo in that grid disappear too.
+                const singlePhotoWrapper = img.closest('.mt-3.relative');
+                const gridItemWrapper    = img.closest('.grid > .relative');
+                const target = singlePhotoWrapper || gridItemWrapper || img;
+                target.classList.add('hidden');
             }
         } catch (e) {
             console.error('Error resolving thumbnail for ref', ref, e);
@@ -11506,7 +11510,7 @@ async function handleEditPlaceSubmit(event) {
 
     map.dateLastChanged = Date.now();
     saveMapsToLocalStorage();
-    closeEditPlaceModal();
+    closeModal('edit-place-modal');
     showMessage(`Place ${place.description} updated successfully.`, 'success');
     render();
 }
