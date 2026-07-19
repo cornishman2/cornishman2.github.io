@@ -160,7 +160,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.76
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.77
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -6235,18 +6235,20 @@ async function deleteOrphanPhotoPermanently(photoId) {
 }
 
 // ================================
-//  MAP-OPEN PHOTO LINK VERIFICATION
+//  MAP-OPEN / MAP-CLOSE PHOTO LINK VERIFICATION
 // ================================
-// Runs automatically whenever a map is opened. Checks the link between
-// places and their photos in BOTH directions:
+// Runs automatically whenever a map is opened OR closed. Checks the link
+// between places and their photos in BOTH directions:
 //   Forward  (place -> photo): does every photo ref a place holds still
 //             point at a photo that actually exists in storage?
 //   Backward (photo -> place): does storage hold any photo that thinks it
 //             belongs to this map, but isn't actually linked from any of
 //             the map's live places right now?
 // A mismatch in either direction is exactly the pattern that caused the
-// original data loss, caught the moment it happens (or the next time the
-// map is opened) instead of being discovered later as "missing photos".
+// original data loss. Checking on OPEN catches anything that was already
+// wrong before this session started; checking on CLOSE catches anything
+// that went wrong during the session that's just ending, while it's still
+// fresh, rather than waiting for this map to happen to be opened again.
 // While checking, it also repairs each photo's own stored map/place
 // metadata to match its current, live link — so that record stays
 // trustworthy for next time, and for photos saved before this feature
@@ -6257,6 +6259,10 @@ let mapPhotoLinkCheckInProgress = false;
 
 async function verifyMapPhotoLinksOnOpen(map) {
     if (!map || typeof indexedDB === 'undefined') return;
+    // Skip rather than stack up if a check is already running (e.g. a rapid
+    // open-then-close) — the backward half reads every photo in storage,
+    // not just this map's, so overlapping runs are worth avoiding.
+    if (mapPhotoLinkCheckInProgress) return;
     mapPhotoLinkCheckInProgress = true;
 
     try {
@@ -12853,6 +12859,11 @@ async function handleMapAction(button) {
                 saveMapsToLocalStorage();
                 showMessage(`Map '${name}' is now CLOSED (Active).`, 'info');
                 render();
+
+                // Runs in the background — doesn't block or slow down closing.
+                if (typeof verifyMapPhotoLinksOnOpen === 'function') {
+                    verifyMapPhotoLinksOnOpen(map);
+                }
                 break;
 
             case 'archive':
