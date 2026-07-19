@@ -150,7 +150,6 @@
 <body class="min-h-screen">
     <!-- Persistent hidden inputs always in DOM -->
 
-    <input type="file" id="place-card-photo-input" accept="image/*;capture=camera" class="hidden" onchange="handlePlaceCardPhotoSelected(event)">
     <input type="file" id="map-photo-input" accept="image/*;capture=camera" class="hidden" onchange="handleMapPhotoSelected(event)">
     <input type="file" id="quick-photo-place-input" accept="image/*" capture="environment" class="hidden" onchange="handleQuickPhotoPlaceSelected(event)">
     <input type="file" id="quick-form-photo-input" accept="image/*;capture=camera" class="hidden" onchange="handleQuickFormPhotoSelected(event)">
@@ -159,7 +158,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.82
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.83
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -724,190 +723,6 @@
         </div>
     </div>
     
-<!-- [DEADCODE-PASS2 START: edit-place-modal (static HTML)] unreachable, see conversation notes -->
-<script type="text/plain" data-dead-code="edit-place-modal (static HTML)">
-    <div id="edit-place-modal" class="modal">
-        <div class="modal-content bg-white p-6 shadow-2xl">
-            <h3 class="text-xl font-bold text-primary mb-4">Edit Place Details</h3>
-            <p id="edit-place-logged-datetime" class="text-xs text-gray-500 -mt-3 mb-4">
-                Logged: <span class="font-semibold text-gray-700" id="edit-place-logged-datetime-value">Not recorded</span>
-            </p>
-            <form id="edit-place-form">
-                <input type="hidden" id="edit-place-id" name="placeId">
-                <input type="hidden" id="edit-map-id" name="mapId">
-
-                <div id="edit-place-map-display" class="bg-gray-100 p-2 rounded-md mb-4 text-sm font-semibold text-gray-700">
-                    Editing place in: <span id="current-edit-map-name" class="text-primary">Loading...</span>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="mb-4 col-span-2">
-                        <label for="edit-place-description" class="block text-sm font-medium text-gray-700">Description *</label>
-                        <input type="text" id="edit-place-description" name="placeDescription" required 
-                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
-                    </div>
-                    <div class="mb-4 col-span-2">
-    <label class="block text-sm font-medium text-gray-700 mb-1">
-        Place Photographs
-    </label>
-
-    <input
-        type="file"
-        id="edit-place-photo-input"
-        accept="image/*;capture=camera"
-        class="hidden"
-        multiple
-        onchange="handleEditPlacePhotoSelected(event)"
-    >
-
-    <input
-        type="hidden"
-        id="edit-place-photo-data"
-        name="placePhotoData"
-    >
-
-    <div class="flex items-center space-x-3">
-        <button
-            type="button"
-            class="px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm font-semibold"
-            onclick="triggerEditPlacePhotoInput()"
-        >
-            <i class="fas fa-camera mr-1"></i> Take / Choose Photo(s)
-        </button>
-        <span id="edit-place-photo-status" class="text-xs text-gray-500">
-            No photo captured yet.
-        </span>
-    </div>
-
-    <!-- Thumbnails (stacked, nearly full width) -->
-    <div id="edit-place-photo-preview-wrapper" class="mt-2 hidden w-full"></div>
-</div>
-                    <div class="mb-4 col-span-2">
-                        <label for="edit-place-type" class="block text-sm font-medium text-gray-700">Type</label>
-                        <select id="edit-place-type" name="placeType"
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary bg-white">
-                            <option value="">— select type —</option>
-                <optgroup label="Access &amp; Navigation">
-                <option value="Bridge">Bridge</option>
-                <option value="Dead End">Dead End</option>
-                <option value="Gate">Gate</option>
-                <option value="One Way">One Way</option>
-                </optgroup>
-                <optgroup label="Accommodation">
-                <option value="Camping Barn">Camping Barn</option>
-                <option value="Campsite">Campsite</option>
-                <option value="Hostel">Hostel</option>
-                <option value="Hotel">Hotel</option>
-                </optgroup>
-                <optgroup label="Food &amp; Drink">
-                <option value="Bakery">Bakery</option>
-                <option value="Bar">Bar</option>
-                <option value="Café">Café</option>
-                <option value="Fast Food">Fast Food</option>
-                <option value="Pub">Pub</option>
-                <option value="Restaurant">Restaurant</option>
-                <option value="Shop">Shop</option>
-                <option value="Supermarket">Supermarket</option>
-                </optgroup>
-                <optgroup label="Nature &amp; Landscape">
-                <option value="Beach">Beach</option>
-                <option value="Cliff Edge">Cliff Edge</option>
-                <option value="Field">Field</option>
-                <option value="Forest / Wood">Forest / Wood</option>
-                <option value="Hill / Summit">Hill / Summit</option>
-                <option value="Lake / Reservoir">Lake / Reservoir</option>
-                <option value="Mountain">Mountain</option>
-                <option value="Moorland">Moorland</option>
-                <option value="Quarry">Quarry</option>
-                <option value="Standing Stones">Standing Stones</option>
-                <option value="River">River</option>
-                <option value="Stile">Stile</option>
-                <option value="Stream">Stream</option>
-                <option value="Trig Point">Trig Point</option>
-                <option value="Valley">Valley</option>
-                <option value="Viewpoint">Viewpoint</option>
-                <option value="Woods">Woods</option>
-                </optgroup>
-                <optgroup label="Places of Interest">
-                <option value="Castle / Ruins">Castle / Ruins</option>
-                <option value="Church / Chapel">Church / Chapel</option>
-                <option value="Cinema">Cinema</option>
-                <option value="City Centre">City Centre</option>
-<option value="Historic Site">Historic Site</option>
-                <option value="Museum">Museum</option>
-<option value="Old Town">Old Town</option>
-                <option value="Park">Park</option>
-                <option value="Playground">Playground</option>
-<option value="Shopping Centre / Mall">Shopping Centre / Mall</option>
-                <option value="Sports Field">Sports Field</option>
-<option value="Town Centre">Town Centre</option>
-<option value="Town Square">Town Square</option>
-                </optgroup>
-                <optgroup label="Services">
-                <option value="ATM">ATM</option>
-                <option value="Bank">Bank</option>
-                <option value="Dentist">Dentist</option>
-                <option value="Emergency Department">Emergency Department</option>
-                <option value="GP Surgery">GP Surgery</option>
-                <option value="Hospital">Hospital</option>
-                <option value="Information Point">Information Point</option>
-                <option value="Minor Injuries Unit">Minor Injuries Unit</option>
-                <option value="Pharmacy">Pharmacy</option>
-                <option value="Police Station">Police Station</option>
-                <option value="Public Toilet">Public Toilet</option>
-<option value="Town Hall">Town Hall</option>
-                </optgroup>
-                <optgroup label="Transport">
-                <option value="Airport">Airport</option>
-                <option value="Bus Stop">Bus Stop</option>
-                <option value="Ferry Terminal">Ferry Terminal</option>
-                <option value="Free Parking">Free Parking</option>
-                <option value="Long Stay Parking">Long Stay Parking</option>
-<option value="Metro / Underground">Metro / Underground</option>
-                <option value="Petrol Station">Petrol Station</option>
-                <option value="Short Stay Parking">Short Stay Parking</option>
-                <option value="Train Station">Train Station</option>
-                </optgroup>
-                <optgroup label="Other">
-                <option value="Something else">Something else</option>
-                </optgroup>
-                        </select>
-                    </div>
-                    <div class="mb-4 col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
-                            <div class="flex gap-2">
-                                <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="1" class="sr-only" onclick="onStarRatingClick(this,'placeRating')"><span class="block py-2 rounded-lg border-2 border-gray-300 text-gray-600 text-lg font-bold" style="transition:all 0.15s">★</span></label>
-                                <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="2" class="sr-only" onclick="onStarRatingClick(this,'placeRating')"><span class="block py-2 rounded-lg border-2 border-gray-300 text-gray-600 text-lg font-bold" style="transition:all 0.15s">★★</span></label>
-                                <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="3" class="sr-only" onclick="onStarRatingClick(this,'placeRating')"><span class="block py-2 rounded-lg border-2 border-gray-300 text-gray-600 text-lg font-bold" style="transition:all 0.15s">★★★</span></label>
-                                <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="4" class="sr-only" onclick="onStarRatingClick(this,'placeRating')"><span class="block py-2 rounded-lg border-2 border-gray-300 text-gray-600 text-lg font-bold" style="transition:all 0.15s">★★★★</span></label>
-                                <label class="flex-1 text-center cursor-pointer"><input type="radio" name="placeRating" value="5" class="sr-only" onclick="onStarRatingClick(this,'placeRating')"><span class="block py-2 rounded-lg border-2 border-gray-300 text-gray-600 text-lg font-bold" style="transition:all 0.15s">★★★★★</span></label>
-                            </div>
-                        </div>
-                    
-<div class="mb-4 col-span-2">
-                        <label for="edit-place-coords" class="block text-sm font-medium text-gray-700">GPS Coordinates</label>
-                        <input type="text" id="edit-place-coords" name="placeCoords" placeholder="e.g., 50.2568, -5.2345" 
-                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
-                    </div>
-                    <div class="mb-4 col-span-2">
-                        <label for="edit-place-accuracy" class="block text-sm font-medium text-gray-700">GPS Accuracy (m)</label>
-                        <input type="text" id="edit-place-accuracy" name="placeAccuracy" placeholder="e.g., 5.0" 
-                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary focus:border-primary">
-                    </div>
-                </div>
-
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" onclick="closeModal('edit-place-modal')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
-                    <button type="submit" class="px-4 py-2 text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition duration-150"
-                            style="background-color: rgb(var(--color-secondary));">
-                        Save Place Changes
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</script>
-<!-- [DEADCODE-PASS2 END: edit-place-modal (static HTML)] -->
     
 <div id="edit-profile-modal" class="modal">
     <div class="modal-content bg-white p-6 shadow-2xl">
@@ -1067,10 +882,8 @@ let mapCanvasExpanded   = true;     // map map canvas + controls
 let expandedRouteEditId   = null;     // route ID currently open for inline editing (null = none)
 let expandedRouteDeleteId = null;     // route ID currently open for inline delete confirm (null = none)
 let newMapPanelOpen     = false;    // whether the inline new-map form is expanded on the home page
-// [DEADCODE-PASS2 START: editMapPanelOpen (state var, never read)]
-//let editMapPanelOpen    = false;    // whether the inline edit-map form is expanded on the home page
-// [DEADCODE-PASS2 END: editMapPanelOpen (state var, never read)]
 let expandedMapDeleteId = null;     // map ID currently open for inline delete confirm (null = none)
+let expandedPlaceDeleteId = null;   // still cleared by confirmInlinePlaceDelete's cleanup step; kept so that assignment has a real variable to write to
 let exportMapConfirmOpen  = false;   // whether the inline export-zip confirm is showing
 let maintenanceConfirmOpen   = false;   // whether the inline maintenance confirm is showing
 let orphanPhotoRecoveryOpen  = false;   // whether the orphaned-photo recovery panel is showing
@@ -1099,9 +912,6 @@ let devicePresetConfirm    = null;    // {device, label} when inline device pres
 let newPlacePanelOpen      = false;   // whether the inline new-place form is showing on the places page
 let expandedPlaceEditId    = null;    // place ID currently open for inline editing
 let expandedPlaceCopyId    = null;    // place ID currently open for inline copy-to-favourites confirm
-// [DEADCODE-PASS2 START: expandedPlaceDeleteId (state var, never read)]
-//let expandedPlaceDeleteId  = null;    // place ID currently open for inline delete confirm
-// [DEADCODE-PASS2 END: expandedPlaceDeleteId (state var, never read)]
 let qrPanelPlaceId         = null;    // place ID whose QR panel is currently open
 let expandedFavouriteEditId      = null;    // find ID currently open for inline editing
 let expandedFavouriteDeleteId    = null;    // find ID currently open for inline delete confirm
@@ -1215,12 +1025,6 @@ let compassMapIdForMap = null; // which map the Compass/Map is currently showing
 // ------------------------------------------------------
 //  GRID TILE (Step 1: show current GPS + simple 30m tile)
 // ------------------------------------------------------
-// [DEADCODE-PASS2 START: getCompassOpenMap]
-//function getCompassOpenMap() {
-//    if (!compassMapIdForMap) return maps.find(s => s.status === 'Open') || null;
-//    return maps.find(s => s.id === compassMapIdForMap) || maps.find(s => s.status === 'Open') || null;
-//}
-// [DEADCODE-PASS2 END: getCompassOpenMap]
 
 function collectIndexedDbPhotoIdsFromRefs(refsOrSingle) {
     const ids = new Set();
@@ -2653,31 +2457,6 @@ function loadAppLimits() {
     }
 }
 
-// [DEADCODE-PASS2 START: saveAppLimits]
-//function saveAppLimits(limits) {
-//    const normIntOrNull = (v) => {
-//        const s = String(v ?? '').trim();
-//        if (!s) return null;                 // blank => unlimited
-//        const n = Math.max(0, Math.floor(+s));
-//        return Number.isFinite(n) ? n : null;
-//    };
-//    const normDateOrNull = (v) => {
-//        const s = String(v ?? '').trim();
-//        if (!s) return null;                 // blank => no expiry
-//        // Expect YYYY-MM-DD
-//        return s;
-//    };
-//
-//    const toSave = {
-//        maxMaps: normIntOrNull(limits.maxMaps),
-//        maxPlaces: normIntOrNull(limits.maxPlaces),
-//        maxFavourites:   normIntOrNull(limits.maxFavourites),
-//        expiryDate: normDateOrNull(limits.expiryDate)
-//    };
-//    localStorage.setItem(APP_LIMITS_STORAGE_KEY, JSON.stringify(toSave));
-//    return loadAppLimits(); // return normalised
-//}
-// [DEADCODE-PASS2 END: saveAppLimits]
 
 function getAppRunCount() {
     const n = parseInt(localStorage.getItem(APP_RUNS_STORAGE_KEY) || '0', 10);
@@ -2750,26 +2529,6 @@ function canCreate(type, openMap = null) {
     return { ok: true, reason: '', type: type };
 }
 
-// [DEADCODE-PASS2 START: enforceCanCreateOrWarn]
-//function enforceCanCreateOrWarn(type) {
-//    if (typeof canCreate !== 'function') return true; // limits not wired yet
-//    const r = canCreate(type);
-//
-//    if (r.ok) return true;
-//
-//    // Prefer long message if you have it
-//    if (typeof showMessageLong === 'function') {
-//        showMessageLong(r.reason || 'Limit reached.', 'error', 7000);
-//    } else if (typeof showMessage === 'function') {
-//        showMessage(r.reason || 'Limit reached.', 'error');
-//    } else {
-//        alert(r.reason || 'Limit reached.');
-//    }
-//
-//    // If expired, you may also want to bounce user to Settings/Home
-//    return false;
-//}
-// [DEADCODE-PASS2 END: enforceCanCreateOrWarn]
         
 function renderHelpPage() {
     return `
@@ -3591,67 +3350,13 @@ function hideAppSplash() {
   setTimeout(() => { el.remove(); }, 200);
 }
 
-// [DEADCODE-PASS2 START: promptRenameRoute]
-//function promptRenameRoute(routeId) {
-//    const found = findRouteById(routeId);
-//    if (!found || !found.route) {
-//        showMessage('Route not found.', 'error');
-//        return;
-//    }
-//
-//    const currentName = String(found.route.name || 'Route').trim();
-//    const newName = prompt('Rename route:', currentName);
-//
-//    // User cancelled
-//    if (newName === null) return;
-//
-//    const trimmed = String(newName).trim();
-//    if (!trimmed) {
-//        showMessage('Route name cannot be blank.', 'warning');
-//        return;
-//    }
-//
-//    // No change
-//    if (trimmed === currentName) {
-//        showMessage('No change.', 'info');
-//        return;
-//    }
-//
-//    renameRoute(routeId, trimmed);
-//}
-// [DEADCODE-PASS2 END: promptRenameRoute]
 
 
         
-// [DEADCODE-PASS2 START: navViewRadiusMetersForDistance]
-//function navViewRadiusMetersForDistance(distMeters) {
-//    // How many metres from the user to the edge of the mini-map.
-//    // Bigger far away, tighter when close.
-//    if (!isFinite(distMeters)) return 40;
-//
-//    if (distMeters > 200) return 120;
-//    if (distMeters > 120) return 80;
-//    if (distMeters > 60)  return 50;
-//    if (distMeters > 30)  return 30;
-//    if (distMeters > 15)  return 20;
-//    return 12; // very close: show fine detail
-//}
-// [DEADCODE-PASS2 END: navViewRadiusMetersForDistance]
 
 // Holds the chosen folder handle for this session
 let photoGalleryExportRootHandle = null;
 
-// [DEADCODE-PASS2 START: turnInstructionFromRelativeAngle]
-//function turnInstructionFromRelativeAngle(relDeg) {
-//    // relDeg: -180..+180 (negative = place left, positive = place right)
-//    const a = Math.abs(relDeg);
-//    if (a < 10) return 'STRAIGHT';
-//    if (a < 25) return relDeg > 0 ? 'SLIGHT RIGHT' : 'SLIGHT LEFT';
-//    if (a < 60) return relDeg > 0 ? 'RIGHT' : 'LEFT';
-//    if (a < 110) return relDeg > 0 ? 'HARD RIGHT' : 'HARD LEFT';
-//    return 'TURN AROUND';
-//}
-// [DEADCODE-PASS2 END: turnInstructionFromRelativeAngle]
 
         
 function needsGpsNow() {
@@ -3692,51 +3397,6 @@ async function pickPhotoGalleryExportFolder() {
 }
 
 
-// [DEADCODE-PASS2 START: exportPhotoGalleryToSelectedFolder]
-//async function exportPhotoGalleryToSelectedFolder() {
-//    if (!photoGalleryExportRootHandle) {
-//        showMessage('Please pick a Master folder first (Step 1).', 'error');
-//        return;
-//    }
-//
-//    const opts = {
-//        createIndex: !!document.getElementById('gallery-opt-create-index')?.checked,
-//
-//        exportOpen:  !!document.getElementById('gallery-opt-export-open')?.checked,
-//        exportOther: !!document.getElementById('gallery-opt-export-other')?.checked,
-//
-//        includePlacesInHtml: !!document.getElementById('gallery-opt-include-places')?.checked,
-//        includeFavouritesInHtml:   !!document.getElementById('gallery-opt-include-favourites')?.checked,
-//
-//        writePlaceJpgs: !!document.getElementById('gallery-opt-write-place-jpgs')?.checked,
-//        writeFavouriteJpgs:   !!document.getElementById('gallery-opt-write-find-jpgs')?.checked,
-//
-//        // sensible defaults (match your previous exporter style)
-//        maxW: (typeof getMaxPhotoWidth === 'function') ? getMaxPhotoWidth() : 1000
-//    };
-//
-//    if (!opts.exportOpen && !opts.exportOther) {
-//        showMessage('Please select at least one map scope: Open and/or Other maps.', 'error');
-//        return;
-//    }
-//    if (!opts.includePlacesInHtml && !opts.includeFavouritesInHtml) {
-//        showMessage('Please select at least one: Export Places and/or Export Favourites (for the gallery).', 'error');
-//        return;
-//    }
-//
-//    // One confirmation, then run
-//    const msg = `
-//      Export photo galleries into the selected Master folder?<br>
-//      ${opts.createIndex ? '<strong>index.html will be created/overwritten.</strong><br>' : ''}
-//      <span class="text-sm text-gray-600">
-//        HTML files will be written directly into the chosen folder.
-//        Optional JPGs will also be written directly into the same folder.
-//      </span>
-//    `;
-//    // Export directly — user has already configured options above
-//    await exportPhotoGalleries_MasterFolder(photoGalleryExportRootHandle, opts);
-//}
-// [DEADCODE-PASS2 END: exportPhotoGalleryToSelectedFolder]
 
 
 // Master-folder exporter (no subfolders)
@@ -4305,11 +3965,6 @@ async function resizeBlobToMaxWidthJpeg(blob, maxWidth, quality = 0.85) {
     return await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
 }
 
-// [DEADCODE-PASS2 START: blobToArrayBuffer]
-//async function blobToArrayBuffer(blob) {
-//    return await blob.arrayBuffer();
-//}
-// [DEADCODE-PASS2 END: blobToArrayBuffer]
 
 async function writeFileToHandle(dirHandle, filename, blob) {
     const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
@@ -4723,36 +4378,6 @@ function isAnyRouteRecording() {
 }
         
 
-// [DEADCODE-PASS2 START: ensureRoutingThen]
-//function ensureRoutingThen(fn) {
-//    // If already recording, run immediately
-//    if (typeof isAnyRouteRecording === 'function' && isAnyRouteRecording()) {
-//        fn();
-//        return;
-//    }
-//
-//    // Start a new route
-//    if (typeof handleStartRouteClick === 'function') {
-//        handleStartRouteClick();
-//    }
-//
-//    // Give the GPS/watch a brief moment to populate coords.
-//    // If coords already exist, this returns almost immediately.
-//    const start = Date.now();
-//    const maxWaitMs = 1200;     // short, keeps UI snappy
-//    const tickMs = 100;
-//
-//    const timer = setInterval(() => {
-//        const gps = smoothedUserCoords || currentUserCoords;
-//        const hasFix = gps && typeof gps.lat === 'number' && typeof gps.lon === 'number' && !isNaN(gps.lat) && !isNaN(gps.lon);
-//
-//        if (hasFix || (Date.now() - start) >= maxWaitMs) {
-//            clearInterval(timer);
-//            fn();
-//        }
-//    }, tickMs);
-//}
-// [DEADCODE-PASS2 END: ensureRoutingThen]
 
         
 // Place types per map type — used to filter dropdowns
@@ -6005,25 +5630,6 @@ function buildMapPhotoLinkWarningBannerHtml() {
 // ── Shared place pin colour helper ─────────────────────────────────────
 // Fill  = Category range colour from quick place buttons
 // Border = status colour
-// [DEADCODE-PASS2 START: getPlacePinColors]
-//function getPlacePinColors(t, ranges) {
-//    const status = String(t.status || 'Not visited').toLowerCase();
-//
-//    // Fill from status — this is the main visual indicator
-//    const statusColors = {
-//        'not visited': '#22c55e',  // green (go there!)
-//        'visited':     '#1f2937',  // black (done)
-//        'to return':   '#eab308',  // yellow (nice experience)
-//        'avoid':       '#ef4444',  // red (avoid)
-//    };
-//    const fill = statusColors[status] || '#22c55e';
-//
-//    // Border is always white — makes pins stand out on the map
-//    const border = '#ffffff';
-//
-//    return { fill, border };
-//}
-// [DEADCODE-PASS2 END: getPlacePinColors]
 // ── End shared helper ────────────────────────────────────────────────────
 function getActivePlaces(map) {
     if (!map || !Array.isArray(map.targets)) return [];
@@ -6063,21 +5669,6 @@ function saveCollectionToStorage(key, data) {
     }
 }
 
-// [DEADCODE-PASS2 START: loadCollectionFromStorage]
-//function loadCollectionFromStorage(key, fallback = []) {
-//    try {
-//        const raw = localStorage.getItem(key);
-//        if (!raw) return fallback;
-//
-//        const parsed = JSON.parse(raw);
-//        return Array.isArray(parsed) ? parsed : fallback;
-//    } catch (err) {
-//        console.error(`Error loading ${key} from localStorage:`, err);
-//        showMessage(`Could not load ${key} from local storage. Using defaults.`, 'warning');
-//        return fallback;
-//    }
-//}
-// [DEADCODE-PASS2 END: loadCollectionFromStorage]
        
 // --- GEOGRAPHY HELPER FUNCTIONS ---
 
@@ -6139,11 +5730,6 @@ function haversineDistanceMeters(lat1, lon1, lat2, lon2) {
 
 
 // Alias used by navigation code (legacy name)
-// [DEADCODE-PASS2 START: metersBetweenLatLon]
-//function metersBetweenLatLon(lat1, lon1, lat2, lon2) {
-//    return haversineDistanceMeters(lat1, lon1, lat2, lon2);
-//}
-// [DEADCODE-PASS2 END: metersBetweenLatLon]
 
 /**
  * Returns the initial bearing (forward azimuth) from point 1 to point 2
@@ -6183,17 +5769,7 @@ function haversineDistanceMetres(lat1, lon1, lat2, lon2) {
 }
 
 // Optional alias some code paths check for
-// [DEADCODE-PASS2 START: calculateDistanceMeters]
-//function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
-//    return distanceMeters(lat1, lon1, lat2, lon2);
-//}
-// [DEADCODE-PASS2 END: calculateDistanceMeters]
 
-// [DEADCODE-PASS2 START: calculateBearingDegrees]
-//function calculateBearingDegrees(lat1, lon1, lat2, lon2) {
-//    return initialBearingDegrees(lat1, lon1, lat2, lon2);
-//}
-// [DEADCODE-PASS2 END: calculateBearingDegrees]
 
         
 /**
@@ -6226,14 +5802,6 @@ function bearingToCompassPoint(bearingDeg, precision = 16) {
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 
 /** Calculates the diameter (in meters) for the confidence circle: Accuracy * 2. */
-// [DEADCODE-PASS2 START: getCircleDiameter]
-//function getCircleDiameter(accuracyInMeters) {
-//    if (typeof accuracyInMeters === 'number' && accuracyInMeters > 0) {
-//        return (accuracyInMeters * 2).toFixed(1); // Diameter = 2 * radius
-//    }
-//    return 'N/A';
-//}
-// [DEADCODE-PASS2 END: getCircleDiameter]
 
 // --- MOVEMENT & GUIDANCE HELPER FUNCTIONS ---
 
@@ -6263,36 +5831,6 @@ function recordMovementSample(lat, lon) {
  *   - a bearing in degrees [0, 360) if we have enough motion
  *   - null if we don't have enough recent movement yet
  */
-// [DEADCODE-PASS2 START: computeMovementBearingDegrees]
-//function computeMovementBearingDegrees() {
-//    if (!movementHistory || movementHistory.length < 2) {
-//        return null;
-//    }
-//
-//    const now = Date.now();
-//
-//    // Keep only samples from the recent window
-//    movementHistory = movementHistory.filter(p => now - p.time <= MOVEMENT_HISTORY_MAX_AGE_MS);
-//
-//    if (movementHistory.length < 2) {
-//        return null;
-//    }
-//
-//    const first = movementHistory[0];
-//    const last = movementHistory[movementHistory.length - 1];
-//
-//    // Distance moved in metres (use existing distanceMeters helper)
-//    const dist = distanceMeters(first.lat, first.lon, last.lat, last.lon);
-//
-//    if (dist < MOVEMENT_MIN_DISTANCE_METERS) {
-//        // Too little movement to get a stable direction
-//        return null;
-//    }
-//
-//    // Bearing of travel from first point in history to the most recent
-//    return initialBearingDegrees(first.lat, first.lon, last.lat, last.lon);
-//}
-// [DEADCODE-PASS2 END: computeMovementBearingDegrees]
         
 // --- END GEOGRAPHY HELPER FUNCTIONS ---
 
@@ -6734,88 +6272,6 @@ function attachFormSubmitHandler(formId, handler) {
 
 /** Confirm and execute inline find delete. */
 
-// [DEADCODE-PASS2 START: openEditRouteModal]
-//function openEditRouteModal(routeId, options = {}) {
-//    const found = findRouteById(routeId);
-//    if (!found || !found.route || !found.map) {
-//        showMessage('Route not found.', 'error');
-//        return;
-//    }
-//
-//    const modal = document.getElementById('edit-route-modal');
-//    const form  = document.getElementById('edit-route-form');
-//    if (!modal || !form) {
-//        showMessage('Edit Route modal not found in page.', 'error');
-//        return;
-//    }
-//
-//    const titleEl = document.getElementById('edit-route-title');
-//    const idEl    = document.getElementById('edit-route-id');
-//    const nameEl  = document.getElementById('edit-route-name');
-//    const descEl  = document.getElementById('edit-route-description');
-//
-//    const route = found.route;
-//
-//    // Title
-//    const isNew = !!options.isNew;
-//    _editRouteIsNew = isNew;
-//    _editRouteNewId = isNew ? route.id : null;
-//    if (titleEl) titleEl.textContent = isNew ? 'New Route Details' : 'Edit Route';
-//
-//    // Fill fields
-//    if (idEl)   idEl.value = route.id;
-//    if (nameEl) nameEl.value = String(route.name || 'Route');
-//    if (descEl) descEl.value = String(route.description || '');
-//
-//    // Filter route type dropdown by map type
-//    const typeSelect = document.getElementById('edit-route-type');
-//    if (typeSelect) {
-//        const allowedTypes = getFilteredRouteTypes(found.map.mapType || 'General');
-//        typeSelect.innerHTML = '<option value="">(select type)</option>'
-//            + allowedTypes.map(function(t) {
-//                return '<option value="' + t + '"' + (route.type === t ? ' selected' : '') + '>' + t + '</option>';
-//            }).join('');
-//    }
-//
-//    // Colour swatches
-//    const colourInput = document.getElementById('edit-route-colour');
-//    if (colourInput) colourInput.value = route.color || 'rgba(59,130,246,0.9)';
-//    document.querySelectorAll('.route-colour-swatch').forEach(btn => {
-//        const selected = (btn.getAttribute('data-color') === (route.color || 'rgba(59,130,246,0.9)'));
-//        btn.style.borderColor = selected ? '#15803d' : 'transparent';
-//        btn.style.transform = selected ? 'scale(1.2)' : 'scale(1)';
-//        btn.onclick = () => {
-//            document.querySelectorAll('.route-colour-swatch').forEach(b => {
-//                b.style.borderColor = 'transparent';
-//                b.style.transform = 'scale(1)';
-//            });
-//            btn.style.borderColor = '#15803d';
-//            btn.style.transform = 'scale(1.2)';
-//            if (colourInput) colourInput.value = btn.getAttribute('data-color');
-//        };
-//    });
-//
-//    // Attach submit safely (you already use this pattern elsewhere)
-//    if (typeof attachFormSubmitHandler === 'function') {
-//        attachFormSubmitHandler('edit-route-form', handleEditRouteSubmit);
-//    } else {
-//        // Fallback (in case attachFormSubmitHandler isn't in this build)
-//        form.onsubmit = handleEditRouteSubmit;
-//    }
-//
-//    openModal('edit-route-modal');
-//
-//    // Focus for faster editing on mobile
-//    setTimeout(() => {
-//        try {
-//            if (nameEl) {
-//                nameEl.focus();
-//                nameEl.setSelectionRange(nameEl.value.length, nameEl.value.length);
-//            }
-//        } catch (e) {}
-//    }, 50);
-//}
-// [DEADCODE-PASS2 END: openEditRouteModal]
 
 let _editRouteIsNew = false;
 let _editRouteNewId = null;
@@ -8610,12 +8066,6 @@ function renderExportPage() {
 }
 
         
-// [DEADCODE-PASS2 START: promptEditRouteMeta]
-//        function promptEditRouteMeta(routeId) {
-//    // Backwards-compatible wrapper: old callers now open the modal
-//    openEditRouteModal(routeId);
-//}
-// [DEADCODE-PASS2 END: promptEditRouteMeta]
 
 /**
  * Refreshes ONLY the Routes panel DOM in place (used to show/hide the inline
@@ -8731,50 +8181,6 @@ function refreshGpsInfoCardInPlace() {
 }
 
         
-// [DEADCODE-PASS2 START: deleteRoute]
-//        function deleteRoute(routeId) {
-//    const found = findRouteById(routeId);
-//    if (!found) {
-//        showMessage('Route not found.', 'error');
-//        return;
-//    }
-//
-//    const { map, route } = found;
-//    const routeName = route.name || 'this route';
-//
-//    const executeDelete = () => {
-//        // If deleting the currently active recording route, stop + clear state safely
-//        if (activeRouteId === route.id && activeRouteMapId === map.id) {
-//            activeRouteId = null;
-//            activeRouteMapId = null;
-//
-//            // Also stop routing so user-location does not keep affecting the map
-//            isRoutingActive = false;
-//            if (typeof stopLiveMapLocationWatch === 'function') {
-//                stopLiveMapLocationWatch();
-//            }
-//        }
-//
-//        // Remove it from the map
-//        map.tracks = (map.tracks || []).filter(t => t.id !== route.id);
-//
-//        saveMapsToLocalStorage();
-//        showMessage(`Route deleted: ${routeName}.`, 'success');
-//
-//        // Re-render if we're on Compass so the list + map update immediately
-//        if (currentPage === 'Compass') {
-//            render();
-//        }
-//    };
-//
-//    showConfirmationModal(
-//        `Confirm Delete Route: ${routeName}`,
-//        `Are you sure you want to permanently delete <strong>${routeName}</strong>?<br>
-//         <span class="text-sm text-gray-600">This cannot be undone.</span>`,
-//        executeDelete
-//    );
-//}
-// [DEADCODE-PASS2 END: deleteRoute]
 
 
         
@@ -9069,11 +8475,6 @@ function preWarmGpsIfPermitted() {
 }
 
 /** Wrapper function to re-render Compass page for auto-refresh using the latest watched GPS data. */
-// [DEADCODE-PASS2 START: triggerImportMap]
-//function triggerImportMap() {
-//    importMapWithPhotosFromFile();
-//}
-// [DEADCODE-PASS2 END: triggerImportMap]
 
 async function handleGpxImport(event) {
     const fileInput = event?.target;
@@ -9427,95 +8828,6 @@ function inferVdiFromName(name) {
 }
 
 /** Parse GPX into waypoints + routes (namespace-safe). */
-// [DEADCODE-PASS2 START: parseGpxToObjects]
-//function parseGpxToObjects(gpxText) {
-//    const parser = new DOMParser();
-//    const xml = parser.parseFromString(gpxText, 'application/xml');
-//
-//    // Detect parse errors
-//    const pe = xml.getElementsByTagName('parsererror');
-//    if (pe && pe.length) {
-//        throw new Error('GPX XML parse error.');
-//    }
-//
-//    const getFirstTextByLocal = (parent, localName) => {
-//        if (!parent) return '';
-//        const nodes = parent.getElementsByTagNameNS('*', localName);
-//        if (nodes && nodes[0] && nodes[0].textContent != null) return nodes[0].textContent.trim();
-//        return '';
-//    };
-//
-//    const parseExtensions = (parent) => {
-//        const out = {};
-//        if (!parent) return out;
-//
-//        const extNodes = parent.getElementsByTagNameNS('*', 'extensions');
-//        const ext = extNodes && extNodes[0] ? extNodes[0] : null;
-//        if (!ext) return out;
-//
-//        for (const ch of Array.from(ext.childNodes || [])) {
-//            if (ch.nodeType !== 1) continue; // ELEMENT_NODE
-//            const k = ch.localName || ch.nodeName;
-//            const v = (ch.textContent || '').trim();
-//            if (k && v) out[k] = v;
-//        }
-//        return out;
-//    };
-//
-//    // Metadata name (optional)
-//    const md = xml.getElementsByTagNameNS('*', 'metadata')[0] || null;
-//    const metadataName = md ? getFirstTextByLocal(md, 'name') : '';
-//
-//    // Waypoints
-//    const wptNodes = Array.from(xml.getElementsByTagNameNS('*', 'wpt'));
-//    const waypoints = wptNodes.map(wpt => {
-//        const lat = Number(wpt.getAttribute('lat'));
-//        const lon = Number(wpt.getAttribute('lon'));
-//        const name = getFirstTextByLocal(wpt, 'name');
-//        const desc = getFirstTextByLocal(wpt, 'desc');
-//        const sym  = getFirstTextByLocal(wpt, 'sym');
-//        const extensions = parseExtensions(wpt);
-//
-//        return {
-//            lat, lon,
-//            name, desc, sym,
-//            extensions
-//        };
-//    }).filter(w => Number.isFinite(w.lat) && Number.isFinite(w.lon));
-//
-//    // Routes
-//    const trkNodes = Array.from(xml.getElementsByTagNameNS('*', 'trk'));
-//    const routes = trkNodes.map(trk => {
-//        const name = getFirstTextByLocal(trk, 'name') || '';
-//        const desc = getFirstTextByLocal(trk, 'desc') || '';
-//
-//        const trkptNodes = Array.from(trk.getElementsByTagNameNS('*', 'trkpt'));
-//        const points = trkptNodes.map(pt => {
-//            const lat = Number(pt.getAttribute('lat'));
-//            const lon = Number(pt.getAttribute('lon'));
-//            if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-//
-//            const timeStr = getFirstTextByLocal(pt, 'time');
-//            const t = timeStr ? Date.parse(timeStr) : null;
-//
-//            const ext = parseExtensions(pt);
-//            const acc = (ext.accuracy != null && String(ext.accuracy).trim() !== '')
-//                ? Number(ext.accuracy)
-//                : null;
-//
-//            return {
-//                lat, lon,
-//                time: (t && !isNaN(t)) ? t : null,
-//                accuracy: (acc != null && !isNaN(acc)) ? acc : null
-//            };
-//        }).filter(Boolean);
-//
-//        return { name, desc, points };
-//    });
-//
-//    return { metadataName, waypoints, routes };
-//}
-// [DEADCODE-PASS2 END: parseGpxToObjects]
 
 /** If a waypoint <name> looks like a Category number, use it. */
 function inferVdiFromName(name) {
@@ -10073,251 +9385,8 @@ const permissionNotes = (document.getElementById('map-permission-notes')?.value 
     render();
 }
 
-// [DEADCODE-PASS2 START: showEditMapModal]
-//async function showEditMapModal() {
-//    const openMap = maps.find(s => s.status === 'Open');
-//    if (!openMap) {
-//        showMessage('There is no open map to edit.', 'warning');
-//        return;
-//    }
-//
-//    editMapPanelOpen = true;
-//    render();
-//
-//    // Populate fields after render creates the DOM elements
-//    const form = document.getElementById('edit-map-form');
-//    if (!form) return;
-//
-//    form['mapId'].value = openMap.id;
-//    form['mapName'].value = openMap.name || '';
-//    form['mapDescription'].value = openMap.description || '';
-//    const mapTypeEl = document.getElementById('edit-map-type');
-//    if (mapTypeEl) mapTypeEl.value = openMap.mapType || 'General';
-//
-//    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v ?? ''); };
-//
-//    setVal('edit-map-permission-from', openMap.permissionFrom || '');
-//    setVal('edit-map-permission-type', openMap.permissionType || '');
-//    setVal('edit-map-permission-date-granted', formatMapPermissionDate(openMap.permissionDateGranted));
-//    setVal('edit-map-permission-expiry', formatMapPermissionDate(openMap.permissionExpiry));
-//    setVal('edit-map-permission-notes', openMap.permissionNotes || '');
-//    setVal('edit-map-area-type', openMap.areaType || '');
-//    setVal('edit-map-land-use-current', openMap.landUseCurrent || '');
-//    setVal('edit-map-soil-type', openMap.soilType || '');
-//    setVal('edit-map-ground-rating', openMap.groundRating || '');
-//    setVal('edit-map-mineralisation-level', openMap.mineralisationLevel || '');
-//    setVal('edit-map-weather', openMap.weather || '');
-//    setVal('edit-map-recent-rain', openMap.recentRain || '');
-//    setVal('edit-map-temperature', openMap.temperature || '');
-//    setVal('edit-map-expected-theme', openMap.expectedPeriod || '');
-//    setVal('edit-map-access-notes', openMap.accessNotes || '');
-//    setVal('edit-map-overall-productivity', openMap.overallProductivity || '');
-//    setVal('edit-map-would-detect-again', openMap.wouldDetectAgain || '');
-//    setVal('edit-map-observations', openMap.mapObservations || '');
-//
-//    const purposes = Array.isArray(openMap.purpose) ? openMap.purpose : [];
-//    form.querySelectorAll('input[name="purpose"]').forEach(cb => { cb.checked = purposes.includes(cb.value); });
-//
-//    const hazardsArr = Array.isArray(openMap.hazards) ? openMap.hazards : [];
-//    form.querySelectorAll('input[name="hazards"]').forEach(cb => { cb.checked = hazardsArr.includes(cb.value); });
-//
-//    // Photos
-//    window.currentEditMapPhotos = [];
-//    window.currentEditMapPhotoRefs = [];
-//    try {
-//        if (Array.isArray(openMap.photos) && openMap.photos.length) {
-//            const first = openMap.photos[0];
-//            if (typeof isIndexedDbPhotoRef === 'function' && isIndexedDbPhotoRef(first)) {
-//                if (typeof loadPhotoUrlsFromRefs === 'function') {
-//                    const urls = await loadPhotoUrlsFromRefs(openMap.photos);
-//                    window.currentEditMapPhotos = Array.isArray(urls) ? urls : [];
-//                    window.currentEditMapPhotoRefs = openMap.photos.slice(0, window.currentEditMapPhotos.length);
-//                } else {
-//                    for (const ref of openMap.photos) {
-//                        try { const u = await getPhotoUrlFromRef(ref); if (u) { window.currentEditMapPhotos.push(u); window.currentEditMapPhotoRefs.push(ref); } } catch(e) {}
-//                    }
-//                }
-//            } else {
-//                window.currentEditMapPhotos = openMap.photos.slice();
-//                window.currentEditMapPhotoRefs = new Array(window.currentEditMapPhotos.length).fill(null);
-//            }
-//        } else if (openMap.mapPhotoRef && typeof isIndexedDbPhotoRef === 'function' && isIndexedDbPhotoRef(openMap.mapPhotoRef)) {
-//            const u = await getPhotoUrlFromRef(openMap.mapPhotoRef);
-//            if (u) { window.currentEditMapPhotos = [u]; window.currentEditMapPhotoRefs = [openMap.mapPhotoRef]; }
-//        } else if (openMap.mapPhotoData) {
-//            window.currentEditMapPhotos = [openMap.mapPhotoData];
-//            window.currentEditMapPhotoRefs = [null];
-//        }
-//    } catch(e) {
-//        console.error('Error preparing edit map photos:', e);
-//        window.currentEditMapPhotos = [];
-//        window.currentEditMapPhotoRefs = [];
-//    }
-//    updateEditMapPhotoPreview();
-//
-//    const input = document.getElementById('edit-map-photo-input');
-//    if (input) {
-//        try { input.removeAttribute('capture'); } catch(e) {}
-//        input.setAttribute('accept', 'image/*;capture=camera');
-//        input.multiple = true;
-//    }
-//
-//    attachFormSubmitHandler('edit-map-form', handleEditMapSubmit);
-//}
-// [DEADCODE-PASS2 END: showEditMapModal]
 
-        function closeEditMapModal() {
-    editMapPanelOpen = false;
-    render();
-}
 
-// [DEADCODE-PASS2 START: handleEditMapSubmit]
-//async function handleEditMapSubmit(event) {
-//    event.preventDefault();
-//    const form = event.target;
-//
-//    const id = form['mapId'].value;
-//    const map = maps.find(s => s.id === id);
-//
-//    if (!map || map.status !== 'Open') {
-//        showMessage('Only the open map can be edited.', 'error');
-//        closeEditMapModal();
-//        return;
-//    }
-//
-//    const name = form['mapName'].value.trim();
-//    if (!name) {
-//        showMessage('Map Name is required.', 'error');
-//        return;
-//    }
-//
-//    const description = form['mapDescription'].value.trim() || 'No description provided.';
-//    const mapType = (document.getElementById('edit-map-type') ? document.getElementById('edit-map-type').value : '') || 'General';
-//
-//
-//    // NEW: optional map metadata fields (Sections 1–7)
-//    const permissionFrom = (document.getElementById('edit-map-permission-from')?.value || '').trim();
-//    const permissionType = (document.getElementById('edit-map-permission-type')?.value || '').trim();
-//    let permissionDateGranted = (document.getElementById('edit-map-permission-date-granted')?.value || '').trim();
-//    let permissionExpiry = (document.getElementById('edit-map-permission-expiry')?.value || '').trim();
-//
-//    // Normalize permission dates to DD/MM/YY for storage
-//    permissionDateGranted = formatMapPermissionDate(permissionDateGranted);
-//    permissionExpiry      = formatMapPermissionDate(permissionExpiry);
-//const permissionNotes = (document.getElementById('edit-map-permission-notes')?.value || '').trim();
-//
-//    const areaType = (document.getElementById('edit-map-area-type')?.value || '').trim();
-//    const landUseCurrent = (document.getElementById('edit-map-land-use-current')?.value || '').trim();
-//
-//    const soilType = (document.getElementById('edit-map-soil-type')?.value || '').trim();
-//    const groundRating = (document.getElementById('edit-map-ground-rating')?.value || '').trim();
-//    const mineralisationLevel = (document.getElementById('edit-map-mineralisation-level')?.value || '').trim();
-//
-//    const weather = (document.getElementById('edit-map-weather')?.value || '').trim();
-//    const recentRain = (document.getElementById('edit-map-recent-rain')?.value || '').trim();
-//    const temperature = (document.getElementById('edit-map-temperature')?.value || '').trim();
-//
-//    const purpose = Array.from(form.querySelectorAll('input[name="purpose"]:checked')).map(i => i.value);
-//    const expectedPeriod = (document.getElementById('edit-map-expected-theme')?.value || '').trim();
-//
-//    const accessNotes = (document.getElementById('edit-map-access-notes')?.value || '').trim();
-//    const hazards = Array.from(form.querySelectorAll('input[name="hazards"]:checked')).map(i => i.value);
-//
-//    const overallProductivity = (document.getElementById('edit-map-overall-productivity')?.value || '').trim();
-//    const wouldDetectAgain = (document.getElementById('edit-map-would-detect-again')?.value || '').trim();
-//    const mapObservations = (document.getElementById('edit-map-observations')?.value || '').trim();
-//    // Make sure arrays exist
-//    const photos = Array.isArray(window.currentEditMapPhotos) ? window.currentEditMapPhotos : [];
-//    const refsByIndex = Array.isArray(window.currentEditMapPhotoRefs) ? window.currentEditMapPhotoRefs : [];
-//
-//    // 1) Keep existing refs that are still present
-//    const keptRefs = [];
-//    for (let i = 0; i < photos.length; i++) {
-//        const ref = refsByIndex[i];
-//        if (ref && typeof ref === 'string') {
-//            keptRefs.push(ref);
-//        }
-//    }
-//
-//    // 2) Save NEW photos (data URLs) to IndexedDB and append their refs
-//    const newDataUrls = [];
-//    for (let i = 0; i < photos.length; i++) {
-//        const ref = refsByIndex[i];
-//        const p = photos[i];
-//        if (!ref && typeof p === 'string' && p.startsWith('data:image/')) {
-//            newDataUrls.push(p);
-//        }
-//    }
-//
-//    let newRefs = [];
-//    if (newDataUrls.length) {
-//        try {
-//            newRefs = await saveDataUrlsAsPhotoRefs(newDataUrls, { mapId: map.id, mapName: name });
-//        } catch (e) {
-//            console.error('Error saving new map photos to IndexedDB:', e);
-//            newRefs = [];
-//        }
-//    }
-//
-//    const finalRefs = keptRefs.concat(newRefs);
-//
-//    // Back-compat first photo
-//    const primaryRef = finalRefs[0] || '';
-//    // Only keep base64 if we have no refs at all (very unlikely now)
-//    const primaryDataUrlFallback = (primaryRef ? '' : (photos.find(p => typeof p === 'string' && p.startsWith('data:image/')) || ''));
-//
-//    map.name = name;
-//    map.description = description;
-//    map.mapType = mapType;
-//
-//    // NEW: optional map metadata fields (Sections 1–7)
-//    map.permissionFrom = permissionFrom;
-//    map.permissionType = permissionType;
-//    map.permissionDateGranted = permissionDateGranted;
-//    map.permissionExpiry = permissionExpiry;
-//    map.permissionNotes = permissionNotes;
-//
-//    map.areaType = areaType;
-//    map.landUseCurrent = landUseCurrent;
-//
-//    map.soilType = soilType;
-//    map.groundRating = groundRating;
-//    map.mineralisationLevel = mineralisationLevel;
-//
-//    map.weather = weather;
-//    map.recentRain = recentRain;
-//    map.temperature = temperature;
-//
-//    map.purpose = Array.isArray(purpose) ? purpose : [];
-//    map.expectedPeriod = expectedPeriod;
-//
-//    map.accessNotes = accessNotes;
-//    map.hazards = Array.isArray(hazards) ? hazards : [];
-//
-//    map.overallProductivity = overallProductivity;
-//    map.wouldDetectAgain = wouldDetectAgain;
-//    map.mapObservations = mapObservations;
-//
-//    // ✅ NEW truth
-//    map.photos = finalRefs;
-//
-//    // ✅ Back-compat single photo fields
-//    map.mapPhotoRef  = primaryRef;
-//    map.mapPhotoData = primaryRef ? '' : primaryDataUrlFallback;
-//
-//    map.dateLastChanged = Date.now();
-//
-//    saveMapsToLocalStorage();
-//    closeEditMapModal();
-//
-//    // tidy
-//    window.currentEditMapPhotos = [];
-//    window.currentEditMapPhotoRefs = [];
-//
-//    showMessage('Open map updated.', 'success');
-//    render();
-//}
-// [DEADCODE-PASS2 END: handleEditMapSubmit]
 /** Shows the New Place Modal. */
 function showNewPlaceModal() {
 
@@ -10599,19 +9668,7 @@ function openPhotoGallery(photos, startIndex) {
     openModal('photo-gallery-modal');
 }
 
-// [DEADCODE-PASS2 START: openInlinePlaceDelete]
-//function openInlinePlaceDelete(placeId) {
-//    expandedPlaceDeleteId = placeId;
-//    render();
-//}
-// [DEADCODE-PASS2 END: openInlinePlaceDelete]
 
-// [DEADCODE-PASS2 START: cancelInlinePlaceDelete]
-//function cancelInlinePlaceDelete() {
-//    expandedPlaceDeleteId = null;
-//    render();
-//}
-// [DEADCODE-PASS2 END: cancelInlinePlaceDelete]
 
 async function confirmInlinePlaceDelete(placeId, mapId) {
     const map = maps.find(s => s.id === mapId);
@@ -10705,32 +9762,6 @@ function setInlinePlaceStatus(placeId, status) {
     render();
 }
 
-// [DEADCODE-PASS2 START: rerenderPlaceCard]
-//function rerenderPlaceCard(placeId) {
-//    // Re-render just this place card without full page render
-//    const map = maps.find(s => s.status === 'Open');
-//    if (!map) return;
-//    const place = map.targets ? map.targets.find(t => t.id === placeId) : null;
-//    if (!place) return;
-//    const el = document.querySelector('[data-place-card-id="' + placeId + '"]');
-//    if (el) {
-//        // Work out this card's position among its visible siblings so the
-//        // alternating background stays consistent with the rest of the list
-//        // (whatever the current filter/sort order happens to be) rather than
-//        // always resetting to the "even" colour on a single-card refresh.
-//        let index = 0;
-//        if (el.parentElement) {
-//            const siblings = el.parentElement.querySelectorAll('[data-place-card-id]');
-//            index = Array.prototype.indexOf.call(siblings, el);
-//            if (index < 0) index = 0;
-//        }
-//        el.outerHTML = renderPlaceCard(place, map.id, index);
-//        initialiseCardThumbnails();
-//    } else {
-//        render();
-//    }
-//}
-// [DEADCODE-PASS2 END: rerenderPlaceCard]
 
 async function openMapPhotoGallery(mapId) {
     const map = maps.find(m => m.id === mapId);
@@ -11021,37 +10052,6 @@ function ensureGallerySwipeHandlers() {
 // ======================================
 // SHARED PHOTO-UI INITIALISER
 // ======================================
-// [DEADCODE-PASS2 START: initPhotoUI]
-//function initPhotoUI(photoData, {
-//    statusId,
-//    wrapperId,
-//    imgId,
-//    hiddenId
-//}, messages = {}) {
-//    const statusSpan     = statusId   ? document.getElementById(statusId)   : null;
-//    const previewWrapper = wrapperId  ? document.getElementById(wrapperId)  : null;
-//    const previewImg     = imgId      ? document.getElementById(imgId)      : null;
-//    const hiddenField    = hiddenId   ? document.getElementById(hiddenId)   : null;
-//
-//    const existingMessage = messages.existing || 'Existing photo loaded. Tap "Take / Choose Photo" to replace.';
-//    const emptyMessage    = messages.empty    || 'No photo captured yet.';
-//
-//    // Valid Base64 data URLs are usually fairly long strings
-//    const hasValidPhoto = photoData && typeof photoData === 'string' && photoData.length > 50;
-//
-//    if (hasValidPhoto) {
-//        if (hiddenField)    hiddenField.value = photoData;
-//        if (previewImg)     previewImg.src = photoData;
-//        if (previewWrapper) previewWrapper.classList.remove('hidden');
-//        if (statusSpan)     statusSpan.textContent = existingMessage;
-//    } else {
-//        if (hiddenField)    hiddenField.value = '';
-//        if (previewImg)     previewImg.src = '';
-//        if (previewWrapper) previewWrapper.classList.add('hidden');
-//        if (statusSpan)     statusSpan.textContent = emptyMessage;
-//    }
-//}
-// [DEADCODE-PASS2 END: initPhotoUI]
 
     // ======================================
 // CARD THUMBNAIL INITIALISER (Places & Favourites)
@@ -11108,197 +10108,20 @@ function triggerPhotoInput(inputId) {
     fileInput.click();      // open camera / gallery
 }
 
-// [DEADCODE-PASS2 START: handlePhotoSelected]
-//async function handlePhotoSelected(event, {
-//    statusId,
-//    wrapperId,
-//    imgId,
-//    hiddenId
-//}) {
-//    const fileInput = event.target;
-//    const file = fileInput.files && fileInput.files[0];
-//
-//    const statusSpan  = statusId  ? document.getElementById(statusId)  : null;
-//    const wrapper     = wrapperId ? document.getElementById(wrapperId) : null;
-//    const img         = imgId     ? document.getElementById(imgId)     : null;
-//    const hiddenField = hiddenId  ? document.getElementById(hiddenId)  : null;
-//
-//    if (!file) return;
-//
-//    try {
-//        if (statusSpan) statusSpan.textContent = 'Processing photo...';
-//
-//        const resizedDataUrl = await fileToResizedDataUrl(file);
-//
-//        if (hiddenField) hiddenField.value = resizedDataUrl || '';
-//        if (img) img.src = resizedDataUrl || '';
-//        if (wrapper) wrapper.classList.toggle('hidden', !resizedDataUrl);
-//
-//        if (statusSpan) {
-//            const mw = getMaxPhotoWidth();
-//            statusSpan.textContent = resizedDataUrl
-//                ? (mw ? `Photo ready (max width ${mw}px).` : 'Photo ready (no resize).')
-//                : 'No photo captured yet.';
-//        }
-//    } catch (e) {
-//        console.error('Error processing photo:', e);
-//        if (statusSpan) statusSpan.textContent = 'Photo failed to load.';
-//        showMessage('Could not process that photo.', 'error');
-//    } finally {
-//        // allow selecting the same file again later
-//        try { fileInput.value = ''; } catch (e) {}
-//    }
-//}
-// [DEADCODE-PASS2 END: handlePhotoSelected]
 
 // --- EDIT SURVEY PHOTO HELPERS (match Edit Place behaviour) ---
 
 // ---------- EDIT SURVEY PHOTO HELPERS ----------
 
-// [DEADCODE-PASS2 START: triggerEditMapPhotoInput]
-//function triggerEditMapPhotoInput() {
-//    const input = document.getElementById('edit-map-photo-input');
-//    if (!input) return;
-//
-//    try { input.removeAttribute('capture'); } catch (e) {}
-//    input.setAttribute('accept', 'image/*;capture=camera');
-//    input.multiple = true;
-//
-//    triggerPhotoInput('edit-map-photo-input');
-//}
-// [DEADCODE-PASS2 END: triggerEditMapPhotoInput]
-
-function updateEditMapPhotoPreview() {
-    const statusSpan  = document.getElementById('edit-map-photo-status');
-    const wrapper     = document.getElementById('edit-map-photo-preview-wrapper');
-    const hiddenField = document.getElementById('edit-map-photo-data');
-
-    if (!statusSpan || !wrapper || !hiddenField) return;
-
-    const photos = window.currentEditMapPhotos || [];
-
-    // Store JSON array in hidden field
-    hiddenField.value = JSON.stringify(photos);
-
-    if (!photos.length) {
-        statusSpan.textContent = 'No photo captured yet.';
-        wrapper.classList.add('hidden');
-        wrapper.innerHTML = '';
-        return;
-    }
-
-    statusSpan.textContent = photos.length === 1
-        ? '1 photo selected.'
-        : `${photos.length} photos selected.`;
-
-    const thumbsHtml = photos.map((src, index) => `
-        <div class="relative mb-2 flex justify-center">
-            <img
-                src="${src}"
-                alt="Map photo ${index + 1}"
-                class="w-11/12 max-h-64 object-cover rounded-lg border border-gray-300 cursor-pointer"
-                onclick="openEditMapPhotoGallery(${index})"
-            />
-            <button
-                type="button"
-                class="absolute top-2 right-6 bg-black bg-opacity-60 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs"
-                onclick="event.stopPropagation(); removeEditMapPhoto(${index});"
-                title="Delete photo"
-            >
-                <i class="fas fa-trash-alt"></i>
-            </button>
-        </div>
-    `).join('');
-
-    wrapper.innerHTML = `<div class="flex flex-col items-center w-full">${thumbsHtml}</div>`;
-    wrapper.classList.remove('hidden');
-}
 
 
-// [DEADCODE-PASS2 START: handleEditMapPhotoSelected]
-//async function handleEditMapPhotoSelected(event) {
-//    const files = Array.from(event.target.files || []);
-//    if (!files.length) return;
-//
-//    // Allow selecting the same file again later
-//    event.target.value = '';
-//
-//    try {
-//        for (const file of files) {
-//            const resized = await fileToResizedDataUrl(file);
-//            if (typeof resized === 'string' && resized.startsWith('data:image/')) {
-//                window.currentEditMapPhotos.push(resized);
-//            }
-//        }
-//    } catch (e) {
-//        console.error('Error reading/resizing map photo file:', e);
-//        showMessage('One or more photos could not be processed.', 'error');
-//    }
-//
-//    updateEditMapPhotoPreview();
-//}
-// [DEADCODE-PASS2 END: handleEditMapPhotoSelected]
+
 
         
 
-// [DEADCODE-PASS2 START: openEditMapPhotoGallery]
-//function openEditMapPhotoGallery(startIndex) {
-//    const photos = window.currentEditMapPhotos || [];
-//    if (!photos.length) return;
-//    openPhotoGallery(photos, startIndex || 0);
-//}
-// [DEADCODE-PASS2 END: openEditMapPhotoGallery]
 
 
-// [DEADCODE-PASS2 START: removeEditMapPhoto]
-//function removeEditMapPhoto(index) {
-//    if (!Array.isArray(window.currentEditMapPhotos)) return;
-//
-//    window.currentEditMapPhotos.splice(index, 1);
-//
-//    // keep refs aligned with photos
-//    if (Array.isArray(window.currentEditMapPhotoRefs)) {
-//        window.currentEditMapPhotoRefs.splice(index, 1);
-//    }
-//
-//    updateEditMapPhotoPreview();
-//}
-// [DEADCODE-PASS2 END: removeEditMapPhoto]
 
-// [DEADCODE-PASS2 START: handleEditMapPhotoSelected]
-//async function handleEditMapPhotoSelected(event) {
-//    const files = Array.from(event.target.files || []);
-//    if (!files.length) return;
-//
-//    // Allow selecting the same file again later
-//    event.target.value = '';
-//
-//    // Ensure arrays exist
-//    window.currentEditMapPhotos = window.currentEditMapPhotos || [];
-//    window.currentEditMapPhotoRefs = window.currentEditMapPhotoRefs || [];
-//
-//    // Use whatever's currently in the map name field of the edit form —
-//    // covers both "still the saved name" and "just renamed it, about to save".
-//    const nameEl = document.querySelector('#edit-map-form [name="mapName"]');
-//    const context = { mapName: nameEl ? nameEl.value.trim() : '' };
-//
-//    try {
-//        for (const file of files) {
-//            const resized = await fileToResizedDataUrl(file, context);
-//            if (typeof resized === 'string' && resized.startsWith('data:image/')) {
-//                // New photos are data URLs and have no ref yet
-//                window.currentEditMapPhotos.push(resized);
-//                window.currentEditMapPhotoRefs.push(null);
-//            }
-//        }
-//    } catch (e) {
-//        console.error('Error reading/resizing map photo file:', e);
-//        showMessage('One or more photos could not be processed.', 'error');
-//    }
-//
-//    updateEditMapPhotoPreview();
-//}
-// [DEADCODE-PASS2 END: handleEditMapPhotoSelected]
 
 // --- NEW: MULTI-PHOTO SUPPORT FOR NEW TARGET MODAL ---
 
@@ -11413,101 +10236,11 @@ function triggerNewPlacePhotoInput() {
 
 // --- NEW: MULTI-PHOTO SUPPORT FOR EDIT TARGET MODAL ---
 
-function updateEditPlacePhotoPreview() {
-    const statusSpan  = document.getElementById('edit-place-photo-status');
-    const wrapper     = document.getElementById('edit-place-photo-preview-wrapper');
-    const hiddenField = document.getElementById('edit-place-photo-data');
 
-    if (!statusSpan || !wrapper || !hiddenField) return;
 
-    const photos = currentEditPlacePhotos || [];
-    hiddenField.value = JSON.stringify(photos);
-
-    if (!photos.length) {
-        statusSpan.textContent = 'No photo captured yet.';
-        wrapper.classList.add('hidden');
-        wrapper.innerHTML = '';
-        return;
-    }
-
-    statusSpan.textContent = photos.length === 1
-        ? '1 photo selected.'
-        : `${photos.length} photos selected.`;
-
-    const thumbsHtml = photos.map((src, index) => `
-        <div class="relative mb-2 flex justify-center">
-            <img
-                src="${src}"
-                alt="Place photo ${index + 1}"
-                class="w-11/12 max-h-64 object-cover rounded-lg border border-gray-300 cursor-pointer"
-                onclick="openEditPlacePhotoGallery(${index})"
-            />
-            <button
-                type="button"
-                class="absolute top-2 right-6 bg-black bg-opacity-60 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs"
-                onclick="event.stopPropagation(); removeEditPlacePhoto(${index});"
-            >
-                <i class="fas fa-trash-alt"></i>
-            </button>
-        </div>
-    `).join('');
-
-    wrapper.innerHTML = `
-        <div class="flex flex-col items-center w-full">
-            ${thumbsHtml}
-        </div>
-    `;
-    wrapper.classList.remove('hidden');
-}
-
-// [DEADCODE-PASS2 START: handleEditPlacePhotoSelected]
-//async function handleEditPlacePhotoSelected(event) {
-//    const files = Array.from(event.target.files || []);
-//    if (!files.length) return;
-//
-//    // Allow selecting the same file again later
-//    event.target.value = '';
-//
-//    try {
-//        for (const file of files) {
-//            const resized = await fileToResizedDataUrl(file); // uses Max Photo Width setting
-//            if (typeof resized === 'string' && resized.startsWith('data:image/')) {
-//                currentEditPlacePhotos.push(resized);
-//            }
-//        }
-//    } catch (e) {
-//        console.error('Error reading/resizing place photo file:', e);
-//        showMessage('One or more photos could not be processed.', 'error');
-//    }
-//
-//    // Refresh the thumbnails/gallery in the Edit Place modal
-//    if (typeof updateEditPlacePhotoPreview === 'function') {
-//        updateEditPlacePhotoPreview();
-//    }
-//}
-// [DEADCODE-PASS2 END: handleEditPlacePhotoSelected]
-
-// [DEADCODE-PASS2 START: removeEditPlacePhoto]
-//function removeEditPlacePhoto(index) {
-//    if (!Array.isArray(currentEditPlacePhotos)) return;
-//    currentEditPlacePhotos.splice(index, 1);
-//    updateEditPlacePhotoPreview();
-//}
-// [DEADCODE-PASS2 END: removeEditPlacePhoto]
 
 // Called from button in the Edit Place form
-// [DEADCODE-PASS2 START: triggerEditPlacePhotoInput]
-//function triggerEditPlacePhotoInput() {
-//    triggerPhotoInput('edit-place-photo-input');
-//}
-// [DEADCODE-PASS2 END: triggerEditPlacePhotoInput]
 
-// [DEADCODE-PASS2 START: openEditPlacePhotoGallery]
-//function openEditPlacePhotoGallery(startIndex) {
-//    if (!currentEditPlacePhotos.length) return;
-//    openPhotoGallery(currentEditPlacePhotos, startIndex || 0);
-//}
-// [DEADCODE-PASS2 END: openEditPlacePhotoGallery]
 
 // --- EDIT FIND PHOTO HELPERS ---
 
@@ -11638,143 +10371,8 @@ async function handleNewMapPhotoSelected(event) {
 }
 
         
-// [DEADCODE-PASS2 START: showEditPlaceModal]
-//async function showEditPlaceModal(placeId, mapId) {
-//    // Removed — editing is now done inline on the place card
-//    console.log('showEditPlaceModal called but removed');
-//}
-// [DEADCODE-PASS2 END: showEditPlaceModal]
 
 
-// [DEADCODE-PASS2 START: handleEditPlaceSubmit]
-//async function handleEditPlaceSubmit(event) {
-//    event.preventDefault();
-//
-//    // Always grab the real form element by ID (more robust on mobile)
-//    const form = document.getElementById('edit-place-form');
-//    if (!form) {
-//        showMessage('Error: Edit Place form not found.', 'error');
-//        console.error('Edit Place form not found in DOM.');
-//        return;
-//    }
-//
-//    // Read IDs directly from the hidden inputs
-//    const placeIdInput = document.getElementById('edit-place-id');
-//    const mapIdInput = document.getElementById('edit-map-id');
-//
-//    const placeId = placeIdInput?.value;
-//    const mapId = mapIdInput?.value;
-//
-//    if (!placeId || !mapId) {
-//        console.error('Missing placeId or mapId in edit form.', {
-//            placeId,
-//            mapId,
-//            placeIdInput,
-//            mapIdInput
-//        });
-//        showMessage('Error: Place or Map not found (missing IDs in form).', 'error');
-//        return;
-//    }
-//
-//    const newDescription = form['placeDescription'].value.trim();
-//    if (!newDescription) {
-//        showMessage('Description is required.', 'error');
-//        return;
-//    }
-//
-//    const newCategory    = '';
-//    const ratingEl3      = form.querySelector('input[name="placeRating"]:checked');
-//    const newRating      = ratingEl3 ? ratingEl3.value : '';
-//    const newType        = form['placeType'].value;
-//    const newCoords      = form['placeCoords'].value.trim() || 'No GPS logged';
-//    const newAccuracy    = form['placeAccuracy'].value.trim() || 'N/A';
-//
-//    // --- Photos: parse JSON array (or single string) from hidden field ---
-//    let photosDataUrls = [];
-//    const rawPhotoField = form['placePhotoData']?.value;
-//
-//    if (rawPhotoField) {
-//        try {
-//            const parsed = JSON.parse(rawPhotoField);
-//            if (Array.isArray(parsed)) {
-//                photosDataUrls = parsed.filter(p => typeof p === 'string' && p.length > 0);
-//            } else if (typeof parsed === 'string' && parsed.length > 0) {
-//                photosDataUrls = [parsed];
-//            }
-//        } catch (e) {
-//            // Not valid JSON? Treat it as a single URL (data: or blob:)
-//            if (typeof rawPhotoField === 'string' && rawPhotoField.length > 0) {
-//                photosDataUrls = [rawPhotoField];
-//            }
-//        }
-//    }
-//
-//    // Save these URLs into IndexedDB and get back lightweight references
-//    let photoRefs = [];
-//    try {
-//        photoRefs = await saveDataUrlsAsPhotoRefs(photosDataUrls);
-//    } catch (e) {
-//        console.error('Error saving edited place photos to IndexedDB:', e);
-//        // We can still proceed, but with no IDB refs
-//        photoRefs = [];
-//    }
-//
-//    const primaryDataUrl = photosDataUrls[0] || '';
-//    const primaryRef     = photoRefs[0] || '';
-//
-//    // Look up map + place
-//    const map = maps.find(s => s.id === mapId);
-//    if (!map) {
-//        showMessage('Error: Map not found.', 'error');
-//        return;
-//    }
-//
-//    const place = map.targets.find(t => t.id === placeId);
-//    if (!place) {
-//        showMessage('Error: Place not found.', 'error');
-//        return;
-//    }
-//
-//    // Update core fields
-//    place.description = newDescription;
-//    place.category         = newCategory;
-//    place.rating       = newRating;
-//    place.type        = newType;
-//    place.coordinates = newCoords;
-//    place.accuracy    = newAccuracy;
-//
-//    // Update photos (new IndexedDB-backed structure)
-//    place.photos          = photoRefs;
-//    place.placePhotoRef  = primaryRef;
-//    place.placePhotoData = photoRefs.length > 0 ? '' : primaryDataUrl;
-//
-//    // Centre-on-map handling (only one per map)
-//    const yesRadio = document.getElementById('edit-place-center-yes');
-//    const noRadio  = document.getElementById('edit-place-center-no');
-//
-//    if (yesRadio && noRadio) {
-//        const centerOnMap = !!yesRadio.checked;
-//
-//        if (centerOnMap) {
-//            // Ensure only this place is centred in this map
-//            map.targets.forEach(t => {
-//                if (t.id !== placeId) {
-//                    t.centerOnMap = false;
-//                }
-//            });
-//        }
-//
-//        place.centerOnMap = centerOnMap;
-//    }
-//    // If radios are missing, we leave place.centerOnMap unchanged
-//
-//    map.dateLastChanged = Date.now();
-//    saveMapsToLocalStorage();
-//    closeModal('edit-place-modal');
-//    showMessage(`Place ${place.description} updated successfully.`, 'success');
-//    render();
-//}
-// [DEADCODE-PASS2 END: handleEditPlaceSubmit]
 
         /** Shows the Edit Profile Modal and loads current data. */
         function showEditProfileModal() {
@@ -11852,7 +10450,7 @@ function handleEditProfileSubmit(event) {
 
 // ============================================================
 // SURVEY CARD BUTTON FIX / STANDARDIZATION HELPERS
-// Map cards may call openMap(id)/closeMap(id)/editMap(id).
+// Map cards may call openMap(id)/closeMap(id).
 // These wrappers delegate into handleMapAction() so behaviour is consistent.
 // ============================================================
 
@@ -11874,21 +10472,7 @@ async function closeMap(id) {
     });
 }
 
-// [DEADCODE-PASS2 START: editMap]
-//async function editMap(id) {
-//    await openMap(id);
-//    setTimeout(() => {
-//        if (typeof showEditMapModal === 'function') showEditMapModal();
-//    }, 50);
-//}
-// [DEADCODE-PASS2 END: editMap]
 
-// [DEADCODE-PASS2 START: toggleMapSummary]
-//function toggleMapSummary() {
-//    mapSummaryExpanded = !mapSummaryExpanded;
-//    fullRerenderCompass();
-//}
-// [DEADCODE-PASS2 END: toggleMapSummary]
 
 function toggleMapRouting() {
     mapRoutingExpanded = !mapRoutingExpanded;
@@ -12314,18 +10898,6 @@ async function handleMapAction(button) {
                 render();
                 break;
             }
-// [DEADCODE-PASS2 START: handleMapAction 'edit' case (dead, calls showEditMapModal)]
-//case 'edit': {
-//    // Ensure the map is opened first (edit operates on the currently open map)
-//    await handleMapAction({
-//        dataset: { id: String(id), action: 'open', name: name || '' }
-//    });
-//    setTimeout(() => {
-//        if (typeof showEditMapModal === 'function') showEditMapModal();
-//    }, 50);
-//    return;
-//}
-// [DEADCODE-PASS2 END: handleMapAction 'edit' case (dead, calls showEditMapModal)]
 
 
 
@@ -12809,13 +11381,6 @@ function handlePlaceAction(element) {
     const place = (map.targets || []).find(t => t.id === placeId);
     if (!place) return;
 
-// [DEADCODE-PASS2 START: handlePlaceAction 'edit' branch (dead, calls showEditPlaceModal)]
-//    // Special case: open the edit modal
-//    if (action === 'edit') {
-//        showEditPlaceModal(placeId, mapId);
-//        return;
-//    }
-// [DEADCODE-PASS2 END: handlePlaceAction 'edit' branch (dead, calls showEditPlaceModal)]
 
     const executeAction = () => {
         switch (action) {
@@ -13288,17 +11853,6 @@ function renderMapCard(map, isOpen = false) {
                     </button>
 </div>
                 <div class="flex gap-2 mt-2">
-<!-- [DEADCODE-PASS2 START: map card Edit button (Open status)] -->
-<!--
-                    <button
-                        class="flex-1 bg-green-600 text-white font-bold py-2 rounded-lg shadow hover:bg-green-700 transition"
-                        onclick="handleMapAction(this)" data-action="edit" data-id="${map.id}" data-name="${map.name || ''}"
-                    >
-                        <i class="fas fa-edit mr-1"></i> Edit
-                    </button>
-
--->
-<!-- [DEADCODE-PASS2 END: map card Edit button (Open status)] -->
                     <button
                         class="flex-1 bg-red-600 text-white font-bold py-2 rounded-lg shadow hover:bg-red-700 transition"
                         onclick="openInlineMapDelete('${map.id}')"
@@ -13324,17 +11878,6 @@ function renderMapCard(map, isOpen = false) {
         case 'Closed':
             actions = `
                 <div class="flex gap-2 mt-4">
-<!-- [DEADCODE-PASS2 START: map card Edit button (Archived/Closed status)] -->
-<!--
-                    <button
-                        class="flex-1 bg-green-600 text-white font-bold py-2 rounded-lg shadow hover:bg-green-700 transition"
-                        onclick="handleMapAction(this)" data-action="edit" data-id="${map.id}" data-name="${map.name || ''}"
-                    >
-                        <i class="fas fa-edit mr-1"></i> Edit
-                    </button>
-
--->
-<!-- [DEADCODE-PASS2 END: map card Edit button (Archived/Closed status)] -->
                     <button
                         class="flex-1 bg-red-600 text-white font-bold py-2 rounded-lg shadow hover:bg-red-700 transition"
                         onclick="openInlineMapDelete('${map.id}')"
@@ -15162,39 +13705,8 @@ function destroyMapLibre() {
 // Each CSS zoom step (0.25) maps to 0.5 MapLibre zoom levels
 const ML_ZOOM_FACTOR = 0.5 / MAP_ZOOM_STEP;
 
-// [DEADCODE-PASS2 START: _syncMlZoom]
-//function _syncMlZoom() {
-//    if (!_mlMap || !_mlMapReady || _mlBaseZoom === null) return;
-//    const mlZoom = _mlBaseZoom + (mapZoom - 1) * ML_ZOOM_FACTOR;
-//    _mlMap.setZoom(mlZoom);
-//}
-// [DEADCODE-PASS2 END: _syncMlZoom]
 
-// [DEADCODE-PASS2 START: zoomMapIn]
-//function zoomMapIn(event) {
-//    if (event) { event.preventDefault(); event.stopPropagation(); }
-//    if (_mlMap && _mlMapReady) {
-//        _mlUserInteracted = true;
-//        _mlMap.zoomIn();
-//        return;
-//    }
-//    mapZoom = Math.min(MAP_ZOOM_MAX, mapZoom + MAP_ZOOM_STEP);
-//    rerenderCompassIfActive();
-//}
-// [DEADCODE-PASS2 END: zoomMapIn]
 
-// [DEADCODE-PASS2 START: zoomMapOut]
-//function zoomMapOut(event) {
-//    if (event) { event.preventDefault(); event.stopPropagation(); }
-//    if (_mlMap && _mlMapReady) {
-//        _mlUserInteracted = true;
-//        _mlMap.zoomOut();
-//        return;
-//    }
-//    mapZoom = Math.max(MAP_ZOOM_MIN, mapZoom - MAP_ZOOM_STEP);
-//    rerenderCompassIfActive();
-//}
-// [DEADCODE-PASS2 END: zoomMapOut]
 
 function resetMapView(event) {
     if (event) { event.preventDefault(); event.stopPropagation(); }
@@ -15261,17 +13773,6 @@ function panMap(dir, event) {
     }
 }
 
-// [DEADCODE-PASS2 START: startMapPan]
-//function startMapPan(dir, event) {
-//    if (event) { event.preventDefault(); event.stopPropagation(); }
-//    stopMapPan();            // clear any previous hold
-//    panMap(dir);             // immediate first step
-//    // After a short delay, repeat rapidly while held
-//    _mapPanTimer = setTimeout(() => {
-//        _mapPanTimer = setInterval(() => panMap(dir), 80);
-//    }, 350);
-//}
-// [DEADCODE-PASS2 END: startMapPan]
 
 function stopMapPan() {
     if (_mapPanTimer !== null) {
@@ -16020,19 +14521,6 @@ const toPercent = (x, y) => {
 }
         
     /** Toggles the map state and re-renders immediately. */
-// [DEADCODE-PASS2 START: toggleMapFullscreen]
-//function toggleMapFullscreen(event) {
-//    // Prevent accidental fullscreen toggles when clicking UI controls/pins
-//    if (event && event.target && event.target.closest) {
-//        if (event.target.closest('.map-zoom-controls') || event.target.closest('.map-pin') || event.target.closest('button')) {
-//            return;
-//        }
-//    }
-//
-//    isMapFullscreen = !isMapFullscreen;
-//    render();
-//}
-// [DEADCODE-PASS2 END: toggleMapFullscreen]
 
 
 function refreshActiveRouteFromMaps() {
@@ -17631,300 +16119,6 @@ async function exportAllMapsPhotoGalleries_ToFolder(rootPick) {
  * Core exporter: writes ONE map gallery directly into `galleryDir`.
  * Returns true if it wrote index.html, false if there were no photos.
  */
-// [DEADCODE-PASS2 START: exportMapPhotoGallery_NoModal]
-//async function exportMapPhotoGallery_NoModal({ map, galleryDir, includePlaces, maxW, log, showSpinner }) {
-//    const openMap = map;
-//    if (!openMap) return false;
-//
-//    const escapeHtml = (s) => String(s ?? '')
-//        .replace(/&/g, '&amp;')
-//        .replace(/</g, '&lt;')
-//        .replace(/>/g, '&gt;')
-//        .replace(/"/g, '&quot;')
-//        .replace(/'/g, '&#39;');
-//
-//    const blobToDataUrl = (blob) => new Promise((resolve, reject) => {
-//        const reader = new FileReader();
-//        reader.onload = () => resolve(reader.result);
-//        reader.onerror = () => reject(reader.error || new Error('File read failed'));
-//        reader.readAsDataURL(blob);
-//    });
-//
-//    // Gather ALL photo references from all possible fields (deduped)
-//    const collectPhotoInputs = (obj, kind) => {
-//        const out = [];
-//        const add = (v) => {
-//            if (!v) return;
-//            if (Array.isArray(v)) {
-//                v.forEach(add);
-//                return;
-//            }
-//            const s = String(v).trim();
-//            if (!s) return;
-//            out.push(s);
-//        };
-//
-//        // New/primary fields
-//        add(obj?.photos);
-//        add(obj?.photoRefs); // some records may still have this
-//
-//        // Kind-specific single fields
-//        if (kind === 'map') {
-//            add(obj?.mapPhotoRef);
-//            add(obj?.mapPhotoData);
-//            add(obj?.mapPhotoDataUrl);
-//        } else if (kind === 'find') {
-//            add(obj?.findPhotoRef);
-//            add(obj?.findPhotoData);
-//            add(obj?.findPhotoDataUrl);
-//            // older/alternate naming you’ve used in places
-//            add(obj?.photoRef);
-//            add(obj?.photoData);
-//            add(obj?.photoDataUrl);
-//            // very old carry-over (some favourites were created from places)
-//            add(obj?.placePhotoRef);
-//            add(obj?.placePhotoData);
-//        } else if (kind === 'place') {
-//            add(obj?.placePhotoRef);
-//            add(obj?.placePhotoData);
-//            add(obj?.placePhotoDataUrl);
-//            add(obj?.photoRef);
-//            add(obj?.photoData);
-//            add(obj?.photoDataUrl);
-//        }
-//
-//        // Deduplicate while preserving order
-//        const seen = new Set();
-//        const deduped = [];
-//        for (const x of out) {
-//            if (seen.has(x)) continue;
-//            seen.add(x);
-//            deduped.push(x);
-//        }
-//        return deduped;
-//    };
-//
-//    async function saveJpg(dirHandle, filenameBase, photoRefOrDataUrl) {
-//        const rawBlob = await resolvePhotoBlob(photoRefOrDataUrl);
-//        if (!rawBlob) return null;
-//
-//        const outBlob = await resizeBlobToMaxWidthJpeg(rawBlob, maxW, 0.85);
-//        if (!outBlob) return null;
-//
-//        const fileName = `${filenameBase}.jpg`;
-//        await writeFileToHandle(dirHandle, fileName, outBlob);
-//        return outBlob;
-//    }
-//
-//    // Create JPG subfolders
-//    const mapDir  = await getOrCreateDir(galleryDir, 'Map');
-//    const favouritesDir   = await getOrCreateDir(galleryDir, 'Favourites');
-//    const placesDir = await getOrCreateDir(galleryDir, 'Places');
-//
-//    // Build item list (ONE item per photo)
-//    const items = [];
-//
-//    // Map photo(s)
-//    const mapPhotos = collectPhotoInputs(openMap, 'map');
-//    for (let i = 0; i < mapPhotos.length; i++) {
-//        items.push({
-//            kind: 'map',
-//            parentId: openMap.id,
-//            indexInParent: i + 1,
-//            title: openMap.name || 'Map photo',
-//            type: 'Map',
-//            category: '',
-//            rating: '',
-//            time: openMap.creationDate || openMap.dateLastChanged || '',
-//            coords: '',
-//            accuracy: '',
-//            photoRefOrDataUrl: mapPhotos[i]
-//        });
-//    }
-//
-//    // Favourites
-//    const linkedFavourites = (Array.isArray(favourites) ? favourites : []).filter(f => f.mapId === openMap.id);
-//    for (const f of linkedFavourites) {
-//        const photoInputs = collectPhotoInputs(f, 'find');
-//        for (let i = 0; i < photoInputs.length; i++) {
-//            items.push({
-//                kind: 'find',
-//                parentId: f.id,
-//                indexInParent: i + 1,
-//                title: f.description || f.name || `Favourite ${f.id}`,
-//                type: f.type || '',
-//                category: f.category || '',
-//                rating: f.rating || '',
-//                time: f.time || f.date || '',
-//                coords: f.coordinates || '',
-//                accuracy: f.accuracy || '',
-//                photoRefOrDataUrl: photoInputs[i]
-//            });
-//        }
-//    }
-//
-//    // Places (optional)
-//    if (includePlaces && Array.isArray(openMap.targets)) {
-//        for (const t of openMap.targets) {
-//            const photoInputs = collectPhotoInputs(t, 'place');
-//            for (let i = 0; i < photoInputs.length; i++) {
-//                items.push({
-//                    kind: 'place',
-//                    parentId: t.id,
-//                    indexInParent: i + 1,
-//                    title: t.description || `Place ${t.id}`,
-//                    type: t.type || '',
-//                    category: t.category || '',
-//                    rating: t.rating || '',
-//                    time: t.time || '',
-//                    coords: t.coordinates || '',
-//                    accuracy: t.accuracy || '',
-//                    photoRefOrDataUrl: photoInputs[i]
-//                });
-//            }
-//        }
-//    }
-//
-//    if (!items.length) return false;
-//
-//    log?.(`  Total photos discovered: ${items.length}`);
-//    showSpinner?.(`Processing 0/${items.length}…`);
-//
-//    let mapHeroHtml = '';
-//    const findCards = [];
-//    const placeCards = [];
-//    const sections = [];
-//
-//    for (let i = 0; i < items.length; i++) {
-//        const it = items[i];
-//        const baseName = `${it.kind}_${safeSlug(it.parentId)}_${String(it.indexInParent).padStart(2, '0')}`;
-//        const anchorId = baseName;
-//
-//        showSpinner?.(`Processing ${i + 1}/${items.length}…`);
-//
-//        let dirHandle = favouritesDir;
-//        if (it.kind === 'map') dirHandle = mapDir;
-//        else if (it.kind === 'place') dirHandle = placesDir;
-//
-//        const outBlob = await saveJpg(dirHandle, baseName, it.photoRefOrDataUrl);
-//        if (!outBlob) continue;
-//
-//        const dataUrl = await blobToDataUrl(outBlob);
-//
-//        if (it.kind === 'map') {
-//            // Use first map photo as hero; additional map photos go into “Full Photos”
-//            if (!mapHeroHtml) {
-//                mapHeroHtml = `
-//                  <div class="mapHero">
-//                    <img class="mapImg" src="${escapeHtml(dataUrl)}" alt="Map photo">
-//                  </div>
-//                `;
-//            }
-//        } else {
-//            const card = `
-//              <div class="card">
-//                <a class="thumbLink" href="#${anchorId}">
-//                  <img src="${escapeHtml(dataUrl)}" alt="${escapeHtml(it.title)}">
-//                </a>
-//                <div class="cap">
-//                  <div class="title">${escapeHtml(it.title)}</div>
-//                  <div class="metaLine">${escapeHtml(it.category)} ${it.type ? '· ' + escapeHtml(it.type) : ''}</div>
-//                  <div class="metaLine">${escapeHtml(fmtDateTime(it.time))}</div>
-//                </div>
-//              </div>
-//            `;
-//            if (it.kind === 'find') findCards.push(card);
-//            else placeCards.push(card);
-//        }
-//
-//        sections.push(`
-//          <div class="detail" id="${anchorId}">
-//            <p class="back"><a href="#top">↑ Back to top</a></p>
-//            <h3>${escapeHtml(it.title)}</h3>
-//            <p class="muted">${escapeHtml(it.kind)} photo ${it.indexInParent}</p>
-//            <img class="full" src="${escapeHtml(dataUrl)}" alt="${escapeHtml(it.title)}">
-//            <ul class="meta">
-//              <li><strong>Type:</strong> ${escapeHtml(it.type)}</li>
-//              ${it.category ? `<li><strong>Category/ID:</strong> ${escapeHtml(it.category)}</li>` : ''}
-//              ${it.rating ? `<li><strong>Rating:</strong> ${escapeHtml(it.rating)}</li>` : ''}
-//              ${it.time ? `<li><strong>Date/Time:</strong> ${escapeHtml(fmtDateTime(it.time))}</li>` : ''}
-//              ${it.coords ? `<li><strong>Coordinates:</strong> ${escapeHtml(it.coords)}</li>` : ''}
-//              ${it.accuracy ? `<li><strong>Accuracy:</strong> ${escapeHtml(it.accuracy)}</li>` : ''}
-//              <li><strong>Parent ID:</strong> ${escapeHtml(it.parentId)}</li>
-//              <li><strong>Photo #:</strong> ${it.indexInParent}</li>
-//            </ul>
-//            <hr>
-//          </div>
-//        `);
-//    }
-//
-//    const mapInfoHtml = `
-//      <div class="mapBox">
-//        <h1>${escapeHtml(openMap.name || 'Unnamed map')}</h1>
-//        <p><strong>Description:</strong> ${escapeHtml(openMap.description || '')}</p>
-//        <p><strong>Exported:</strong> ${escapeHtml(new Date().toLocaleString())}</p>
-//        <p class="muted">index.html is embedded/phone-safe and does not link to the JPG folders.</p>
-//      </div>
-//    `;
-//
-//    const indexHtml = `<!doctype html>
-//<html>
-//<head>
-//<meta charset="utf-8">
-//<meta name="viewport" content="width=device-width, initial-scale=1">
-//<title>Trekta Gallery - ${escapeHtml(openMap.name || 'Map')}</title>
-//<style>
-//  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:18px;color:#111;background:#f8fafc;}
-//  .wrap{max-width:1200px;margin:0 auto;}
-//  .mapBox{background:#fff;border:1px solid #e5e7eb;border-left:6px solid #0ea5e9;border-radius:14px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
-//  h1{margin:0 0 8px 0;font-size:26px}
-//  h2{margin:22px 0 10px 0}
-//  h3{margin:8px 0 10px 0}
-//  .muted{color:#64748b;font-size:14px}
-//
-//  .mapHero{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.06); margin-top:12px;}
-//  .mapImg{width:100%; height:auto; display:block;}
-//
-//  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-//  @media (max-width:520px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
-//
-//  .card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
-//  .card img{width:100%;height:120px;object-fit:cover;display:block}
-//  .cap{padding:10px}
-//  .title{font-weight:800;font-size:14px;margin-bottom:4px}
-//  .metaLine{font-size:12px;color:#64748b}
-//  a.thumbLink{text-decoration:none;color:inherit}
-//
-//  .detail{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-top:14px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
-//  img.full{width:100%;height:auto;border-radius:12px;border:1px solid #e5e7eb}
-//  .meta{margin:12px 0 0 0;padding:0;list-style:none}
-//  .meta li{padding:6px 0;border-bottom:1px solid #f1f5f9}
-//  .back{margin:0 0 8px 0}
-//</style>
-//</head>
-//<body>
-//  <a id="top"></a>
-//  <div class="wrap">
-//    ${mapInfoHtml}
-//    ${mapHeroHtml}
-//
-//    <h2>Favourites</h2>
-//    <div class="grid">${findCards.join('')}</div>
-//
-//    ${includePlaces ? `<h2>Places</h2><div class="grid">${placeCards.join('')}</div>` : ''}
-//
-//    <h2>Full Photos</h2>
-//    ${sections.join('')}
-//
-//    <p class="muted" style="margin-top:22px;">Generated by Trekta.</p>
-//  </div>
-//</body>
-//</html>`;
-//
-//    await writeFileToHandle(galleryDir, 'index.html', new Blob([indexHtml], { type: 'text/html' }));
-//    return true;
-//}
-// [DEADCODE-PASS2 END: exportMapPhotoGallery_NoModal]
 
 
         /** Exports all data (maps and profile) to a JSON string and displays it. */
@@ -18002,61 +16196,8 @@ async function exportAllMapsPhotoGalleries_ToFolder(rootPick) {
  * Build an array of data URLs for a given photo array on a place or find.
  * It understands IndexedDB refs ("idb:123") and legacy direct data URLs.
  */
-// [DEADCODE-PASS2 START: buildPhotoDataUrlsFromRefs]
-//async function buildPhotoDataUrlsFromRefs(refs, fallbackSingleDataUrl) {
-//    const result = [];
-//
-//    if (Array.isArray(refs) && refs.length) {
-//        for (const ref of refs) {
-//            if (typeof ref !== 'string' || !ref) continue;
-//
-//            // New world: IndexedDB reference, e.g. "idb:5"
-//            if (isIndexedDbPhotoRef(ref)) {
-//                const id = parsePhotoRef(ref);
-//                if (id != null) {
-//                    const blob = await loadPhotoBlob(id);
-//                    if (blob) {
-//                        const dataUrl = await blobToDataUrl(blob);
-//                        if (dataUrl) result.push(dataUrl);
-//                    }
-//                }
-//            } else if (ref.startsWith('data:image/')) {
-//                // Legacy: direct base64 data URL
-//                result.push(ref);
-//            }
-//        }
-//    }
-//
-//    // If nothing came from refs, fall back to a single stored thumbnail
-//    if (!result.length && fallbackSingleDataUrl && typeof fallbackSingleDataUrl === 'string') {
-//        result.push(fallbackSingleDataUrl);
-//    }
-//
-//    return result;
-//}
-// [DEADCODE-PASS2 END: buildPhotoDataUrlsFromRefs]
 
-// [DEADCODE-PASS2 START: showExportConfirmModal]
-//function showExportConfirmModal(onConfirmCallback) {
-//    showConfirmationModal(
-//        "Export map",
-//        "Export the open map as a <strong>.zip package</strong> including photos?<br><br>" +
-//        "This is the recommended format for backups and moving maps between devices.",
-//        onConfirmCallback
-//    );
-//}
-// [DEADCODE-PASS2 END: showExportConfirmModal]
 
-// [DEADCODE-PASS2 START: showImportConfirmModal]
-//function showImportConfirmModal(filename, onConfirmCallback) {
-//    showConfirmationModal(
-//        "Import map",
-//        `Import map from file "<strong>${filename}</strong>"?<br><br>` +
-//        `This will add the map and its favourites  to your local data.`,
-//        onConfirmCallback
-//    );
-//}
-// [DEADCODE-PASS2 END: showImportConfirmModal]
 
 
 /* ============================
@@ -18095,21 +16236,6 @@ function safePermissionDateDisplay(v) {
 
 
 /** Format a timestamp for reports as "dd/mm/yy, hh:mm" (UK). Returns '' if missing/invalid. */
-// [DEADCODE-PASS2 START: formatReportDateTime]
-//function formatReportDateTime(ts) {
-//    if (ts === null || ts === undefined) return '';
-//    try {
-//        const d = new Date(ts);
-//        if (!isFinite(d)) return '';
-//        return d.toLocaleString('en-GB', {
-//            day: '2-digit', month: '2-digit', year: '2-digit',
-//            hour: '2-digit', minute: '2-digit'
-//        });
-//    } catch (e) {
-//        return '';
-//    }
-//}
-// [DEADCODE-PASS2 END: formatReportDateTime]
 
 /** Get a formatted Logged Date/Time string for a place or find (for the PDF Map Report). */
 
@@ -18946,11 +17072,6 @@ async function prepareMapShareZip(forceRebuild = false) {
 }
 
 // Compatibility name retained for any older inline handler/bookmark.
-// [DEADCODE-PASS2 START: actuallyShareMapAsZip]
-//async function actuallyShareMapAsZip() {
-//    return await prepareMapShareZip(true);
-//}
-// [DEADCODE-PASS2 END: actuallyShareMapAsZip]
 
 async function sharePreparedMapZip() {
     const openMap = maps.find(s => s.status === 'Open');
@@ -19977,42 +18098,6 @@ if (sortByDateBtn) {
  * Read a chosen .json file and import it as a map,
  * updating the import log as the process runs.
  */
-// [DEADCODE-PASS2 START: importMapWithPhotosFromFile]
-//async function importMapWithPhotosFromFile() {
-//    const fileInput = document.getElementById('import-map-with-photos-file');
-//    const logBox    = document.getElementById('import-map-log');
-//
-//    const log = (msg) => {
-//        if (!logBox) return;
-//        logBox.value += msg + '\n';
-//        logBox.scrollTop = logBox.scrollHeight;
-//    };
-//
-//    if (!fileInput || !fileInput.files || !fileInput.files.length) {
-//        showMessage('Please choose a map .json file to import.', 'error');
-//        return;
-//    }
-//
-//    const file = fileInput.files[0];
-//    if (logBox) logBox.value = '';
-//    log(`Reading file "${file.name}"...`);
-//
-//    let text;
-//    try {
-//        text = await file.text();
-//        log('File read successfully. Ready to import.');
-//    } catch (e) {
-//        console.error('Error reading map import file:', e);
-//        log(`ERROR: Could not read file (${e.message || 'Unknown error'})`);
-//        showMessage(`Could not read import file: ${e.message || 'Unknown error'}`, 'error');
-//        return;
-//    }
-//
-//    // Show inline confirm panel instead of modal
-//    importMapConfirmData = { filename: file.name, text, log };
-//    render();
-//}
-// [DEADCODE-PASS2 END: importMapWithPhotosFromFile]
 
         // --- INITIALIZATION & EVENT LISTENERS ---
 
@@ -20077,20 +18162,6 @@ function getDefaultQuickPlaceRanges() {
     return defaults;
 }
 
-// [DEADCODE-PASS2 START: getQuickPlaceSwatchClass]
-//function getQuickPlaceSwatchClass(colorName) {
-//    const c = String(colorName || '').toUpperCase().trim();
-//    // Tailwind classes for a small swatch dot
-//    const map = {
-//        BLUE:  'bg-green-600',
-//        SKY:   'bg-sky-500',
-//        GREEN: 'bg-emerald-600',
-//        AMBER: 'bg-amber-500',
-//        RED:   'bg-red-600'
-//    };
-//    return map[c] || 'bg-gray-400';
-//}
-// [DEADCODE-PASS2 END: getQuickPlaceSwatchClass]
 
 
 
@@ -20178,30 +18249,6 @@ function getPresetRangesForDevice(deviceName) {
     return key ? DETECTOR_Category_PRESETS[key] : null;
 }
 
-// [DEADCODE-PASS2 START: applyDevicePreset]
-//function applyDevicePreset(deviceName, silent) {
-//    const ranges = getPresetRangesForDevice(deviceName);
-//    if (!ranges) {
-//        if (!silent) showMessage('No Category preset found for this device — ranges unchanged.', 'info');
-//        return false;
-//    }
-//    saveQuickPlaceRanges(ranges);
-//    quickPlaceRangesDraft = null;
-//    // Refresh the settings table if it's visible
-//    try {
-//        const tbody = document.getElementById('quick-place-ranges-tbody');
-//        if (tbody) {
-//            const key = getPresetKeyForDevice(deviceName);
-//            const label = key === 'minelab' ? 'Low range (1–3)' :
-//                          key === 'legend'  ? 'Mid range (3–4)' :
-//                                             'Standard (0→99)';
-//            if (!silent) showMessage(`Category preset applied: ${label}. Tap Save to keep it.`, 'success');
-//            render();
-//        }
-//    } catch (e) {}
-//    return true;
-//}
-// [DEADCODE-PASS2 END: applyDevicePreset]
 
 // =====================================
 // Live Quick Place Draft (no-save) sync
@@ -20210,15 +18257,6 @@ function getPresetRangesForDevice(deviceName) {
 // update immediately (even before pressing Save). Saving will persist to localStorage as usual.
 let quickPlaceRangesDraft = null;
 
-// [DEADCODE-PASS2 START: getQuickPlaceRangesEffective]
-//function getQuickPlaceRangesEffective() {
-//    // Use draft if available; otherwise use persisted values
-//    try {
-//        if (Array.isArray(quickPlaceRangesDraft) && quickPlaceRangesDraft.length) return quickPlaceRangesDraft;
-//    } catch (e) {}
-//    return loadQuickPlaceRanges();
-//}
-// [DEADCODE-PASS2 END: getQuickPlaceRangesEffective]
 
 let _findCardPhotoPending = null;
 
@@ -20459,70 +18497,7 @@ async function sharePlaceAsHtml(placeId, mapId) {
 
 let _placeCardPhotoPending = null;
 
-// [DEADCODE-PASS2 START: triggerPlacePhotoCapture]
-//function triggerPlacePhotoCapture(placeId, mapId) {
-//    _placeCardPhotoPending = { placeId, mapId };
-//    const inp = document.getElementById('place-card-photo-input');
-//    if (inp) { inp.value = ''; inp.click(); }
-//}
-// [DEADCODE-PASS2 END: triggerPlacePhotoCapture]
 
-// [DEADCODE-PASS2 START: handlePlaceCardPhotoSelected]
-//async function handlePlaceCardPhotoSelected(event) {
-//    const file = event.target.files && event.target.files[0];
-//    if (!file || !_placeCardPhotoPending) return;
-//
-//    const { placeId, mapId } = _placeCardPhotoPending;
-//    _placeCardPhotoPending = null;
-//    try { event.target.value = ''; } catch(e) {}
-//
-//    const map = Array.isArray(maps) ? maps.find(s => s.id === mapId) : null;
-//    const place = map && Array.isArray(map.targets)
-//        ? map.targets.find(t => String(t.id) === String(placeId)) : null;
-//    if (!place) { showMessage('Place not found.', 'error'); return; }
-//
-//    showMessage('Processing photo...', 'info');
-//
-//    let photoData = '';
-//    try {
-//        photoData = await fileToResizedDataUrl(file);
-//    } catch(err) {
-//        showMessage('Photo could not be processed.', 'error');
-//        return;
-//    }
-//
-//    if (!Array.isArray(place.photos)) place.photos = [];
-//
-//    // Migrate any existing legacy single-photo fields into place.photos first,
-//    // so the new photo is added alongside them rather than hiding them.
-//    const legacyUrl = place.placePhotoData || place.photoDataUrl || place.photoData || '';
-//    if (legacyUrl && place.photos.length === 0) {
-//        try {
-//            const legacyRefs = await saveDataUrlsAsPhotoRefs([legacyUrl]);
-//            place.photos = legacyRefs.length > 0 ? legacyRefs : [legacyUrl];
-//            if (legacyRefs.length > 0) place.placePhotoRef = legacyRefs[0];
-//        } catch (_) {
-//            place.photos = [legacyUrl];
-//        }
-//        place.placePhotoData = '';
-//        place.photoDataUrl    = '';
-//        place.photoData       = '';
-//    }
-//
-//    // Save the new photo to IDB and append
-//    try {
-//        const newRefs = await saveDataUrlsAsPhotoRefs([photoData]);
-//        place.photos.push(newRefs.length > 0 ? newRefs[0] : photoData);
-//    } catch (_) {
-//        place.photos.push(photoData);
-//    }
-//
-//    map.dateLastChanged = Date.now();
-//    saveMapsToLocalStorage();
-//    showMessage('Photo added to place.', 'success');
-//    if (typeof render === 'function') render();
-//}
-// [DEADCODE-PASS2 END: handlePlaceCardPhotoSelected]
 
 
 let _mapPhotoPendingId = null;
@@ -20843,46 +18818,6 @@ function buildElevationGraphHtml(openMap) {
         + '</div>';
 }
 
-// [DEADCODE-PASS2 START: buildCompassPhotoBtnsHtml]
-//function buildCompassPhotoBtnsHtml(ranges) {
-//    return `
-//        <div class="bg-amber-50 px-3 pt-3 pb-1 rounded-t-xl shadow-lg border border-amber-200 border-b-0 mb-0">
-//            <div class="grid grid-cols-5 gap-2">
-//            <button type="button"
-//                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
-//                style="background:#ef4444"
-//                onclick="_quickPhotoStarPlace(1);document.getElementById('quick-photo-place-input').click();">
-//                <i class="fas fa-camera"></i> ★
-//            </button>
-//            <button type="button"
-//                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
-//                style="background:#1f2937"
-//                onclick="_quickPhotoStarPlace(2);document.getElementById('quick-photo-place-input').click();">
-//                <i class="fas fa-camera"></i> ★★
-//            </button>
-//            <button type="button"
-//                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
-//                style="background:#1f2937"
-//                onclick="_quickPhotoStarPlace(3);document.getElementById('quick-photo-place-input').click();">
-//                <i class="fas fa-camera"></i> ★★★
-//            </button>
-//            <button type="button"
-//                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
-//                style="background:#eab308"
-//                onclick="_quickPhotoStarPlace(4);document.getElementById('quick-photo-place-input').click();">
-//                <i class="fas fa-camera"></i> ★★★★
-//            </button>
-//            <button type="button"
-//                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
-//                style="background:#eab308"
-//                onclick="_quickPhotoStarPlace(5);document.getElementById('quick-photo-place-input').click();">
-//                <i class="fas fa-camera"></i> ★★★★★
-//            </button>
-//            </div>
-//        </div>
-//    `;
-//}
-// [DEADCODE-PASS2 END: buildCompassPhotoBtnsHtml]
 
 // Star-based quick log helpers
 const _STAR_CONFIG = [
@@ -20990,12 +18925,6 @@ async function handleQuickFormPhotoSelected(event) {
     }
 }
 
-// [DEADCODE-PASS2 START: _quickPhotoQuickForm]
-//function _quickPhotoQuickForm() {
-//    const { type, name } = _getQuickFormNameAndType();
-//    _quickPhotoPlacePending = { stars: 0, status: _quickFormStatus, label: name, rating: '', type: type };
-//}
-// [DEADCODE-PASS2 END: _quickPhotoQuickForm]
 
 function quickLogStarPlace(stars) {
     const cfg = _STAR_CONFIG[stars];
@@ -21018,17 +18947,6 @@ let _quickPhotoPlacePending = null;
 let _quickFormPhotoRef = null;  // photo held ready for Quick Save
 
 
-// [DEADCODE-PASS2 START: triggerQuickPhotoPlace]
-//function triggerQuickPhotoPlace(btn) {
-//    const min   = btn.getAttribute('data-min');
-//    const max   = btn.getAttribute('data-max');
-//    const tid   = btn.getAttribute('data-placeid');
-//    const color = btn.getAttribute('data-color');
-//    _quickPhotoPlacePending = { min, max, placeId: tid, color };
-//    const inp = document.getElementById('quick-photo-place-input');
-//    if (inp) { inp.value = ''; inp.click(); }
-//}
-// [DEADCODE-PASS2 END: triggerQuickPhotoPlace]
 
 async function handleQuickPhotoPlaceSelected(event) {
     const file = event.target.files && event.target.files[0];
@@ -21135,46 +19053,6 @@ async function handleQuickPhotoPlaceSelected(event) {
 
 
 
-// [DEADCODE-PASS2 START: buildCompassRangeButtonsHtml]
-//function buildCompassRangeButtonsHtml(ranges) {
-//    return `
-//        <div class="bg-amber-50 px-3 pb-3 pt-2 rounded-b-xl shadow-lg border border-amber-200 border-t-0 mb-4">
-//            <div class="grid grid-cols-5 gap-2">
-//            <button type="button"
-//                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
-//                style="background:#ef4444"
-//                onclick="quickLogStarPlace(1);">
-//                ★
-//            </button>
-//            <button type="button"
-//                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
-//                style="background:#1f2937"
-//                onclick="quickLogStarPlace(2);">
-//                ★★
-//            </button>
-//            <button type="button"
-//                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
-//                style="background:#1f2937"
-//                onclick="quickLogStarPlace(3);">
-//                ★★★
-//            </button>
-//            <button type="button"
-//                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
-//                style="background:#eab308"
-//                onclick="quickLogStarPlace(4);">
-//                ★★★★
-//            </button>
-//            <button type="button"
-//                class="w-full py-3 rounded-lg text-white font-extrabold text-xs shadow"
-//                style="background:#eab308"
-//                onclick="quickLogStarPlace(5);">
-//                ★★★★★
-//            </button>
-//            </div>
-//        </div>
-//    `;
-//}
-// [DEADCODE-PASS2 END: buildCompassRangeButtonsHtml]
 
 function applyQuickPlaceRangesToCompassButtons(ranges) {
     const btns = Array.from(document.querySelectorAll('.compass-range-btn'));
