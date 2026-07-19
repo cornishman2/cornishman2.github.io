@@ -160,7 +160,7 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.77
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.78
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
@@ -1276,8 +1276,9 @@ let hasRenderedFirstGpsFix = false;
 let lastGpsUiRefreshMs     = 0;
 let currentGalleryPhotos   = [];
 let currentGalleryPlaceId  = null;
+let currentGalleryFindId   = null; // distinct from placeId — without this, gallery-delete on a favourite has nowhere correct to go
 let currentGalleryMapId    = null;
-let currentGalleryPhotoRefs = [];  // original IDB refs parallel to resolved URLs
+let currentGalleryPhotoRefs = [];  // kept index-aligned with currentGalleryPhotos — see openPlacePhotoGallery
 let currentGalleryIndex    = 0;
 let gallerySwipeInitialized = false;
 let galleryTouchStartX     = 0;
@@ -5727,6 +5728,30 @@ async function loadPhotoUrlsFromRefs(refs) {
     return urls;
 }
 
+/**
+ * Same idea as loadPhotoUrlsFromRefs, but returns { urls, refs } with the
+ * two arrays kept strictly index-aligned — if a ref fails to resolve (e.g.
+ * its blob no longer exists), it's dropped from BOTH arrays together,
+ * never just from urls. Use this anywhere a "delete photo N" action will
+ * later trust that position to mean the same thing in the stored refs
+ * array — the plain loadPhotoUrlsFromRefs() does not guarantee that, and
+ * using it for that purpose is exactly what let one already-broken photo
+ * cause a completely different, previously-fine photo to be deleted by
+ * position instead of by identity.
+ */
+async function loadPhotoUrlsAndRefsAligned(refs) {
+    const urls = [];
+    const keptRefs = [];
+    for (const ref of refs || []) {
+        const url = await getPhotoUrlFromRef(ref);
+        if (url) {
+            urls.push(url);
+            keptRefs.push(ref);
+        }
+    }
+    return { urls, refs: keptRefs };
+}
+
 // ================================
 //  ORPHANED PHOTO RECOVERY TOOL
 // ================================
@@ -6256,13 +6281,20 @@ async function deleteOrphanPhotoPermanently(photoId) {
 
 let mapPhotoLinkWarning = null;        // {mapId, mapName, missingCount, unlinkedCount, missingLabels} for the last problem found, else null
 let mapPhotoLinkCheckInProgress = false;
+let _mapPhotoLinkRecheckQueue = null;  // holds a map to re-verify once the in-progress run finishes, or null
 
 async function verifyMapPhotoLinksOnOpen(map) {
     if (!map || typeof indexedDB === 'undefined') return;
-    // Skip rather than stack up if a check is already running (e.g. a rapid
-    // open-then-close) — the backward half reads every photo in storage,
-    // not just this map's, so overlapping runs are worth avoiding.
-    if (mapPhotoLinkCheckInProgress) return;
+    // Don't skip silently if a check is already running (e.g. a rapid
+    // close-then-open) — that used to mean the second request's check
+    // simply never ran at all, with no error and no warning: a genuine
+    // problem could go completely unreported. Queue exactly one follow-up
+    // run instead, so whatever changed between "this check started" and
+    // "this check finished" still gets verified once the current run ends.
+    if (mapPhotoLinkCheckInProgress) {
+        _mapPhotoLinkRecheckQueue = map;
+        return;
+    }
     mapPhotoLinkCheckInProgress = true;
 
     try {
@@ -6280,9 +6312,41 @@ async function verifyMapPhotoLinksOnOpen(map) {
 
         const livePlaces = Array.isArray(map.targets) ? map.targets.filter(t => t && t.deleted !== true) : [];
 
-        // ---- Forward: place -> photo ----
+        // ---- Forward: place -> photo, AND map's own photo(s) -> photo ----
         const missingRefs = []; // { placeLabel }
         const linkedPhotoIds = new Set();
+
+        // The map's own photo(s) — map.photos (multi) or mapPhotoRef (single,
+        // legacy) — are a separate thing from place photos, easy to miss
+        // (this exact gap was already found and fixed in three other photo
+        // functions this session; this one was written fresh and got missed).
+        const mapOwnRefs = Array.isArray(map.photos) && map.photos.length
+            ? map.photos
+            : (map.mapPhotoRef ? [map.mapPhotoRef] : []);
+        for (const ref of mapOwnRefs) {
+            if (!isIndexedDbPhotoRef(ref)) continue;
+            const id = parsePhotoRef(ref);
+            if (id == null) continue;
+
+            const record = await getRecord(id);
+            if (!record) {
+                missingRefs.push({ placeLabel: `${map.name || 'this map'} (map photo)` });
+                continue;
+            }
+
+            linkedPhotoIds.add(id);
+
+            if (record.mapId !== map.id || record.placeId) {
+                try {
+                    await updatePhotoMeta(id, {
+                        mapId: map.id, mapName: map.name || '',
+                        placeId: null, placeName: ''
+                    });
+                } catch (e) {
+                    console.warn('Could not repair photo provenance for', id, e);
+                }
+            }
+        }
 
         for (const t of livePlaces) {
             const refs = Array.isArray(t.photos) && t.photos.length
@@ -6346,6 +6410,12 @@ async function verifyMapPhotoLinksOnOpen(map) {
     } finally {
         mapPhotoLinkCheckInProgress = false;
         render();
+
+        if (_mapPhotoLinkRecheckQueue) {
+            const queuedMap = _mapPhotoLinkRecheckQueue;
+            _mapPhotoLinkRecheckQueue = null;
+            verifyMapPhotoLinksOnOpen(queuedMap); // fire-and-forget, same as every other caller
+        }
     }
 }
 
@@ -11059,6 +11129,7 @@ async function openPlacePhotoGallery(placeId, mapId) {
         if (el) el.textContent = formatPlaceLoggedDateTime(place);
     } catch (e) {}
 let photos = [];
+let refsForGallery = [];
 
     if (Array.isArray(place.photos) && place.photos.length) {
         const first = place.photos[0];
@@ -11066,19 +11137,24 @@ let photos = [];
         // NEW: if these are IndexedDB refs ("idb:..."), load blobs and make real URLs
         if (isIndexedDbPhotoRef(first)) {
             try {
-                photos = await loadPhotoUrlsFromRefs(place.photos);
+                const aligned = await loadPhotoUrlsAndRefsAligned(place.photos);
+                photos = aligned.urls;
+                refsForGallery = aligned.refs;
             } catch (e) {
                 console.error('Error loading place photos from IndexedDB:', e);
                 photos = [];
+                refsForGallery = [];
             }
         } else {
             // Old style: already data URLs, just copy them
             photos = place.photos.slice();
+            refsForGallery = place.photos.slice();
         }
     } else if (place.placePhotoData || place.photoDataUrl) {
         const basePhoto = place.placePhotoData || place.photoDataUrl;
         if (basePhoto) {
             photos = [basePhoto];
+            refsForGallery = [basePhoto];
         }
     }
 
@@ -11087,9 +11163,11 @@ let photos = [];
         return;
     }
 
-    // Store refs so we can delete individual photos
-    currentGalleryPhotoRefs = Array.isArray(place.photos) ? place.photos.slice() : [];
+    // Store refs so we can delete individual photos — kept aligned with
+    // `photos` above (see loadPhotoUrlsAndRefsAligned).
+    currentGalleryPhotoRefs = refsForGallery;
     currentGalleryPlaceId = placeId;
+    currentGalleryFindId = null;
     currentGalleryMapId = mapId;
     openPhotoGallery(photos, 0);
 }
@@ -11102,25 +11180,31 @@ async function openFavouritePhotoGallery(findId) {
     }
 
     let photos = [];
+    let refsForGallery = [];
 
     if (Array.isArray(find.photos) && find.photos.length) {
         const first = find.photos[0];
 
         if (isIndexedDbPhotoRef(first)) {
             try {
-                photos = await loadPhotoUrlsFromRefs(find.photos);
+                const aligned = await loadPhotoUrlsAndRefsAligned(find.photos);
+                photos = aligned.urls;
+                refsForGallery = aligned.refs;
             } catch (e) {
                 console.error('Error loading find photos from IndexedDB:', e);
                 photos = [];
+                refsForGallery = [];
             }
         } else {
             // Old style: direct data URLs
             photos = find.photos.slice();
+            refsForGallery = find.photos.slice();
         }
     } else if (find.findPhotoData || find.placePhotoData || find.photoData) {
         const basePhoto = find.findPhotoData || find.placePhotoData || find.photoData;
         if (basePhoto) {
             photos = [basePhoto];
+            refsForGallery = [basePhoto];
         }
     }
 
@@ -11129,6 +11213,12 @@ async function openFavouritePhotoGallery(findId) {
         return;
     }
 
+    // Without setting these, a delete tapped from inside this gallery would
+    // act on whatever place/map gallery was last open instead of this find.
+    currentGalleryPhotoRefs = refsForGallery;
+    currentGalleryPlaceId = null;
+    currentGalleryFindId = findId;
+    currentGalleryMapId = find.mapId || null;
     openPhotoGallery(photos, 0);
 }
 function openPhotoGallery(photos, startIndex) {
@@ -11298,6 +11388,7 @@ async function openMapPhotoGallery(mapId) {
 
     currentGalleryPhotoRefs = refs;
     currentGalleryPlaceId   = null;
+    currentGalleryFindId    = null;
     currentGalleryMapId     = mapId;
     openPhotoGallery(photos, 0);
 }
@@ -11411,7 +11502,7 @@ async function deletePlacePhoto(placeId, mapId, index) {
 }
 
 async function deleteCurrentGalleryPhoto() {
-    if (!currentGalleryPhotoRefs.length || !currentGalleryMapId) {
+    if (!currentGalleryPhotoRefs.length || (!currentGalleryMapId && !currentGalleryFindId)) {
         showMessage('Cannot delete — no photo context.', 'error');
         return;
     }
@@ -11419,34 +11510,71 @@ async function deleteCurrentGalleryPhoto() {
     const idx = currentGalleryIndex;
     const ref = currentGalleryPhotoRefs[idx];
 
-    // Delete from IndexedDB if it's an IDB ref
-    if (ref && typeof ref === 'string' && ref.startsWith('idb:')) {
-        try {
-            const photoId = parsePhotoRef(ref);
-            if (photoId != null) await deletePhotoBlob(photoId);
-        } catch(e) { console.warn('Photo blob delete failed:', e); }
-    }
+    const map = currentGalleryMapId ? maps.find(s => s.id === currentGalleryMapId) : null;
 
-    const map = maps.find(s => s.id === currentGalleryMapId);
+    // Remove the reference by matching its VALUE in the live, stored array —
+    // not by trusting `idx`, which is only meaningful within this gallery's
+    // own (possibly filtered) view. Matching by identity means this is safe
+    // even if the gallery's list ever drifts out of position relative to
+    // what's actually stored, instead of silently deleting whichever photo
+    // happens to sit at that position in the real array.
+    let removed = false;
 
-    if (currentGalleryPlaceId) {
+    if (currentGalleryFindId) {
+        // Remove from find.photos array
+        const find = Array.isArray(favourites) ? favourites.find(f => f.id === currentGalleryFindId) : null;
+        if (find && Array.isArray(find.photos)) {
+            const realIdx = find.photos.indexOf(ref);
+            if (realIdx >= 0) {
+                find.photos.splice(realIdx, 1);
+                if (find.findPhotoRef === ref) find.findPhotoRef = find.photos[0] || '';
+                removed = true;
+            }
+            saveFavouritesToLocalStorage();
+        }
+    } else if (currentGalleryPlaceId) {
         // Remove from place.photos array
         const place = map && Array.isArray(map.targets) ? map.targets.find(t => t.id === currentGalleryPlaceId) : null;
         if (place && Array.isArray(place.photos)) {
-            place.photos.splice(idx, 1);
-            if (idx === 0 && place.placePhotoRef === ref) place.placePhotoRef = place.photos[0] || '';
+            const realIdx = place.photos.indexOf(ref);
+            if (realIdx >= 0) {
+                place.photos.splice(realIdx, 1);
+                if (place.placePhotoRef === ref) place.placePhotoRef = place.photos[0] || '';
+                removed = true;
+            }
             saveMapsToLocalStorage();
         }
     } else if (map) {
         // Remove from map.photos array
         if (Array.isArray(map.photos)) {
-            map.photos.splice(idx, 1);
+            const realIdx = map.photos.indexOf(ref);
+            if (realIdx >= 0) {
+                map.photos.splice(realIdx, 1);
+                removed = true;
+            }
             map.mapPhotoRef = map.photos[0] || '';
         } else {
             map.mapPhotoRef  = '';
             map.mapPhotoData = '';
+            removed = true; // legacy single-photo field — nothing more to find
         }
         saveMapsToLocalStorage();
+    }
+
+    if (!removed) {
+        console.warn('Gallery delete: could not find this photo\'s reference in its place/find/map — leaving the underlying photo in storage rather than risk an unrecoverable dangling link.');
+    }
+
+    // Only delete the underlying blob once the reference removal above is
+    // confirmed. Deleting the blob first (the old order) meant that any
+    // lookup failure left the blob gone but the reference still pointing at
+    // nothing — a permanent dangling link. This order fails safe instead:
+    // worst case is a harmless, still-recoverable orphan blob.
+    if (removed && ref && typeof ref === 'string' && ref.startsWith('idb:')) {
+        try {
+            const photoId = parsePhotoRef(ref);
+            if (photoId != null) await deletePhotoBlob(photoId);
+        } catch(e) { console.warn('Photo blob delete failed:', e); }
     }
 
     // Remove from gallery arrays
@@ -11487,6 +11615,14 @@ function showGalleryPhoto(delta) {
 
 function closePhotoGallery() {
     closeModal('photo-gallery-modal');
+    // Prevent stale context from a previous gallery session ever being used
+    // by a later delete — e.g. if some future gallery-opening path forgets
+    // to set these (as openFavouritePhotoGallery once did), a stale value
+    // here would otherwise let a delete silently act on the wrong place/map.
+    currentGalleryPlaceId = null;
+    currentGalleryFindId = null;
+    currentGalleryMapId = null;
+    currentGalleryPhotoRefs = [];
 }
 
 function ensureGallerySwipeHandlers() {
