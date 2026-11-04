@@ -147,17 +147,17 @@
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.421
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.647
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <div class="hidden sm:flex space-x-2">
 
                 
+                    <button class="nav-btn p-2 rounded-full text-gray-500 hover:text-primary transition duration-150" data-page="Compass">
+                        <i class="fas fa-map text-xl"></i>
+                    </button>
                     <button class="nav-btn p-2 rounded-full text-gray-500 hover:text-primary transition duration-150" data-page="Home">
                         <i class="fas fa-home text-xl"></i>
-                    </button>
-                    <button class="nav-btn p-2 rounded-full text-gray-500 hover:text-primary transition duration-150" data-page="Compass">
-                        <i class="fas fa-compass text-xl"></i>
                     </button>
                     <button class="nav-btn p-2 rounded-full text-gray-500 hover:text-primary transition duration-150" data-page="Places">
                         <i class="fas fa-bullseye text-xl"></i>
@@ -223,26 +223,9 @@
                     </button>
                 </div>
 
-            <!-- “1 of N” text -->
+            <!-- "1 of N" + swipe hint -->
             <p id="photo-gallery-caption" class="mt-3 text-center text-sm text-gray-300"></p>
-
-            <!-- Prev / Next buttons -->
-            <div class="mt-4 flex justify-between items-center gap-2">
-                <button
-                    type="button"
-                    class="px-4 py-2 rounded-md bg-gray-700 hover:bg-gray-600 text-sm font-semibold"
-                    onclick="showGalleryPhoto(-1)"
-                >
-                    ‹ Prev
-                </button>
-                <button
-                    type="button"
-                    class="px-4 py-2 rounded-md bg-gray-700 hover:bg-gray-600 text-sm font-semibold"
-                    onclick="showGalleryPhoto(1)"
-                >
-                    Next ›
-                </button>
-            </div>
+            <p class="text-center text-xs text-gray-500 mt-1">Swipe to browse</p>
         </div>
     </div>
 <!-- Place QR modal -->
@@ -1285,7 +1268,7 @@ let currentGalleryPhotoRefs = [];  // original IDB refs parallel to resolved URL
 let currentGalleryIndex    = 0;
 let gallerySwipeInitialized = false;
 let galleryTouchStartX     = 0;
-let currentPage = 'Home';
+let currentPage = 'Compass';
 let expandedMapIds  = new Set(); // map IDs whose cards are currently expanded
 let expandedPlaceIds  = new Set(); // place IDs whose cards are currently expanded
 let expandedFavouriteIds    = new Set(); // find IDs whose cards are currently expanded
@@ -7078,6 +7061,29 @@ switch (currentPage) {
         break;
     }
     case 'Compass':
+        // If MapLibre is active, update data layers in-place — avoid destroying the map
+        if (_mlMap && document.getElementById('place-map-container')) {
+            if (_mlMapReady) {
+                const openMap = maps.find(s => s.status === 'Open');
+                if (openMap) {
+                    const places = getActivePlaces(openMap).filter(
+                        t => t.coordinates && t.coordinates.includes(',') && t.coordinates !== 'No GPS logged'
+                    );
+                    const legacyFavs = (Array.isArray(favourites) ? favourites : [])
+                        .filter(f => f && String(f.mapId) === String(openMap.id) && f.coordinates && String(f.coordinates).includes(',') && String(f.coordinates) !== 'No GPS logged')
+                        .map(f => ({ id: f.id, description: f.description || 'Favourite', type: f.type || 'Unknown',
+                            category: '', status: f.statusAtSave || 'Visited', rating: f.rating || '',
+                            accuracy: f.accuracy || '', coordinates: f.coordinates, centerOnMap: false,
+                            favourite: true, isFavourite: true }));
+                    const allPlaces = [...places, ...legacyFavs];
+                    const userCoord = showUserPosition ? (smoothedUserCoords || currentUserCoords) : null;
+                    renderPlacePlot(allPlaces, userCoord);
+                }
+            }
+            attachPageEventListeners();
+            updateActiveNavButtons();
+            return;
+        }
         contentHtml = renderCompassPage(false);
         break;
     case 'Export':
@@ -7989,7 +7995,7 @@ function processLiveGpsPosition(position) {
     if (!hasRenderedFirstGpsFix && currentUserCoords && currentPage === 'Compass') {
         hasRenderedFirstGpsFix = true;
         const appContent = document.getElementById('app-content');
-        if (appContent) { appContent.innerHTML = renderCompassPage(true); attachPageEventListeners(); }
+        if (appContent && !_mlMap) { appContent.innerHTML = renderCompassPage(true); attachPageEventListeners(); }
     }
 
     if (smoothedUserCoords && activeRouteId && activeRouteMapId) {
@@ -8629,15 +8635,17 @@ function updateMapWithUserLocationAndRender() {
 
     const savedScroll = window.scrollY;
 
-    // If MapLibre is active, just call renderPlacePlot which will call updateMapLibreOverlay
-    if (_mlMap && _mlMapReady) {
-        const openMap = maps.find(s => s.status === 'Open');
-        if (openMap) {
-            const places = getActivePlaces(openMap).filter(
-                t => t.coordinates && t.coordinates.includes(',') && t.coordinates !== 'No GPS logged'
-            );
-            const userCoord = showUserPosition ? (smoothedUserCoords || currentUserCoords) : null;
-            renderPlacePlot(places, userCoord);
+    // If MapLibre exists (even if not yet ready), never do a full DOM rebuild
+    if (_mlMap) {
+        if (_mlMapReady) {
+            const openMap = maps.find(s => s.status === 'Open');
+            if (openMap) {
+                const places = getActivePlaces(openMap).filter(
+                    t => t.coordinates && t.coordinates.includes(',') && t.coordinates !== 'No GPS logged'
+                );
+                const userCoord = showUserPosition ? (smoothedUserCoords || currentUserCoords) : null;
+                renderPlacePlot(places, userCoord);
+            }
         }
         if (savedScroll > 0) requestAnimationFrame(() => window.scrollTo(0, savedScroll));
         attachPageEventListeners();
@@ -8645,6 +8653,8 @@ function updateMapWithUserLocationAndRender() {
     }
 
     // Fallback: full re-render if MapLibre not yet ready
+    // BUT skip if we're in the middle of a fullRerenderCompass transition
+    if (_mlSkipInit) return;
     appContent.innerHTML = renderCompassPage(true);
     if (savedScroll > 0) {
         requestAnimationFrame(() => window.scrollTo(0, savedScroll));
@@ -8753,7 +8763,102 @@ function showConfirmationModal(title, message, onConfirmCallback) {
             document.getElementById('confirmation-modal').style.display = 'none';
         }
 
-    /** Shows the New Map Modal and attaches the submit listener. */
+    /** Toggle route recording from the map panel button */
+function quickToggleRouteRecording() {
+    if (isAnyRouteRecording()) {
+        handleStopRouteClick();
+    } else {
+        const openMap = maps.find(s => s.status === 'Open');
+        if (!openMap) return;
+        const nextIndex = Array.isArray(openMap.tracks) ? openMap.tracks.length + 1 : 1;
+        const name = 'Route ' + nextIndex;
+        const routeId = 'route_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        const newRoute = {
+            id: routeId, name,
+            description: '', type: '',
+            createdAt: Date.now(),
+            isRecording: true, isVisible: true,
+            color: '#000000', points: []
+        };
+        if (!Array.isArray(openMap.tracks)) openMap.tracks = [];
+        openMap.tracks.push(newRoute);
+        isRoutingActive = true;
+        activeRouteMapId = openMap.id;
+        activeRouteId = routeId;
+        saveMapsToLocalStorage();
+        startLiveMapLocationWatch();
+        startCompassAutoRefresh();
+        showMessage('Recording ' + name, 'success');
+        // Update button and recording indicator directly — no re-render needed
+        const btn = document.querySelector('#map-canvas-controls button');
+        if (btn) {
+            btn.className = btn.className.replace('bg-green-600', 'bg-red-600').replace('hover:bg-green-700', 'hover:bg-red-700');
+            btn.innerHTML = '<i class="fas fa-stop-circle text-base"></i> Stop Recording ' + name;
+        }
+        // Update header recording indicator directly
+        const recIndicator = document.querySelector('.animate-pulse');
+        if (recIndicator) {
+            recIndicator.innerHTML = '<i class="fas fa-circle text-red-500"></i> ' + name + ' Recording';
+        }
+    }
+}
+
+/** Quick-create a new map from the Explore page when no map is open */
+function quickCreateMap() {
+    // Find an unused name like "New Map 1", "New Map 2" etc.
+    let n = 1;
+    const existingNames = maps.map(m => m.name);
+    while (existingNames.includes('New Map ' + n)) n++;
+    const name = 'New Map ' + n;
+
+    const now = new Date().toISOString().slice(0, 10);
+    const id = 'map_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+    // Close any other open maps first
+    maps.forEach(m => { if (m.status === 'Open') m.status = 'Closed'; });
+
+    // Create Route 1
+    const routeId = 'route_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const route1 = {
+        id: routeId,
+        name: 'Route 1',
+        description: '',
+        type: '',
+        createdAt: Date.now(),
+        isRecording: true,
+        isVisible: true,
+        color: '#000000',
+        points: []
+    };
+
+    const newMap = {
+        id, name,
+        description: '',
+        status: 'Open',
+        mapType: 'General',
+        creationDate: now,
+        dateLastChanged: now,
+        targets: [], finds: [],
+        tracks: [route1],
+        photos: [], mapPhotoRef: '', mapPhotoData: ''
+    };
+
+    maps.unshift(newMap);
+
+    // Start recording
+    isRoutingActive = true;
+    activeRouteMapId = id;
+    activeRouteId = routeId;
+
+    saveMapsToLocalStorage();
+    startLiveMapLocationWatch();
+    startCompassAutoRefresh();
+
+    showMessage('Map \'' + name + '\' created — recording Route 1!', 'success');
+    render();
+}
+
+/** Shows the New Map Modal and attaches the submit listener. */
 function showNewMapModal() {
     // LIMITS: block opening if over limit / expired
     const r = canCreate('maps');
@@ -10749,12 +10854,12 @@ async function editMap(id) {
 
 function toggleMapSummary() {
     mapSummaryExpanded = !mapSummaryExpanded;
-    rerenderCompassIfActive();
+    fullRerenderCompass();
 }
 
 function toggleMapRouting() {
     mapRoutingExpanded = !mapRoutingExpanded;
-    rerenderCompassIfActive();
+    fullRerenderCompass();
 }
 
 /** Save an inline route edit from the route list panel. */
@@ -10856,11 +10961,56 @@ async function confirmInlineMapDelete(mapId) {
 }
 
 // Map canvas toggle — update state then re-render
-function toggleMapCanvas() {
-    mapCanvasExpanded = !mapCanvasExpanded;
-    rerenderCompassIfActive();
+// Full re-render of Compass page content while preserving the MapLibre instance
+function fullRerenderCompass() {
+    if (typeof currentPage === 'undefined' || currentPage !== 'Compass') return;
+    const appContent = document.getElementById('app-content');
+    if (!appContent || typeof renderCompassPage !== 'function') return;
+
+    // Detach MapLibre container before innerHTML replacement so it survives
+    const mlContainer = document.getElementById('maplibre-container');
+    if (mlContainer) mlContainer.remove();
+
+    // Block initOrSyncMapLibre and GPS re-renders during the transition
+    _mlSkipInit = true;
+
+    const savedScroll = window.scrollY;
+    appContent.innerHTML = renderCompassPage(false);
+    if (savedScroll > 0) requestAnimationFrame(() => window.scrollTo(0, savedScroll));
+    attachPageEventListeners();
+    updateActiveNavButtons();
+
+    // Re-attach MapLibre container into the new place-map-container
+    if (mlContainer && _mlMap) {
+        const newMapContainer = document.getElementById('place-map-container');
+        if (newMapContainer) {
+            mlContainer.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:0;';
+            newMapContainer.insertBefore(mlContainer, newMapContainer.firstChild);
+            setTimeout(() => {
+                _mlSkipInit = false;
+                if (_mlMap) { _mlMap.resize(); syncMapLibreLayerVisibility(); }
+                // Update overlay with current data
+                const openMap = maps.find(s => s.status === 'Open');
+                if (openMap && _mlMapReady) {
+                    const places = getActivePlaces(openMap).filter(
+                        t => t.coordinates && t.coordinates.includes(',') && t.coordinates !== 'No GPS logged'
+                    );
+                    const userCoord = showUserPosition ? (smoothedUserCoords || currentUserCoords) : null;
+                    renderPlacePlot(places, userCoord);
+                }
+            }, 100);
+        } else {
+            _mlSkipInit = false;
+        }
+    } else {
+        _mlSkipInit = false;
+    }
 }
 
+function toggleMapCanvas() {
+    mapCanvasExpanded = !mapCanvasExpanded;
+    fullRerenderCompass();
+}
 function toggleMapCard(mapId) {
     if (expandedMapIds.has(mapId)) {
         // Collapsing — auto-save inline fields if present
@@ -10943,11 +11093,11 @@ function toggleMapPanel(panel) {
     }
     if (panel === 'gps') {
         gpsInfoExpanded = !gpsInfoExpanded;
-        rerenderCompassIfActive();
+        fullRerenderCompass();
         return;
     }
     if (panel === 'routes')   { routesPanelExpanded = !routesPanelExpanded; }
-    rerenderCompassIfActive();
+    fullRerenderCompass();
 }
 
 async function handleMapAction(button) {
@@ -13502,11 +13652,31 @@ function setMapLibreStyle(style) {
     mapTilerStyle = style;
     localStorage.setItem('trektaMapStyle', style);
     if (!_mlMap) return;
-    // Changing style destroys all sources/layers — need to re-add them after
+
+    // Show a loading overlay on top of the existing map — no flicker
+    const container = document.getElementById('place-map-container');
+    if (container) {
+        let overlay = document.getElementById('map-style-loading');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'map-style-loading';
+            overlay.style.cssText = 'position:absolute;inset:0;z-index:100;background:rgba(255,255,255,0.7);display:flex;align-items:center;justify-content:center;border-radius:inherit;';
+            overlay.innerHTML = '<div style="text-align:center;color:#374151;">'
+                + '<i class="fas fa-circle-notch fa-spin fa-2x mb-2 block"></i>'
+                + '<div style="font-size:12px;font-weight:600;">Loading map…</div>'
+                + '</div>';
+            container.appendChild(overlay);
+        }
+    }
+
+    // Change style — destroys all sources/layers
     _mlMapReady = false;
     _mlMap.setStyle(getMaptilerStyleUrl(style));
     _mlMap.once('styledata', () => {
         _mlMapReady = true;
+        // Remove loading overlay
+        const overlay = document.getElementById('map-style-loading');
+        if (overlay) overlay.remove();
         // Re-add trekta layers
         const openMap = maps && maps.find(s => s.status === 'Open');
         if (openMap) {
@@ -13581,21 +13751,26 @@ function rerenderCompassIfActive() {
         const appContent = document.getElementById('app-content');
         if (!appContent || typeof renderCompassPage !== 'function') return;
 
-        // If MapLibre is active, update overlay directly
-        if (_mlMap && _mlMapReady) {
-            const openMap = maps.find(s => s.status === 'Open');
-            if (openMap) {
-                const places = getActivePlaces(openMap).filter(
-                    t => t.coordinates && t.coordinates.includes(',') && t.coordinates !== 'No GPS logged'
-                );
-                const userCoord = showUserPosition ? (smoothedUserCoords || currentUserCoords) : null;
-                renderPlacePlot(places, userCoord);
+        // If MapLibre exists (even if not yet ready), never do a full DOM rebuild
+        if (_mlMap) {
+            if (_mlMapReady) {
+                const openMap = maps.find(s => s.status === 'Open');
+                if (openMap) {
+                    const places = getActivePlaces(openMap).filter(
+                        t => t.coordinates && t.coordinates.includes(',') && t.coordinates !== 'No GPS logged'
+                    );
+                    const userCoord = showUserPosition ? (smoothedUserCoords || currentUserCoords) : null;
+                    renderPlacePlot(places, userCoord);
+                }
             }
+            const gpsBtn = document.getElementById('toggle-gps-btn');
+            if (gpsBtn) gpsBtn.innerHTML = '<i class="fas fa-location-crosshairs mr-1"></i>' + (showUserPosition ? 'Hide GPS' : 'Show GPS');
             if (typeof attachPageEventListeners === 'function') attachPageEventListeners();
             return;
         }
 
         // Fallback: full re-render
+        if (_mlSkipInit) return;
         const savedScroll = window.scrollY;
         appContent.innerHTML = renderCompassPage(true);
         if (savedScroll > 0) requestAnimationFrame(() => window.scrollTo(0, savedScroll));
@@ -13741,7 +13916,7 @@ function clearMapLibreOverlay() {
     if (_mlUserMarker) { _mlUserMarker.remove(); _mlUserMarker = null; }
 }
 
-function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pinZoomScale) {
+function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pinZoomScale, routesOnly) {
     if (!_mlMap) return;
     if (!_mlMapReady) {
         _mlPendingOverlay = { parsedCoords, drawRoutes, userCoord, invZoom, pinZoomScale };
@@ -13779,6 +13954,7 @@ function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pin
     }
 
     // ── Place pins as GeoJSON circle layer ──────────────────────────────────
+    if (routesOnly) return; // progressive load — skip places on first pass
     _mlMarkers.forEach(m => m.remove());
     _mlMarkers = [];
 
@@ -13956,9 +14132,33 @@ function initOrSyncMapLibre(centerLon, centerLat, minLon, minLat, maxLon, maxLat
             style: getMaptilerStyleUrl(mapTilerStyle),
             center: [centerLon, centerLat],
             zoom: 14,
-            interactive: false,  // we use our own +/- buttons
-            attributionControl: false
+            interactive: true,
+            attributionControl: false,
+            cooperativeGestures: false,  // we handle this ourselves
+            dragPan: {
+                linearity: 0.3,
+                maxSpeed: 1400,
+                deceleration: 2500
+            }
         });
+
+        // On touch devices, require two fingers to pan (prevents conflict with page scroll)
+        _mlMap.on('load', () => {});  // placeholder, real load handler below
+        if ('ontouchstart' in window) {
+            _mlMap.dragPan.disable();
+            _mlMap.getCanvas().addEventListener('touchstart', (e) => {
+                if (e.touches.length >= 2) {
+                    _mlMap.dragPan.enable();
+                } else {
+                    _mlMap.dragPan.disable();
+                }
+            }, { passive: true });
+            _mlMap.getCanvas().addEventListener('touchend', (e) => {
+                if (e.touches.length < 2) {
+                    _mlMap.dragPan.disable();
+                }
+            }, { passive: true });
+        }
 
         _mlMap.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
 
@@ -13969,6 +14169,9 @@ function initOrSyncMapLibre(centerLon, centerLat, minLon, minLat, maxLon, maxLat
             _mlMap.resize();
             _mlMap.fitBounds(bounds, { animate: false, padding: 0 });
             _mlPendingBounds = null;
+            // Mark user interaction on any native gesture so GPS refresh doesn't reset view
+            _mlMap.on('dragend', () => { _mlUserInteracted = true; });
+            _mlMap.on('zoomend', () => { _mlUserInteracted = true; });
             setTimeout(() => {
                 if (_mlMap) {
                     _mlMap.resize();
@@ -13981,14 +14184,22 @@ function initOrSyncMapLibre(centerLon, centerLat, minLon, minLat, maxLon, maxLat
                     if (container) {
                         container.querySelectorAll('.map-inner-layer, .map-loading-indicator').forEach(el => el.remove());
                     }
-                    // Apply any pending overlay
+                    // Progressive load: routes first, then places after a short delay
                     if (_mlPendingOverlay) {
                         const o = _mlPendingOverlay;
                         _mlPendingOverlay = null;
-                        updateMapLibreOverlay(o.parsedCoords, o.drawRoutes, o.userCoord, o.invZoom, o.pinZoomScale);
+                        // Step 1: routes + user position only
+                        updateMapLibreOverlay(o.parsedCoords, o.drawRoutes, o.userCoord, o.invZoom, o.pinZoomScale, true);
+                        // Step 2: places a moment later so map tiles are visible first
+                        setTimeout(() => {
+                            if (_mlMap && _mlMapReady) {
+                                updateMapLibreOverlay(o.parsedCoords, o.drawRoutes, o.userCoord, o.invZoom, o.pinZoomScale, false);
+                                regeneratePinImagesWhenFontsReady();
+                            }
+                        }, 400);
+                    } else {
+                        regeneratePinImagesWhenFontsReady();
                     }
-                    // Regenerate pin images once FA font is ready
-                    regeneratePinImagesWhenFontsReady();
                 }
             }, 200);
         });
@@ -14324,6 +14535,19 @@ const drawRoutes = showMapRoutes ? visibleRoutes : [];
 
     if (mapWidthMeters === 0) mapWidthMeters = 1;
     if (mapHeightMeters === 0) mapHeightMeters = 1;
+
+    // Enforce a minimum map size of 1km × 1km so the map isn't zoomed in too far
+    const MIN_MAP_SIZE_METERS = 1000;
+    if (mapWidthMeters < MIN_MAP_SIZE_METERS) {
+        const pad = (MIN_MAP_SIZE_METERS - mapWidthMeters) / 2;
+        minX -= pad; maxX += pad;
+        mapWidthMeters = MIN_MAP_SIZE_METERS;
+    }
+    if (mapHeightMeters < MIN_MAP_SIZE_METERS) {
+        const pad = (MIN_MAP_SIZE_METERS - mapHeightMeters) / 2;
+        minY -= pad; maxY += pad;
+        mapHeightMeters = MIN_MAP_SIZE_METERS;
+    }
 
     // Add buffer
     minX -= mapWidthMeters * bufferPercentage;
@@ -15017,7 +15241,7 @@ function handleStartRouteClick() {
     saveMapsToLocalStorage();
 
     // Re-render — the section will now show the "routing ON" state
-    rerenderCompassIfActive();
+    fullRerenderCompass();
 }
 
 /**
@@ -15065,7 +15289,7 @@ function handleStopRouteClick() {
     }
 
     showMessage(`Stopped recording ${name}.`, 'info');
-    render();
+    fullRerenderCompass();
 }
 
 /**
@@ -15334,11 +15558,17 @@ function renderCompassPage(isAutoRefresh = false) {
 
 if (!openMap) {
         return `
-            <div class="p-4">
-                <h2 class="text-3xl font-bold text-primary mb-2">Map</h2>
-                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-amber-400">
-                    <h3 class="text-xl font-bold text-amber-600 mb-3">No Map Open</h3>
-                    <p class="text-gray-700">There is no open map to display. Go to the <strong>Home</strong> page to open an existing map or create a new one.</p>
+            <div class="p-4 flex flex-col items-center justify-center" style="min-height:60vh;">
+                <div class="text-center max-w-xs">
+                    <i class="fas fa-map text-6xl text-green-300 mb-4 block"></i>
+                    <h2 class="text-2xl font-bold text-gray-700 mb-2">Welcome to Trekta</h2>
+                    <p class="text-gray-500 text-sm mb-6">Create a map to start logging places and recording routes.</p>
+                    <button onclick="quickCreateMap();"
+                        class="w-full py-4 px-6 rounded-2xl text-white font-bold text-lg shadow-lg"
+                        style="background:linear-gradient(135deg,#16a34a,#15803d);">
+                        <i class="fas fa-plus mr-2"></i>Create Map
+                    </button>
+                    <p class="text-xs text-gray-400 mt-4">Your GPS position will appear here once a map is open.</p>
                 </div>
             </div>
         `;
@@ -15431,7 +15661,6 @@ if (!openMap) {
 
     return `
         <div class="p-4">
-            <h2 class="text-3xl font-bold text-primary mb-2">Map</h2>
 
             ${gpsLostWarning ? `
             <div class="mb-4 p-3 bg-red-50 border-2 border-red-400 rounded-xl flex items-center gap-3">
@@ -15447,162 +15676,43 @@ if (!openMap) {
                 <p class="text-amber-700 text-sm font-semibold">GPS recovering… (attempt ${gpsRecoveryAttempts}/${GPS_MAX_RECOVERIES})</p>
             </div>
             ` : ''}
-            ${(() => {
-                const _allPlaces = Array.isArray(openMap.targets) ? openMap.targets.filter(t => t && !t.deleted) : [];
-                const _totalPlaces     = _allPlaces.length;
-                const _totalFavourites = _allPlaces.filter(t => t.favourite).length;
-                const _totalRoutes     = Array.isArray(openMap.tracks) ? openMap.tracks.filter(t => t && t.deleted !== true).length : 0;
-                const _borderCls  = mapSummaryExpanded ? 'border-b border-gray-100' : '';
-                const _chevronCls = mapSummaryExpanded ? 'fa-chevron-up' : 'fa-chevron-down';
-                const _countsHtml = mapSummaryExpanded
-                    ? '<div class="px-4 py-2 flex flex-wrap gap-x-4 gap-y-1">'
-                    + '<span class="text-xs text-gray-600 flex items-center gap-1"><i class="fas fa-map-marker-alt text-primary w-3"></i><span class="font-semibold">' + _totalPlaces + '</span> places</span>'
-                    + '<span class="text-xs text-gray-600 flex items-center gap-1"><span class="text-red-500 font-bold w-3">♥</span><span class="font-semibold">' + _totalFavourites + '</span> favourites</span>'
-                    + '<span class="text-xs text-gray-600 flex items-center gap-1"><i class="fas fa-route text-green-600 w-3"></i><span class="font-semibold">' + _totalRoutes + '</span> routes</span>'
-                    + '</div>'
-                    : '';
-                return `
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 overflow-hidden">
-                <div class="px-4 py-3 ${_borderCls} flex items-center justify-between cursor-pointer select-none"
-                     onclick="toggleMapSummary()">
-                    <h3 class="text-xl font-semibold text-gray-700 flex items-center min-w-0">
-                        <i class="fas fa-map mr-2 flex-shrink-0"></i>
-                        <span class="truncate">${openMap.name || 'Unnamed map'}</span>
-                    </h3>
-                    <div class="flex items-center gap-2 flex-shrink-0">
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${showUserPosition ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">Open</span>
-                        <i class="fas ${_chevronCls} text-gray-400"></i>
-                    </div>
-                </div>
-                ${_countsHtml}
-            </div>`;
-            })()}
-
-${(() => {
-    const isOn = !!isAnyRouteRecording();
-
-    const activeRoute = (openMap && Array.isArray(openMap.tracks))
-        ? openMap.tracks.find(t => t && t.isRecording)
-        : null;
-
-    const statusText = isOn ? 'Recording' : 'Off';
-
-    const _borderCls  = mapRoutingExpanded ? 'border-b border-gray-100' : '';
-    const _chevronCls = mapRoutingExpanded ? 'fa-chevron-up' : 'fa-chevron-down';
-    const _statusCls  = isOn ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600';
-
-    // Compute defaults for the "ready to start" form
-    const _nextIndex  = (openMap && Array.isArray(openMap.tracks)) ? openMap.tracks.length + 1 : 1;
-    const _defName    = _nextIndex === 1 ? 'Route 1' : `Route ${_nextIndex}`;
-
-    // Colour swatches — filtered by map type
-    // Build route types from user settings (colour from routeTypeSettings)
-    const _allRouteTypes = ROUTE_TYPE_NAMES.map(function(name) {
-        return { type: name, color: getRouteTypeColor(name) };
-    });
-    const _allowedTypes = getFilteredRouteTypes(openMap ? openMap.mapType : 'General');
-    const _routeTypes = _allRouteTypes.filter(rt => _allowedTypes.includes(rt.type));
-
-
-    // Default colour = first route type colour (Footpath pink)
-    const _defColor = '#000000';
-
-    // Swatch HTML — matches Edit Route modal, default colour pre-highlighted
-    const _startSwatchHtml = _routeTypes.map(s => {
-        const sel = s.color === _defColor;
-        return '<button type="button"'
-            + ' data-color="' + s.color + '"'
-            + ' onclick="(function(b){'
-            +   'document.querySelectorAll(\'.inline-route-swatch\').forEach(function(x){x.style.borderColor=\'transparent\';x.style.transform=\'scale(1)\'});'
-            +   'b.style.borderColor=\'#15803d\';b.style.transform=\'scale(1.2)\';'
-            +   'document.getElementById(\'inline-route-colour\').value=b.getAttribute(\'data-color\');})(this)"'
-            + ' class="inline-route-swatch w-8 h-8 rounded-full border-2"'
-            + ' style="background:' + s.color + ';border-color:' + (sel ? '#15803d' : 'transparent') + ';transform:' + (sel ? 'scale(1.2)' : 'scale(1)') + (s.color === '#FFFF00' ? ';outline:1px solid #ccc' : '') + '"'
-            + ' title="' + s.type + '"></button>';
-    }).join('');
-
-    // Type dropdown — simple onchange calls named function
-    const _startTypeSelect = '<select id="inline-route-type"'
-        + ' class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"'
-        + ' onchange="onInlineRouteTypeChange(this.value)">'
-        + '<option value=""></option>'
-        + _routeTypes.map(rt => '<option value="' + rt.type + '">' + rt.type + '</option>').join('')
-        + '</select>';
-
-    // Body shown when ROUTING IS OFF — name, type, colour, cancel/start
-    const _bodyOff = '<div class="p-4">'        + '<div class="mb-3">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">New Route Name</label>'        +   '<input id="inline-route-name" type="text" value="' + _defName.replace(/"/g, '&quot;') + '" class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm" placeholder="e.g. Perimeter">'        + '</div>'        + '<div class="mb-3">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">New Route Type</label>'        +   _startTypeSelect        + '</div>'        + '<div class="mb-4">'        +   '<label class="block text-sm font-medium text-gray-700 mb-2">New Route Colour</label>'        +   '<div class="flex gap-2 flex-wrap">' + _startSwatchHtml + '</div>'        +   '<input type="hidden" id="inline-route-colour" value="' + _defColor + '">'        + '</div>'        + '<div class="flex gap-3">'        +   '<button type="button" onclick="mapRoutingExpanded=false;rerenderCompassIfActive()" class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>'        +   '<button id="start-route-btn" type="button" onclick="handleStartRouteClick()" class="flex-1 py-3 rounded-xl font-bold text-white shadow bg-green-600 hover:bg-green-700">\uD83D\uDFE2 Start Routing</button>'        + '</div>'        + '</div>';
-
-    // Body shown when ROUTING IS ON — status + stop
-    const _bodyOn = '<div class="p-4">'        + '<p class="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">'        +   '<i class="fas fa-circle text-green-500"></i>'        +   (activeRoute ? ('<span class="text-gray-800">' + (activeRoute.name || 'Route') + '</span>') : 'Recording…')        + '</p>'        + '<div class="mb-4">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">Change Route Type</label>'        +   '<select id="switch-route-type" class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm" onchange="switchRouteType(this.value);this.value=\'\'">'        +   '<option value="">— change route type —</option>'        + getFilteredRouteTypes(openMap ? openMap.mapType : 'General').map(function(t){ return '<option value="' + t + '">' + t + '</option>'; }).join('')        +   '</select>'        + '</div>'        + '<div class="flex gap-3">'        +   '<button type="button" onclick="mapRoutingExpanded=false;rerenderCompassIfActive()" class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>'        +   '<button id="stop-route-btn" type="button" onclick="handleStopRouteClick()" class="flex-1 py-3 rounded-xl font-bold text-white shadow bg-red-600 hover:bg-red-700">🔴 Stop Routing</button>'        + '</div>'        + '</div>';
-
-    const _bodyHtml = mapRoutingExpanded ? (isOn ? _bodyOn : _bodyOff) : '';
-
-    return `
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 overflow-hidden">
-        <div class="px-4 py-3 ${_borderCls} flex items-center justify-between cursor-pointer select-none"
-             onclick="toggleMapRouting()">
-            <h3 class="text-xl font-semibold text-gray-700 flex items-center">
-                <i class="fas fa-route mr-2"></i> Routing Controls
-            </h3>
-            <div class="flex items-center gap-2 flex-shrink-0">
-                <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${_statusCls}">
-                    ${statusText}
-                </span>
-                <i class="fas ${_chevronCls} text-gray-400"></i>
-            </div>
-        </div>
-        ${_bodyHtml}
-    </div>
-    `;
-})()}
-
-            <!-- Map Style selector -->
-            <div class="flex gap-1 mb-2">
-                ${['outdoor-v2','streets-v2','openstreetmap','satellite'].map(s => {
-                    const labels = {'outdoor-v2':'Outdoor','streets-v2':'Streets','openstreetmap':'OSM','satellite':'Satellite'};
-                    const active = mapTilerStyle === s;
-                    return '<button onclick="setMapLibreStyle(\'' + s + '\');rerenderCompassIfActive();" '
-                        + 'class="flex-1 py-1 text-xs font-semibold rounded-lg border ' 
-                        + (active ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-300') + '">'
-                        + labels[s] + '</button>';
-                }).join('')}
-            </div>
 
             <!-- Map -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 overflow-hidden">
                 <div class="px-4 py-3 ${mapCanvasExpanded ? 'border-b border-gray-100' : ''} flex items-center justify-between cursor-pointer select-none"
                      onclick="toggleMapCanvas()">
-                    <h3 class="text-xl font-semibold text-gray-700 flex items-center">
-                        <i class="fas fa-map mr-2"></i> Map
-                    </h3>
-                    <i class="fas ${mapCanvasExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400 ml-2"></i>
+                    <div class="flex flex-col min-w-0">
+                        <h3 class="text-base font-bold text-gray-800 flex items-center truncate">
+                            <i class="fas fa-map mr-2 text-primary flex-shrink-0"></i>
+                            <span class="truncate">${openMap.name || 'Unnamed map'}</span>
+                        </h3>
+                        <div class="flex items-center gap-3 mt-0.5 pl-6">
+                            <span class="text-xs text-gray-500 flex items-center gap-1"><i class="fas fa-map-marker-alt text-primary"></i> ${(Array.isArray(openMap.targets) ? openMap.targets.filter(t => t && !t.deleted).length : 0)}</span>
+                            <span class="text-xs text-gray-500 flex items-center gap-1"><span class="text-red-500 font-bold">♥</span> ${(Array.isArray(openMap.targets) ? openMap.targets.filter(t => t && !t.deleted && t.favourite).length : 0)}</span>
+                            <span class="text-xs text-gray-500 flex items-center gap-1"><i class="fas fa-route text-green-600"></i> ${(Array.isArray(openMap.tracks) ? openMap.tracks.filter(t => t && !t.deleted).length : 0)}</span>
+                            ${activeRoute ? `<span class="text-xs font-semibold text-red-600 flex items-center gap-1 animate-pulse"><i class="fas fa-circle text-red-500"></i> ${activeRoute.name || 'Route'} Recording</span>` : ''}
+                        </div>
+                    </div>
+                    <i class="fas ${mapCanvasExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400 ml-2 flex-shrink-0"></i>
                 </div>
                 ${mapCanvasExpanded ? renderPlacePlot(pointsForPlot, showUserPosition ? (smoothedUserCoords || currentUserCoords) : null) : ''}
                 <div id="map-canvas-controls" class="px-4 pb-4" style="${mapCanvasExpanded ? '' : 'display:none'}">
-            <!-- Row 1: Zoom / GPS -->
-            <div class="map-zoom-controls mt-2 mb-1 flex gap-2 justify-center">
-                <button type="button" class="flex-1 h-11 rounded-xl bg-gray-200 hover:bg-gray-300 active:bg-gray-400 font-bold text-sm shadow select-none" onclick="zoomMapIn(event)">+</button>
-                <button type="button" class="flex-1 h-11 rounded-xl bg-gray-200 hover:bg-gray-300 active:bg-gray-400 font-bold text-sm shadow select-none" onclick="zoomMapOut(event)">−</button>
-                <button type="button" class="flex-1 h-11 rounded-xl bg-gray-200 hover:bg-gray-300 active:bg-gray-400 font-bold text-sm shadow select-none" onclick="resetMapView(event)">Reset</button>
-                <button id="toggle-gps-btn" type="button" class="flex-1 h-11 rounded-xl font-bold text-white text-sm shadow hover:opacity-90 select-none"
-                    style="background-color: rgb(var(--color-secondary));"
-                >${showUserPosition ? 'Hide' : 'Show'}</button>
+            <!-- Recording toggle button -->
+            <div class="mt-2 mb-2">
+                <button type="button" onclick="quickToggleRouteRecording()"
+                    class="w-full h-10 rounded-xl font-semibold text-sm shadow select-none flex items-center justify-center gap-2 ${activeRoute ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'}">
+                    <i class="fas ${activeRoute ? 'fa-stop-circle' : 'fa-circle'} text-base"></i>
+                    ${activeRoute ? 'Stop Recording ' + (activeRoute.name || 'Route') : 'Start Recording'}
+                </button>
             </div>
-
-            <!-- Row 2: Map pan -->
-            <div class="map-zoom-controls mt-1 mb-1 flex gap-2 justify-center">
-                <button type="button" class="flex-1 h-11 rounded-xl bg-gray-200 hover:bg-gray-300 active:bg-gray-400 font-bold text-sm shadow select-none"
-                    onmousedown="startMapPan('left',event)" onmouseup="stopMapPan()" onmouseleave="stopMapPan()"
-                    ontouchstart="startMapPan('left',event)" ontouchend="stopMapPan()" ontouchcancel="stopMapPan()">◀</button>
-                <button type="button" class="flex-1 h-11 rounded-xl bg-gray-200 hover:bg-gray-300 active:bg-gray-400 font-bold text-sm shadow select-none"
-                    onmousedown="startMapPan('up',event)" onmouseup="stopMapPan()" onmouseleave="stopMapPan()"
-                    ontouchstart="startMapPan('up',event)" ontouchend="stopMapPan()" ontouchcancel="stopMapPan()">▲</button>
-                <button type="button" class="flex-1 h-11 rounded-xl bg-gray-200 hover:bg-gray-300 active:bg-gray-400 font-bold text-sm shadow select-none"
-                    onmousedown="startMapPan('down',event)" onmouseup="stopMapPan()" onmouseleave="stopMapPan()"
-                    ontouchstart="startMapPan('down',event)" ontouchend="stopMapPan()" ontouchcancel="stopMapPan()">▼</button>
-                <button type="button" class="flex-1 h-11 rounded-xl bg-gray-200 hover:bg-gray-300 active:bg-gray-400 font-bold text-sm shadow select-none"
-                    onmousedown="startMapPan('right',event)" onmouseup="stopMapPan()" onmouseleave="stopMapPan()"
-                    ontouchstart="startMapPan('right',event)" ontouchend="stopMapPan()" ontouchcancel="stopMapPan()">▶</button>
+            <!-- Reset and GPS buttons — touch/pinch/drag replaces zoom/pan buttons -->
+            <div class="mt-2 mb-2 flex gap-2">
+                <button type="button" class="flex-1 h-10 rounded-xl bg-gray-200 hover:bg-gray-300 active:bg-gray-400 font-semibold text-sm shadow select-none flex items-center justify-center gap-1" onclick="resetMapView(event)">
+                    <i class="fas fa-compress-arrows-alt text-gray-600"></i> <span>Reset</span>
+                </button>
+                <button id="toggle-gps-btn" type="button" class="flex-1 h-10 rounded-xl font-semibold text-white text-sm shadow hover:opacity-90 select-none flex items-center justify-center gap-1"
+                    style="background-color: rgb(var(--color-secondary));"
+                ><i class="fas fa-location-crosshairs mr-1"></i>${showUserPosition ? 'Hide GPS' : 'Show GPS'}</button>
             </div>
 
                                 ${buildQuickFormHtml(openMap)}
@@ -15657,6 +15767,96 @@ ${(() => {
     </button>
   </div>` : ''}
 </div>
+
+${(() => {
+    const isOn = !!isAnyRouteRecording();
+
+    const activeRoute = (openMap && Array.isArray(openMap.tracks))
+        ? openMap.tracks.find(t => t && t.isRecording)
+        : null;
+
+    const statusText = isOn ? 'Recording' : 'Off';
+
+    const _borderCls  = mapRoutingExpanded ? 'border-b border-gray-100' : '';
+    const _chevronCls = mapRoutingExpanded ? 'fa-chevron-up' : 'fa-chevron-down';
+    const _statusCls  = isOn ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600';
+
+    // Compute defaults for the "ready to start" form
+    const _nextIndex  = (openMap && Array.isArray(openMap.tracks)) ? openMap.tracks.length + 1 : 1;
+    const _defName    = _nextIndex === 1 ? 'Route 1' : `Route ${_nextIndex}`;
+
+    // Colour swatches — filtered by map type
+    // Build route types from user settings (colour from routeTypeSettings)
+    const _allRouteTypes = ROUTE_TYPE_NAMES.map(function(name) {
+        return { type: name, color: getRouteTypeColor(name) };
+    });
+    const _allowedTypes = getFilteredRouteTypes(openMap ? openMap.mapType : 'General');
+    const _routeTypes = _allRouteTypes.filter(rt => _allowedTypes.includes(rt.type));
+
+
+    // Default colour = first route type colour (Footpath pink)
+    const _defColor = '#000000';
+
+    // Swatch HTML — matches Edit Route modal, default colour pre-highlighted
+    const _startSwatchHtml = _routeTypes.map(s => {
+        const sel = s.color === _defColor;
+        return '<button type="button"'
+            + ' data-color="' + s.color + '"'
+            + ' onclick="(function(b){'
+            +   'document.querySelectorAll(\'.inline-route-swatch\').forEach(function(x){x.style.borderColor=\'transparent\';x.style.transform=\'scale(1)\'});'
+            +   'b.style.borderColor=\'#15803d\';b.style.transform=\'scale(1.2)\';'
+            +   'document.getElementById(\'inline-route-colour\').value=b.getAttribute(\'data-color\');})(this)"'
+            + ' class="inline-route-swatch w-8 h-8 rounded-full border-2"'
+            + ' style="background:' + s.color + ';border-color:' + (sel ? '#15803d' : 'transparent') + ';transform:' + (sel ? 'scale(1.2)' : 'scale(1)') + (s.color === '#FFFF00' ? ';outline:1px solid #ccc' : '') + '"'
+            + ' title="' + s.type + '"></button>';
+    }).join('');
+
+    // Type dropdown — simple onchange calls named function
+    const _startTypeSelect = '<select id="inline-route-type"'
+        + ' class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"'
+        + ' onchange="onInlineRouteTypeChange(this.value)">'
+        + '<option value=""></option>'
+        + _routeTypes.map(rt => '<option value="' + rt.type + '">' + rt.type + '</option>').join('')
+        + '</select>';
+
+    // Body shown when ROUTING IS OFF — name, type, colour, cancel/start
+    const _bodyOff = '<div class="p-4">'        + '<div class="mb-3">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">New Route Name</label>'        +   '<input id="inline-route-name" type="text" value="' + _defName.replace(/"/g, '&quot;') + '" class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm" placeholder="e.g. Perimeter">'        + '</div>'        + '<div class="mb-3">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">New Route Type</label>'        +   _startTypeSelect        + '</div>'        + '<div class="mb-4">'        +   '<label class="block text-sm font-medium text-gray-700 mb-2">New Route Colour</label>'        +   '<div class="flex gap-2 flex-wrap">' + _startSwatchHtml + '</div>'        +   '<input type="hidden" id="inline-route-colour" value="' + _defColor + '">'        + '</div>'        + '<div class="flex gap-3">'        +   '<button type="button" onclick="mapRoutingExpanded=false;fullRerenderCompass()" class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>'        +   '<button id="start-route-btn" type="button" onclick="handleStartRouteClick()" class="flex-1 py-3 rounded-xl font-bold text-white shadow bg-green-600 hover:bg-green-700">\uD83D\uDFE2 Start Routing</button>'        + '</div>'        + '</div>';
+
+    // Body shown when ROUTING IS ON — status + stop
+    const _bodyOn = '<div class="p-4">'        + '<p class="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">'        +   '<i class="fas fa-circle text-green-500"></i>'        +   (activeRoute ? ('<span class="text-gray-800">' + (activeRoute.name || 'Route') + '</span>') : 'Recording…')        + '</p>'        + '<div class="mb-4">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">Change Route Type</label>'        +   '<select id="switch-route-type" class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm" onchange="switchRouteType(this.value);this.value=\'\'">'        +   '<option value="">— change route type —</option>'        + getFilteredRouteTypes(openMap ? openMap.mapType : 'General').map(function(t){ return '<option value="' + t + '">' + t + '</option>'; }).join('')        +   '</select>'        + '</div>'        + '<div class="flex gap-3">'        +   '<button type="button" onclick="mapRoutingExpanded=false;fullRerenderCompass()" class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>'        +   '<button id="stop-route-btn" type="button" onclick="handleStopRouteClick()" class="flex-1 py-3 rounded-xl font-bold text-white shadow bg-red-600 hover:bg-red-700">🔴 Stop Routing</button>'        + '</div>'        + '</div>';
+
+    const _bodyHtml = mapRoutingExpanded ? (isOn ? _bodyOn : _bodyOff) : '';
+
+    return `
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 overflow-hidden">
+        <div class="px-4 py-3 ${_borderCls} flex items-center justify-between cursor-pointer select-none"
+             onclick="toggleMapRouting()">
+            <h3 class="text-xl font-semibold text-gray-700 flex items-center">
+                <i class="fas fa-route mr-2"></i> Routing Controls
+            </h3>
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${_statusCls}">
+                    ${statusText}
+                </span>
+                <i class="fas ${_chevronCls} text-gray-400"></i>
+            </div>
+        </div>
+        ${_bodyHtml}
+    </div>
+    `;
+})()}
+
+            <!-- Map Style selector -->
+            <div class="flex gap-1 mb-2">
+                ${['outdoor-v2','streets-v2','openstreetmap','satellite'].map(s => {
+                    const labels = {'outdoor-v2':'Outdoor','streets-v2':'Streets','openstreetmap':'OSM','satellite':'Satellite'};
+                    const active = mapTilerStyle === s;
+                    return '<button onclick="setMapLibreStyle(\'' + s + '\');rerenderCompassIfActive();" '
+                        + 'class="flex-1 py-1 text-xs font-semibold rounded-lg border ' 
+                        + (active ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-300') + '">'
+                        + labels[s] + '</button>';
+                }).join('')}
+            </div>
 
 <!-- Map Layers -->
 <div id="map-layers-details" class="bg-white rounded-xl shadow-sm border border-gray-200 mb-3 overflow-hidden">
@@ -18276,26 +18476,18 @@ function attachPageEventListeners() {
 if (gpsBtn) {
     gpsBtn.onclick = () => {
         showUserPosition = !showUserPosition;
+        // Update button text immediately without waiting for re-render
+        gpsBtn.innerHTML = '<i class="fas fa-location-crosshairs mr-1"></i>' + (showUserPosition ? 'Hide GPS' : 'Show GPS');
         if (showUserPosition) {
-            // Showing: ensure watch is running, then re-render once we have coords.
-            // If we already have smoothed coords from before, re-render immediately.
-            // Either way, also ensure the watch + auto-refresh are running so the
-            // map keeps updating.
             if (!liveMapWatchId) {
                 startLiveMapLocationWatch();
-                // Watch just (re)started — wait for the first fix before re-rendering,
-                // otherwise the dot won't appear. The auto-refresh interval started by
-                // startLiveMapLocationWatch will trigger the first re-render once a fix
-                // arrives, so we only need an immediate re-render if we already have coords.
                 if (smoothedUserCoords || currentUserCoords) {
                     if (typeof rerenderCompassIfActive === 'function') rerenderCompassIfActive();
                 }
             } else {
-                // Watch already running (position already known) — re-render immediately.
                 if (typeof rerenderCompassIfActive === 'function') rerenderCompassIfActive();
             }
         } else {
-            // Hiding: only stop the watch if nothing else needs GPS.
             if (!needsGpsNow()) {
                 if (typeof stopLiveMapLocationWatch === 'function') stopLiveMapLocationWatch();
             }
@@ -19332,7 +19524,12 @@ function buildQuickFormHtml(openMap) {
     const visClass = _quickFormStatus === 'Visited'
         ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700';
 
-    return `<div class="bg-white px-3 pt-3 pb-3 rounded-xl shadow-lg border border-gray-100 mb-2">
+    return `<div class="bg-green-50 px-3 pt-3 pb-3 rounded-xl shadow-sm border border-green-200 mb-2">
+        <div class="flex items-center gap-2 mb-2 pb-2 border-b border-green-200">
+            <i class="fas fa-map-pin text-green-600"></i>
+            <span class="text-sm font-semibold text-green-800">Quick Log a Place</span>
+            <span class="text-xs text-green-600 ml-auto">Logs at your GPS position</span>
+        </div>
         <div class="space-y-2">
             <select id="quick-form-type" onchange="_quickFormType=this.value"
                     class="w-full border border-gray-300 rounded-md p-2 text-sm bg-white">
@@ -20231,14 +20428,14 @@ try {
   <div class="container mx-auto max-w-lg">
     <div class="flex items-center justify-between px-1 py-1">
 
-      <button class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-primary" data-page="Home">
-        <i class="fas fa-home text-lg"></i>
-        <span class="text-[10px]">Home</span>
+      <button class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-primary" data-page="Compass">
+        <i class="fas fa-map text-lg"></i>
+        <span class="text-[10px]">Explore</span>
       </button>
 
-      <button class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-primary" data-page="Compass">
-        <i class="fas fa-compass text-lg"></i>
-        <span class="text-[10px]">Map</span>
+      <button class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-primary" data-page="Home">
+        <i class="fas fa-home text-lg"></i>
+        <span class="text-[10px]">Maps</span>
       </button>
 
       <button class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-primary" data-page="Places">
