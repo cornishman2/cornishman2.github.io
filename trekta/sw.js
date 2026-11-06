@@ -1,4 +1,4 @@
-const CACHE_NAME = "trekta-cache-v9"; // <-- bump this on every deployment
+const CACHE_NAME = "trekta-cache-v10"; // <-- bump this on every deployment
 const TILE_CACHE = "trekta-tiles-v3";  // OpenFreeMap pictures you have viewed, kept for use without signal (v2 held MapTiler pictures and is removed)
 const TILE_CACHE_MAX = 4000;            // about 100-200 MB; the oldest are removed first
 
