@@ -1,4 +1,4 @@
-const CACHE_NAME = "trekta-cache-v11"; // <-- bump this on every deployment
+const CACHE_NAME = "trekta-cache-v12"; // <-- bump this on every deployment
 const TILE_CACHE = "trekta-tiles-v3";  // OpenFreeMap pictures you have viewed, kept for use without signal (v2 held MapTiler pictures and is removed)
 const TILE_CACHE_MAX = 4000;            // about 100-200 MB; the oldest are removed first
 
@@ -11,10 +11,11 @@ const APP_SHELL = [
   "./assets/icon-192.png",
   "./assets/icon-512.png",
   "./assets/London.png",
-  "./assets/screenshot-home.jpeg",
   "./assets/screenshot-map.jpeg",
   "./assets/screenshot-places.jpeg",
-  "./assets/screenshot-settings.jpeg"
+  "./assets/screenshot-sunlight.jpeg",
+  "./assets/screenshot-settings.jpeg",
+  "./privacy.html"
 ];
 
 // Install: pre-cache the app. Each file is added on its own, so one missing

@@ -9,7 +9,11 @@
   "orientation": "portrait",
   "background_color": "#f3f4f6",
   "theme_color": "#16a34a",
-  "categories": ["travel", "navigation", "lifestyle"],
+  "categories": [
+    "travel",
+    "navigation",
+    "lifestyle"
+  ],
   "icons": [
     {
       "src": "assets/icon-192.png",
@@ -33,32 +37,32 @@
       "label": "Trekta — Record, Explore, Remember"
     },
     {
-      "src": "assets/screenshot-home.jpeg",
-      "sizes": "714x1557",
-      "type": "image/jpeg",
-      "form_factor": "narrow",
-      "label": "Home page — map dashboard with London hero image"
-    },
-    {
       "src": "assets/screenshot-map.jpeg",
       "sizes": "717x1440",
       "type": "image/jpeg",
       "form_factor": "narrow",
-      "label": "Map page — live map showing coloured category pins and routes"
+      "label": "Map — your places and routes on a free map, with live GPS"
     },
     {
       "src": "assets/screenshot-places.jpeg",
-      "sizes": "720x1554",
+      "sizes": "720x1560",
       "type": "image/jpeg",
       "form_factor": "narrow",
-      "label": "Places page — place cards with photos, ratings and status"
+      "label": "Places — every place you logged, with photos, ratings and status"
+    },
+    {
+      "src": "assets/screenshot-sunlight.jpeg",
+      "sizes": "720x1560",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Sunlight mode — high contrast for bright days outdoors"
     },
     {
       "src": "assets/screenshot-settings.jpeg",
-      "sizes": "715x1560",
+      "sizes": "720x1560",
       "type": "image/jpeg",
       "form_factor": "narrow",
-      "label": "Settings page — customisable route type colours and widths"
+      "label": "Settings — profile, photo size, route colours"
     }
   ]
 }
