@@ -1,4 +1,4 @@
-const CACHE_NAME = "trekta-cache-v7"; // <-- bump this on every deployment
+const CACHE_NAME = "trekta-cache-v8"; // <-- bump this on every deployment
 const TILE_CACHE = "trekta-tiles-v2";  // map pictures you have viewed, kept for use without signal
 const TILE_CACHE_MAX = 4000;            // about 100-200 MB; the oldest are removed first
 
