@@ -319,7 +319,7 @@ return maplibregl$1;
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.874
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.875
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <button id="hc-toggle-btn" type="button" onclick="toggleHighContrast()"
@@ -1431,7 +1431,7 @@ document.addEventListener('visibilitychange', function() {
 //  APP META
 // =====================
 const APP_NAME = 'Trekta – Map Your World';
-const APP_VERSION = '1.874';         // change whenever you publish (also the header)
+const APP_VERSION = '1.875';         // change whenever you publish (also the header)
 const APP_BUILD = '2026-11-06';      // optional, you can keep as a date string
 const appVersion = APP_VERSION;      // legacy alias used by older export/report code
 
@@ -7904,10 +7904,12 @@ function applyMapSunlight() {
         if (_mlMap.getLayer('trekta-routes-layer')) {
             _mlMap.setPaintProperty('trekta-routes-layer', 'line-width', hc ? ['*', ['get', 'width'], 1.7] : ['get', 'width']);
         }
+        if (_mlMap.getLayer('trekta-places-labels')) {
+            _mlMap.setPaintProperty('trekta-places-labels', 'text-color', hc ? '#000000' : '#1f2937');
+            _mlMap.setPaintProperty('trekta-places-labels', 'text-halo-width', hc ? 3 : 2);
+            _mlMap.setLayoutProperty('trekta-places-labels', 'text-size', hc ? 15 : 12);
+        }
         if (_mlMap.getLayer('trekta-places-icons')) {
-            _mlMap.setPaintProperty('trekta-places-icons', 'text-color', hc ? '#000000' : '#1f2937');
-            _mlMap.setPaintProperty('trekta-places-icons', 'text-halo-width', hc ? 3 : 2);
-            _mlMap.setLayoutProperty('trekta-places-icons', 'text-size', hc ? 15 : 12);
             _mlMap.setLayoutProperty('trekta-places-icons', 'icon-size', hc ? 1.25 : 1);
         }
         if (_mlMap.getLayer('trekta-places-ring')) {
@@ -11914,15 +11916,20 @@ function renderPlaceCard(place, mapId) {
 
 let mapZoom = 1;
 
-// MapTiler / MapLibre integration
-const MAPTILER_KEY = 'UX5ikZObTRxSPyClatt2';
-let mapTilerStyle = localStorage.getItem('trektaMapStyle') || 'outdoor-v2';
+// Map pictures (V1.875): free OpenFreeMap styles only - no account, no key, no monthly limit.
+// Map data © OpenStreetMap contributors, styles © OpenMapTiles; the credit is shown on the map.
+const FREE_MAP_STYLES = {
+    liberty:  { label: 'Outdoor', url: 'https://tiles.openfreemap.org/styles/liberty' },
+    bright:   { label: 'Bright',  url: 'https://tiles.openfreemap.org/styles/bright' },
+    positron: { label: 'Light',   url: 'https://tiles.openfreemap.org/styles/positron' }
+};
+const MAP_LABEL_FONT = ['Noto Sans Regular'];   // a font OpenFreeMap serves
+let mapTilerStyle = localStorage.getItem('trektaMapStyle') || 'liberty';
+if (!FREE_MAP_STYLES[mapTilerStyle]) mapTilerStyle = 'liberty';   // old MapTiler choices become Outdoor
 
 function getMaptilerStyleUrl(style) {
-    return 'https://api.maptiler.com/maps/' + style + '/style.json?key=' + MAPTILER_KEY;
+    return (FREE_MAP_STYLES[style] || FREE_MAP_STYLES.liberty).url;
 }
-
-const MAPTILER_STYLE_URL = getMaptilerStyleUrl(mapTilerStyle);
 
 function setMapLibreStyle(style) {
     mapTilerStyle = style;
@@ -12050,7 +12057,7 @@ function rerenderCompassIfActive() {
 // ── MapLibre GL integration ──────────────────────────────────────────────────
 
 // Generate a canvas-based place pin image for MapLibre's image registry
-function generatePlacePinImage(fillColor, strokeColor, faUnicode, size) {
+function generatePlacePinImage(fillColor, strokeColor, faUnicode, size, isFavourite) {
     size = size || 32;
     const canvas = document.createElement('canvas');
     canvas.width = size;
@@ -12078,6 +12085,22 @@ function generatePlacePinImage(fillColor, strokeColor, faUnicode, size) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(String.fromCodePoint(parseInt(faUnicode, 16)), cx, cy);
+
+    if (isFavourite) {
+        // Small red heart badge, top right, with a white edge
+        const hs = size * 0.36, hx = size - hs * 0.62, hy = hs * 0.55;
+        const heart = (s) => {
+            ctx.beginPath();
+            ctx.moveTo(hx, hy + s * 0.35);
+            ctx.bezierCurveTo(hx, hy - s * 0.05, hx - s * 0.5, hy - s * 0.05, hx - s * 0.5, hy + s * 0.3);
+            ctx.bezierCurveTo(hx - s * 0.5, hy + s * 0.55, hx, hy + s * 0.75, hx, hy + s * 0.9);
+            ctx.bezierCurveTo(hx, hy + s * 0.75, hx + s * 0.5, hy + s * 0.55, hx + s * 0.5, hy + s * 0.3);
+            ctx.bezierCurveTo(hx + s * 0.5, hy - s * 0.05, hx, hy - s * 0.05, hx, hy + s * 0.35);
+            ctx.closePath();
+        };
+        ctx.lineWidth = 2.5; ctx.strokeStyle = '#ffffff'; heart(hs); ctx.stroke();
+        ctx.fillStyle = '#ef4444'; heart(hs); ctx.fill();
+    }
 
     return ctx.getImageData(0, 0, size, size);
 }
@@ -12113,11 +12136,11 @@ function getOrRegisterPlacePinImage(type, status, isFavourite) {
     const faClass = getPlaceTypeIcon(type);
     const unicode = FA_UNICODE[faClass] || '3f';
     const size = isFavourite ? 36 : 28;
-    const imageId = 'trekta-pin-' + faClass + '-' + fillColor.replace('#','') + '-' + strokeColor.replace('#','') + '-' + size;
+    const imageId = 'trekta-pin-' + faClass + '-' + fillColor.replace('#','') + '-' + strokeColor.replace('#','') + '-' + size + (isFavourite ? '-fav' : '');
 
     if (!_mlMap.hasImage(imageId)) {
         try {
-            const imgData = generatePlacePinImage(fillColor, strokeColor, unicode, size);
+            const imgData = generatePlacePinImage(fillColor, strokeColor, unicode, size, !!isFavourite);
             _mlMap.addImage(imageId, imgData, { pixelRatio: 1 });
         } catch(e) {
             return null;
@@ -12165,11 +12188,6 @@ function syncMapLibreLayerVisibility() {
             _mlMap.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
         }
     });
-    // Labels specifically — also need to toggle the text in the icons layer
-    if (_mlMap.getLayer('trekta-places-icons')) {
-        _mlMap.setLayoutProperty('trekta-places-icons', 'text-field',
-            showMapPlaceLabels ? ['get', 'label'] : '');
-    }
 }
 
 // ── MapLibre native overlay system ──────────────────────────────────────────
@@ -12254,8 +12272,10 @@ function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pin
 
     if (_mlMap.getSource('trekta-places')) {
         _mlMap.getSource('trekta-places').setData(placeGeoJSON);
+        if (_mlMap.getSource('trekta-place-names')) _mlMap.getSource('trekta-place-names').setData(placeGeoJSON);
     } else {
         _mlMap.addSource('trekta-places', { type: 'geojson', data: placeGeoJSON });
+        _mlMap.addSource('trekta-place-names', { type: 'geojson', data: placeGeoJSON });
 
         // Place icons (canvas-generated images with category colour + status ring)
         _mlMap.addLayer({
@@ -12265,13 +12285,24 @@ function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pin
             layout: {
                 'icon-image': ['get', 'imageId'],
                 'icon-allow-overlap': true,
-                'icon-anchor': 'center',
+                'icon-anchor': 'center'
+            }
+        });
+
+        // Place names (separate, so pins still show if the map font can't be loaded)
+        _mlMap.addLayer({
+            id: 'trekta-places-labels',
+            type: 'symbol',
+            source: 'trekta-place-names',
+            layout: {
                 'text-field': ['get', 'label'],
+                'text-font': MAP_LABEL_FONT,
                 'text-size': 12,
                 'text-anchor': 'left',
                 'text-offset': [1.2, 0],
                 'text-allow-overlap': false,
-                'text-optional': true
+                'text-optional': true,
+                'visibility': (showMapPlaces && showMapPlaceLabels) ? 'visible' : 'none'
             },
             paint: {
                 'text-color': '#1f2937',
@@ -12298,10 +12329,11 @@ function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pin
         _mlMap.addLayer({
             id: 'trekta-places-hearts',
             type: 'symbol',
-            source: 'trekta-places',
-            filter: ['==', ['get', 'isFavourite'], 1],
+            source: 'trekta-place-names',
+            filter: ['all', ['==', ['get', 'isFavourite'], 1], ['==', ['get', 'imageId'], '']],
             layout: {
                 'text-field': '♥',
+                'text-font': MAP_LABEL_FONT,
                 'text-size': 10,
                 'text-anchor': 'top-left',
                 'text-offset': [0.6, -1.2],
@@ -13953,8 +13985,8 @@ ${(() => {
 
             <!-- Map Style selector -->
             <div class="flex gap-1 mb-2">
-                ${['outdoor-v2','streets-v2','openstreetmap','satellite'].map(s => {
-                    const labels = {'outdoor-v2':'Outdoor','streets-v2':'Streets','openstreetmap':'OSM','satellite':'Satellite'};
+                ${Object.keys(FREE_MAP_STYLES).map(s => {
+                    const labels = Object.fromEntries(Object.entries(FREE_MAP_STYLES).map(([k, v]) => [k, v.label]));
                     const active = mapTilerStyle === s;
                     return '<button onclick="setMapLibreStyle(\'' + s + '\');rerenderCompassIfActive();" '
                         + 'class="flex-1 py-1 text-xs font-semibold rounded-lg border ' 

@@ -1,5 +1,5 @@
-const CACHE_NAME = "trekta-cache-v8"; // <-- bump this on every deployment
-const TILE_CACHE = "trekta-tiles-v2";  // map pictures you have viewed, kept for use without signal
+const CACHE_NAME = "trekta-cache-v9"; // <-- bump this on every deployment
+const TILE_CACHE = "trekta-tiles-v3";  // OpenFreeMap pictures you have viewed, kept for use without signal (v2 held MapTiler pictures and is removed)
 const TILE_CACHE_MAX = 4000;            // about 100-200 MB; the oldest are removed first
 
 // Since V1.872 every library is built into index.html, so this list is
@@ -110,8 +110,8 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
-  // Map service (styles, map pictures, fonts and symbols)
-  if (url.hostname === "api.maptiler.com" || url.hostname === "tiles.openfreemap.org") {
+  // Map service: OpenFreeMap (styles, map pictures, fonts and symbols)
+  if (url.hostname === "tiles.openfreemap.org") {
     event.respondWith(tileStaleWhileRevalidate(event));
     return;
   }
