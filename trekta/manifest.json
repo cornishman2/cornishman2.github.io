@@ -2,19 +2,14 @@
   "name": "Trekta – Map Your World",
   "short_name": "Trekta",
   "id": "io.github.cornishman2.trekta",
-  "description": "Trekta is a personal mapping and journey-logging app. Record routes, log places of interest, save favourites, and build maps of anywhere you explore — walks, bike rides, holidays, heritage trails, and more. Works fully offline.",
+  "description": "Trekta is a personal mapping and journey-logging app. Record routes, log places of interest, save favourites, and build maps of anywhere you explore — walks, bike rides, holidays, heritage trails, and more. Your places, routes and photos stay on your phone and work without signal; map pictures need a connection the first time you view an area.",
   "start_url": "/trekta/",
   "scope": "/trekta/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f3f4f6",
   "theme_color": "#16a34a",
-  "permissions": ["geolocation"],
-  "features": [
-    {
-      "name": "geolocation"
-    }
-  ],
+  "categories": ["travel", "navigation", "lifestyle"],
   "icons": [
     {
       "src": "assets/icon-192.png",
@@ -26,7 +21,7 @@
       "src": "assets/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "screenshots": [

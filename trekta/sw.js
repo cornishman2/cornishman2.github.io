@@ -1,6 +1,9 @@
-const CACHE_NAME = "trekta-cache-v4";
-const TILE_CACHE_NAME = "trekta-tiles-v1";  // separate cache for map tiles
+const CACHE_NAME = "trekta-cache-v6"; // <-- bump this on every deployment
+const TILE_CACHE = "trekta-tiles-v2";  // map pictures you have viewed, kept for use without signal
+const TILE_CACHE_MAX = 4000;            // about 100-200 MB; the oldest are removed first
 
+// Since V1.872 every library is built into index.html, so this list is
+// everything the app needs to run with no signal.
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -8,43 +11,40 @@ const APP_SHELL = [
   "./assets/icon-192.png",
   "./assets/icon-512.png",
   "./assets/London.png",
-  "./assets/screenshot-home.jpg",
-  "./assets/screenshot-map.jpg",
-  "./assets/screenshot-places.jpg",
-  "./assets/screenshot-settings.jpg"
+  "./assets/screenshot-home.jpeg",
+  "./assets/screenshot-map.jpeg",
+  "./assets/screenshot-places.jpeg",
+  "./assets/screenshot-settings.jpeg"
 ];
 
-// Install: pre-cache app shell, ignore individual failures
+// Install: pre-cache the app. Each file is added on its own, so one missing
+// picture can't stop the whole app being saved for offline use.
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return Promise.allSettled(
-        APP_SHELL.map(url => cache.add(url).catch(err => console.warn('[SW] Failed to cache:', url, err)))
-      );
-    }).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME)
+      .then((cache) => Promise.all(
+        APP_SHELL.map((url) => cache.add(url).catch((err) => {
+          console.warn("SW: could not pre-cache", url, err);
+        }))
+      ))
+      .then(() => self.skipWaiting())
   );
 });
 
-// Activate: cleanup old caches + take control
+// Activate: remove old copies of the app (and the old unlimited map cache), then take control
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
       const keys = await caches.keys();
       await Promise.all(
-        keys.map((key) => {
-          // Keep current app cache and tile cache, delete everything else
-          if (key !== CACHE_NAME && key !== TILE_CACHE_NAME) {
-            return caches.delete(key);
-          }
-          return Promise.resolve();
-        })
+        keys.map((key) => (key !== CACHE_NAME && key !== TILE_CACHE ? caches.delete(key) : Promise.resolve()))
       );
       await self.clients.claim();
     })()
   );
 });
 
-// Helper: network-first (HTML, style JSON)
+// HTML: network first, so updates arrive; the saved copy when there is no signal
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   try {
@@ -54,12 +54,14 @@ async function networkFirst(request) {
     }
     return fresh;
   } catch (err) {
-    const cached = await cache.match(request);
+    const cached = (await cache.match(request, { ignoreSearch: true }))
+      || (await cache.match("./index.html"))
+      || (await cache.match("./"));
     return cached || Promise.reject(err);
   }
 }
 
-// Helper: cache-first (icons, assets)
+// Icons and pictures: the saved copy first
 async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
@@ -71,64 +73,57 @@ async function cacheFirst(request) {
   return fresh;
 }
 
-// Helper: stale-while-revalidate for map tiles
-// Serve cached tile immediately, update cache in background
-async function staleWhileRevalidate(request) {
-  const tileCache = await caches.open(TILE_CACHE_NAME);
-  const cached = await tileCache.match(request);
-
-  // Fetch fresh in background regardless
-  const fetchPromise = fetch(request).then(fresh => {
-    if (fresh && fresh.ok) {
-      tileCache.put(request, fresh.clone());
+// Map pictures: the saved copy at once (works without signal), refreshed in the background.
+// The cache is kept to TILE_CACHE_MAX pictures so it can't fill the phone.
+let trimming = false;
+async function trimTileCache() {
+  if (trimming) return;
+  trimming = true;
+  try {
+    const cache = await caches.open(TILE_CACHE);
+    const keys = await cache.keys();          // oldest first
+    const extra = keys.length - TILE_CACHE_MAX;
+    for (let i = 0; i < extra; i++) await cache.delete(keys[i]);
+  } catch (e) { /* ignore */ }
+  trimming = false;
+}
+async function tileStaleWhileRevalidate(event) {
+  const cache = await caches.open(TILE_CACHE);
+  const cached = await cache.match(event.request);
+  const refresh = fetch(event.request).then(async (resp) => {
+    if (resp && (resp.ok || resp.type === "opaque")) {
+      await cache.put(event.request, resp.clone());
+      trimTileCache();
     }
-    return fresh;
+    return resp;
   }).catch(() => null);
-
-  // Return cached immediately if available, otherwise wait for network
-  return cached || fetchPromise;
-}
-
-// Is this a MapTiler tile or resource request?
-function isMapTilerRequest(url) {
-  return url.hostname === 'api.maptiler.com';
-}
-
-// Is this a MapLibre CDN request (sprites, glyphs, etc)?
-function isMapLibreResource(url) {
-  return url.hostname === 'unpkg.com' && url.pathname.includes('maplibre-gl');
+  if (cached) {
+    event.waitUntil(refresh);
+    return cached;
+  }
+  const fresh = await refresh;
+  return fresh || new Response("", { status: 504, statusText: "Offline" });
 }
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
-
   const url = new URL(req.url);
 
-  // MapTiler tiles and resources — stale-while-revalidate
-  // This serves cached tiles immediately while updating in background
-  if (isMapTilerRequest(url)) {
-    event.respondWith(staleWhileRevalidate(req));
+  // Map service (styles, map pictures, fonts and symbols)
+  if (url.hostname === "api.maptiler.com" || url.hostname === "tiles.openfreemap.org") {
+    event.respondWith(tileStaleWhileRevalidate(event));
     return;
   }
 
-  // MapLibre GL JS library — cache-first (rarely changes)
-  if (isMapLibreResource(url)) {
-    event.respondWith(cacheFirst(req));
-    return;
-  }
-
-  // Only handle same-origin requests for everything else
+  // Everything else from other sites (e.g. place search) goes straight to the network
   if (url.origin !== self.location.origin) return;
 
-  // HTML/navigation — network-first
   const isNavigation = req.mode === "navigate";
   const isHtml = req.headers.get("accept")?.includes("text/html");
-  if (isNavigation || isHtml || url.pathname.endsWith("/") || url.pathname.endsWith("/index.html") || url.pathname.endsWith("/Trekta.html")) {
+  if (isNavigation || isHtml || url.pathname.endsWith("/") || url.pathname.endsWith("/index.html")) {
     event.respondWith(networkFirst(req));
     return;
   }
-
-  // Everything else same-origin — cache-first
   event.respondWith(cacheFirst(req));
 });
