@@ -38,10 +38,24 @@
     },
     {
       "src": "assets/screenshot-map.jpeg",
-      "sizes": "717x1440",
+      "sizes": "720x1347",
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "Map — your places and routes on a free map, with live GPS"
+    },
+    {
+      "src": "assets/screenshot-fullscreen.jpeg",
+      "sizes": "720x1555",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Full-screen map — log a place where you stand"
+    },
+    {
+      "src": "assets/screenshot-explore.jpeg",
+      "sizes": "720x1347",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Explore — search anywhere and plan places to visit"
     },
     {
       "src": "assets/screenshot-places.jpeg",
