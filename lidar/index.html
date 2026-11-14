@@ -191,7 +191,7 @@ return maplibregl$1;
 </script>
 <script>
 "use strict";
-const VERSION = '0.4';
+const VERSION = '0.5';
 document.getElementById('ver').textContent = VERSION;
 
 // ---------------------------------------------------------------------------
@@ -380,6 +380,60 @@ function setDiag() { document.getElementById('diag').textContent = Object.entrie
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function looksLikeTiff(buf) { const b = new Uint8Array(buf, 0, Math.min(4, buf.byteLength)); return b.length >= 4 && ((b[0] === 0x49 && b[1] === 0x49) || (b[0] === 0x4d && b[1] === 0x4d)); }
 
+const WMS_URL = 'https://environment.data.gov.uk/spatialdata/lidar-composite-digital-terrain-model-dtm-1m/wms';
+/** Fetch and report what happened (for the details). good = a TIFF came back. */
+async function tryFetch(url, wantText) {
+  const out = { good: false };
+  try {
+    const res = await fetch(url, { mode: 'cors', cache: 'no-store' });
+    out.status = res.status + ' ' + res.statusText; out.type = res.headers.get('content-type') || '(none)';
+    out.buf = await res.arrayBuffer(); out.ok = res.ok;
+    out.good = res.ok && looksLikeTiff(out.buf);
+    if (!out.good || wantText) { try { out.text = new TextDecoder().decode(new Uint8Array(out.buf)); } catch (e) { out.text = ''; } }
+    out.summary = `${out.status}, ${out.type}, ${out.buf.byteLength} bytes` + (out.good ? '' : out.text ? ' — ' + out.text.replace(/\s+/g, ' ').slice(0, 300) : '');
+  } catch (err) { out.error = String(err && err.message || err); out.summary = 'fetch failed: ' + out.error; }
+  return out;
+}
+/** Route 2: ask the picture service (WMS) for an elevation layer as a TIFF. Only useful if it sends real heights
+ *  (one band of numbers), not a coloured picture. Everything learned goes in the details. */
+async function tryWmsHeights(e0, n0, e1, n1) {
+  const out = {};
+  const wcsCap = await tryFetch(WCS_URL + '?service=WCS&request=GetCapabilities&version=2.0.1');
+  diag.wcsCapabilities = wcsCap.error ? 'fetch failed (blocked)' : wcsCap.status;
+  const cap = await tryFetch(WMS_URL + '?service=WMS&request=GetCapabilities&version=1.3.0', true);
+  if (cap.error || !cap.ok) { diag.wmsCapabilities = cap.summary; return out; }
+  let doc; try { doc = new DOMParser().parseFromString(cap.text, 'text/xml'); } catch (e) { diag.wmsCapabilities = 'unreadable'; return out; }
+  const tags = n => Array.from(doc.getElementsByTagNameNS('*', n));
+  const getMap = tags('GetMap')[0];
+  const formats = getMap ? Array.from(getMap.getElementsByTagNameNS('*', 'Format')).map(e => e.textContent.trim()) : [];
+  const layers = tags('Layer').map(l => { const nm = Array.from(l.children).find(c => c.localName === 'Name'); return nm ? nm.textContent.trim() : null; }).filter(Boolean);
+  const crs = [...new Set(tags('CRS').map(e => e.textContent.trim()))];
+  diag.wmsFormats = formats.join(', ') || '(none listed)';
+  diag.wmsLayers = layers.join(', ') || '(none listed)';
+  diag.wmsCRS = crs.slice(0, 15).join(', ');
+  const tif = formats.filter(f => /tif/i.test(f));
+  const elev = layers.filter(l => !/hill|shade|aspect|slope|tsr/i.test(l)).sort((a, b) => (/elev|dtm/i.test(b) ? 1 : 0) - (/elev|dtm/i.test(a) ? 1 : 0));
+  if (!tif.length) { diag.wmsHeights = 'no TIFF format offered'; return out; }
+  if (!elev.length) { diag.wmsHeights = 'no elevation layer (only shaded pictures)'; return out; }
+  const size = Math.round(e1 - e0), tried = [];
+  for (const layer of elev.slice(0, 3)) for (const format of tif.slice(0, 3)) {
+    const u = `${WMS_URL}?service=WMS&request=GetMap&version=1.3.0&layers=${encodeURIComponent(layer)}&styles=&format=${encodeURIComponent(format)}&crs=EPSG:27700&bbox=${e0},${n0},${e1},${n1}&width=${size}&height=${size}`;
+    const r = await tryFetch(u);
+    let note = r.summary;
+    if (r.good) {
+      try {
+        const img = await (await GeoTIFF.fromArrayBuffer(r.buf)).getImage();
+        const spp = img.getSamplesPerPixel(), fd = img.fileDirectory || {};
+        note = `TIFF ${img.getWidth()}x${img.getHeight()}, ${spp} band(s), ${fd.BitsPerSample} bits, sample format ${fd.SampleFormat || 1}`;
+        if (spp === 1) { tried.push(layer + ' / ' + format + ': ' + note + ' — USED'); diag.wmsHeights = tried.join(' | '); return { buf: r.buf, layer, format }; }
+        note += ' — a coloured picture, not heights';
+      } catch (e) { note = 'TIFF unreadable: ' + e; }
+    }
+    tried.push(layer + ' / ' + format + ': ' + note);
+  }
+  diag.wmsHeights = tried.join(' | ');
+  return out;
+}
 async function enhance() {
   if (busy) return;
   const c = map.getCenter();
@@ -395,23 +449,22 @@ async function enhance() {
   setStatus('<span class="spin"></span>Fetching the heights from the Environment Agency…');
   const t0 = performance.now();
   try {
-    let res;
-    try { res = await fetch(url, { mode: 'cors', cache: 'no-store' }); }
-    catch (err) {
-      diag.result = 'fetch failed: ' + (err && err.message || err); diag.online = String(navigator.onLine); setDiag();
-      if (navigator.onLine === false) setStatus('No signal — the heights need an internet connection.', 'err');
-      else setStatus('<strong>The Environment Agency\'s server didn\'t let this page read the heights.</strong> This is the thing we were testing. Please open “Details for Claude”, tap Copy details and send them to Claude.', 'err');
-      return;
-    }
-    diag.status = res.status + ' ' + res.statusText;
-    diag.contentType = res.headers.get('content-type') || '(none)';
-    const buf = await res.arrayBuffer();
-    diag.bytes = buf.byteLength; diag.fetchSeconds = ((performance.now() - t0) / 1000).toFixed(2); setDiag();
-    if (!res.ok || !looksLikeTiff(buf)) {
-      let text = ''; try { text = new TextDecoder().decode(new Uint8Array(buf, 0, Math.min(buf.byteLength, 1500))); } catch (e) {}
-      diag.reply = text.replace(/\s+/g, ' ').slice(0, 1500); setDiag();
-      setStatus(`The Environment Agency replied, but not with heights (${esc(diag.status)}). Please send Claude the details below.`, 'err');
-      return;
+    // Route 1: the height service (WCS). Route 2 if that is blocked: the picture service (WMS), if it offers raw heights.
+    let buf = null;
+    const wcs = await tryFetch(url);
+    diag.wcs = wcs.summary; diag.fetchSeconds = ((performance.now() - t0) / 1000).toFixed(2); setDiag();
+    if (wcs.good) { buf = wcs.buf; diag.route = 'height service (WCS)'; }
+    else {
+      if (wcs.error && navigator.onLine === false) { setStatus('No signal — the heights need an internet connection.', 'err'); return; }
+      setStatus('<span class="spin"></span>The height service is blocked — trying the Environment Agency\'s picture service instead…');
+      const alt = await tryWmsHeights(e0, n0, e1, n1);
+      setDiag();
+      if (alt.buf) { buf = alt.buf; diag.route = 'picture service (WMS) ' + alt.layer + ' as ' + alt.format; }
+      else {
+        if (wcs.error) setStatus('<strong>The Environment Agency\'s servers won\'t let a web page read the heights directly.</strong> I\'ve recorded what they do offer. Please open “Details for Claude”, tap Copy details and send them to Claude.', 'err');
+        else setStatus(`The Environment Agency replied, but not with heights (${esc(wcs.status)}). Please send Claude the details below.`, 'err');
+        return;
+      }
     }
     setStatus('<span class="spin"></span>Reading the heights…');
     const tiff = await GeoTIFF.fromArrayBuffer(buf);
@@ -452,7 +505,7 @@ async function enhance() {
     const gaps = 1 - n / (w * h);
     showResult();
     setStatus(`✔ ${Math.round(D.e1 - D.e0)} × ${Math.round(D.n1 - D.n0)} m, a height every ${D.cell.toFixed(1)} m (${(buf.byteLength / 1048576).toFixed(1)} MB, ${secs} s). Ground ${lo.toFixed(1)}–${hi.toFixed(1)} m.` +
-      (gaps > 0.01 ? ` ${Math.round(gaps * 100)}% has no LiDAR.` : '') + ' Tap the map for the height at a spot.', 'ok');
+      (gaps > 0.01 ? ` ${Math.round(gaps * 100)}% has no LiDAR.` : '') + (/WMS/.test(diag.route || '') ? ' (Fetched through the picture service.)' : '') + ' Tap the map for the height at a spot.', 'ok');
   } catch (e) {
     diag.error = String(e && e.stack || e); setDiag();
     setStatus('Something went wrong reading the heights. Please send Claude the details below.', 'err');
