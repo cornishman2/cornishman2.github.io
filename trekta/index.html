@@ -321,7 +321,7 @@ return maplibregl$1;
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.894
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.895
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <button id="hc-toggle-btn" type="button" onclick="toggleHighContrast()"
@@ -1436,7 +1436,7 @@ document.addEventListener('visibilitychange', function() {
 //  APP META
 // =====================
 const APP_NAME = 'Trekta – Map Your World';
-const APP_VERSION = '1.894';         // change whenever you publish (also the header)
+const APP_VERSION = '1.895';         // change whenever you publish (also the header)
 const APP_BUILD = '2026-11-06';      // optional, you can keep as a date string
 const appVersion = APP_VERSION;      // legacy alias used by older export/report code
 
@@ -2677,7 +2677,39 @@ function exploreFromMap() {
     try { updateActiveNavButtons(); } catch (e) {}
 }
 
+let exploreSelectedPlace = null;   // id of a tapped place (V1.895)
+function exploreSelectedPlaceObj() {
+    const open = maps.find(s => s.status === 'Open');
+    if (!open || !exploreSelectedPlace) return null;
+    return getActivePlaces(open).find(t => String(t.id) === String(exploreSelectedPlace)) || null;
+}
+/** Leave Explore and open the tapped place on the Places tab (where it can be edited). */
+function exploreOpenSelectedPlace() {
+    const p = exploreSelectedPlaceObj();
+    exploreSelectedPlace = null;
+    if (!p) { render(); return; }
+    stopExploreGps();
+    try { if (exploreMap) { const c = exploreMap.getCenter(); saveExploreView(c.lat, c.lng, exploreMap.getZoom()); } } catch (e) {}
+    exploreResults = []; exploreAddBoxOpen = false;
+    expandedPlaceIds.add(p.id);
+    currentPage = 'Places';
+    render();
+    let card = document.querySelector(`[data-place-card-id="${p.id}"]`);
+    if (!card) {   // hidden by the Places filter: show the open map's places unfiltered
+        placesFilter = { mapId: 'open', type: 'All', status: 'All', favourite: 'All' };
+        render();
+        card = document.querySelector(`[data-place-card-id="${p.id}"]`);
+    }
+    try { updateActiveNavButtons(); } catch (e) {}
+    // scroll the card's heading just below the top bar
+    if (card) setTimeout(() => {
+        const hd = document.querySelector('header.fixed');
+        const top = card.getBoundingClientRect().top + window.scrollY - (hd ? hd.getBoundingClientRect().bottom : 0) - 8;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    }, 60);
+}
 function closeExplore() {
+    exploreSelectedPlace = null;
     stopExploreGps();
     try { if (exploreMap) { const c = exploreMap.getCenter(); saveExploreView(c.lat, c.lng, exploreMap.getZoom()); } } catch (e) {}
     exploreResults = []; exploreAddBoxOpen = false;
@@ -2692,7 +2724,7 @@ function explorePlacesGeoJson() {
         const fav = !!(t.isFavourite || t.favourite);
         const imageId = exploreMap ? getOrRegisterPlacePinImage(t.type, t.status, fav, exploreMap) : null;
         feats.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [c.lon, c.lat] },
-            properties: { name: t.description || '', label: getMapPinLabelText(t), colour: getPlaceCategoryColor(t.type),
+            properties: { id: String(t.id), name: t.description || '', label: getMapPinLabelText(t), colour: getPlaceCategoryColor(t.type),
                           imageId: imageId || '', isFavourite: fav ? 1 : 0 } });
     });
     return { type: 'FeatureCollection', features: feats };
@@ -2748,6 +2780,19 @@ function ensureExploreMap(slot) {
     exploreMap.on('move', updateExploreReadout);
     exploreMap.on('load', addExploreLayers);
     exploreMap.on('styledata', addExploreLayers);
+    // V1.895: tap a place to see its name, coordinates and a Google Maps button
+    exploreMap.on('click', (e) => {
+        const layers = ['ex-places', 'ex-places-dot'].filter(l => exploreMap.getLayer(l));
+        if (!layers.length) return;
+        const hit = exploreMap.queryRenderedFeatures([[e.point.x - 14, e.point.y - 14], [e.point.x + 14, e.point.y + 14]], { layers });
+        if (hit && hit.length) {
+            // nearest pin to the tap
+            let best = hit[0], bd = Infinity;
+            hit.forEach(f => { try { const p = exploreMap.project(f.geometry.coordinates); const d = (p.x - e.point.x) ** 2 + (p.y - e.point.y) ** 2; if (d < bd) { bd = d; best = f; } } catch (er) {} });
+            exploreSelectedPlace = best.properties.id; exploreAddBoxOpen = false;
+            render();
+        } else if (exploreSelectedPlace) { exploreSelectedPlace = null; render(); }
+    });
     return true;
 }
 function syncExploreMap() {
@@ -2900,7 +2945,26 @@ function renderExplorePage() {
             <button type="button" onclick="exploreGoToMe()" title="Go to my position" class="fs-ctl w-12 h-12 rounded-xl flex items-center justify-center"><i class="fas fa-location-arrow"></i></button>
         </div>
         <div style="position:absolute;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:5;">
-            <div class="fs-panel rounded-xl p-2">
+            ${(() => {
+                const p = exploreSelectedPlaceObj();
+                if (!p) return '';
+                const c = parseLatLonStr(p.coordinates);
+                const sub = [p.type || '', p.rating ? '★'.repeat(Number(p.rating)) : '', p.status || 'Not visited'].filter(Boolean).join(' · ');
+                return `
+            <div id="explore-place-card" class="fs-panel rounded-xl p-3 mb-2">
+                <div class="flex items-start gap-2">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-semibold text-gray-600 uppercase truncate">Place · ${escapeHtml(open ? (open.name || 'Map') : '')}</p>
+                        <p class="text-lg font-bold text-gray-900 truncate"><i class="fas ${getPlaceTypeIcon(p.type)} mr-1" style="color:${getPlaceCategoryColor(p.type)};"></i>${(p.isFavourite || p.favourite) ? '<span class="text-red-500 mr-1">♥</span>' : ''}${escapeHtml(p.description || 'Unnamed Place')}</p>
+                        <p class="text-xs text-gray-600">${escapeHtml(sub)}</p>
+                    </div>
+                    <button type="button" onclick="exploreSelectedPlace=null;render()" class="fs-ctl w-9 h-9 rounded-full flex items-center justify-center flex-none" title="Close"><i class="fas fa-times"></i></button>
+                </div>
+                ${c ? renderCopyCoordsHtml(c.lat, c.lon, { cls: 'mt-2' }) : ''}
+                <button type="button" onclick="exploreOpenSelectedPlace()" class="w-full mt-2 py-2 rounded-lg bg-primary text-white font-bold text-sm"><i class="fas fa-pen mr-1"></i>Open in Places</button>
+            </div>`;
+            })()}
+            <div class="fs-panel rounded-xl p-2" ${exploreSelectedPlaceObj() ? 'style="display:none"' : ''}>
                 <div id="explore-readout" class="text-sm text-gray-900 mb-2 w-full">—</div>
                 ${open ? `
                 <button type="button" onclick="exploreAddBoxOpen=true;render();setTimeout(()=>{const i=document.getElementById('explore-place-name');if(i)i.focus();},60)"
