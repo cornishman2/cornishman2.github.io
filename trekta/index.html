@@ -321,7 +321,7 @@ return maplibregl$1;
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.892
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.893
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <button id="hc-toggle-btn" type="button" onclick="toggleHighContrast()"
@@ -1436,7 +1436,7 @@ document.addEventListener('visibilitychange', function() {
 //  APP META
 // =====================
 const APP_NAME = 'Trekta – Map Your World';
-const APP_VERSION = '1.892';         // change whenever you publish (also the header)
+const APP_VERSION = '1.893';         // change whenever you publish (also the header)
 const APP_BUILD = '2026-11-06';      // optional, you can keep as a date string
 const appVersion = APP_VERSION;      // legacy alias used by older export/report code
 
@@ -13298,6 +13298,14 @@ function initOrSyncMapLibre(centerLon, centerLat, minLon, minLat, maxLon, maxLat
                     const c = _mlMap.getCenter();
                     _mlCenterLon = c.lng;
                     _mlCenterLat = c.lat;
+                    // V1.893: back to where you had zoomed to (same map only)
+                    if (_mlSavedView) {
+                        const om = maps.find(s => s.status === 'Open');
+                        const v = _mlSavedView; _mlSavedView = null;
+                        if (om && v.mapId === om.id) {
+                            try { _mlMap.jumpTo({ center: v.center, zoom: v.zoom, bearing: v.bearing }); _mlUserInteracted = true; } catch (e) {}
+                        }
+                    }
                     // Remove loading indicator and any CSS fallback layer
                     const container = document.getElementById('place-map-container');
                     if (container) {
@@ -13368,7 +13376,19 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // Destroy MapLibre instance when map panel collapses (saves memory)
+// V1.893: remember where you had zoomed to when the map is put away (e.g. going to Explore),
+// so it comes back the same - but only for the same open map.
+let _mlSavedView = null;
 function destroyMapLibre() {
+    try {
+        if (_mlMap && _mlMapReady && _mlUserInteracted) {
+            const om = maps.find(s => s.status === 'Open');
+            const c = _mlMap.getCenter();
+            _mlSavedView = { mapId: om ? om.id : null, center: [c.lng, c.lat], zoom: _mlMap.getZoom(), bearing: _mlMap.getBearing() };
+        } else if (_mlMap && _mlMapReady) {
+            _mlSavedView = null;      // you hadn't moved it: it comes back fitted, as before
+        }
+    } catch (e) {}
     if (_mlPopup) { _mlPopup.remove(); _mlPopup = null; }
     // The dot and pins belong to this map: forget them too, or the next map
     // would keep moving the old (invisible) dot and never draw a new one.
@@ -13398,6 +13418,7 @@ function resetMapView(event) {
     if (typeof isMapFullscreen !== 'undefined') isMapFullscreen = false;
 
     // Reset MapLibre to fit all data
+    _mlSavedView = null;
     if (_mlMap && _mlMapReady && _mlLastBounds) {
         _mlUserInteracted = false;
         _mlMap.fitBounds(_mlLastBounds, { animate: true, padding: 20 });
