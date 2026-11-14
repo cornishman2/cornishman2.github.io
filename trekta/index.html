@@ -321,7 +321,7 @@ return maplibregl$1;
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.887
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.888
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <button id="hc-toggle-btn" type="button" onclick="toggleHighContrast()"
@@ -1436,7 +1436,7 @@ document.addEventListener('visibilitychange', function() {
 //  APP META
 // =====================
 const APP_NAME = 'Trekta – Map Your World';
-const APP_VERSION = '1.887';         // change whenever you publish (also the header)
+const APP_VERSION = '1.888';         // change whenever you publish (also the header)
 const APP_BUILD = '2026-11-06';      // optional, you can keep as a date string
 const appVersion = APP_VERSION;      // legacy alias used by older export/report code
 
@@ -10510,7 +10510,7 @@ function saveInlineRouteEdit(routeId) {
     if (!found || !found.route) {
         showMessage('Route not found.', 'error');
         expandedRouteEditId = null;
-        rerenderCompassIfActive();
+        refreshCompassPanels();
         return;
     }
 
@@ -10521,20 +10521,20 @@ function saveInlineRouteEdit(routeId) {
     saveMapsToLocalStorage();
 
     expandedRouteEditId = null;
-    rerenderCompassIfActive();
+    refreshCompassPanels();
 }
 
 /** Cancel an inline route edit without saving. */
 function cancelInlineRouteEdit() {
     expandedRouteEditId = null;
-    rerenderCompassIfActive();
+    refreshCompassPanels();
 }
 
 /** Open the inline delete confirmation for a route. */
 function openInlineRouteDelete(routeId) {
     expandedRouteEditId   = null; // close any open edit
     expandedRouteDeleteId = routeId;
-    rerenderCompassIfActive();
+    refreshCompassPanels();
 }
 
 /** Confirm and execute the inline route delete. */
@@ -10542,7 +10542,7 @@ function confirmInlineRouteDelete(routeId) {
     expandedRouteDeleteId = null;
 
     const found = findRouteById(routeId);
-    if (!found) { showMessage('Route not found.', 'error'); rerenderCompassIfActive(); return; }
+    if (!found) { showMessage('Route not found.', 'error'); refreshCompassPanels(); return; }
 
     const { map, route } = found;
     const routeName = route.name || 'route';
@@ -10564,7 +10564,7 @@ function confirmInlineRouteDelete(routeId) {
 /** Cancel the inline route delete. */
 function cancelInlineRouteDelete() {
     expandedRouteDeleteId = null;
-    rerenderCompassIfActive();
+    refreshCompassPanels();
 }
 
 /** Open the inline delete confirmation for a map. */
@@ -12778,6 +12778,14 @@ try {
  // kept for legacy safety — no longer used by drag
 
 /** Re-render the Compass page if it is the active page. */
+/** Redraw the Map page's panels (route list, confirmations, quick-log form) as well as the map — keeping the map
+ *  as it is. rerenderCompassIfActive only redraws the map itself when it is showing, so a button that changes a panel
+ *  must use this (V1.888). */
+function refreshCompassPanels() {
+    if (typeof currentPage === 'undefined' || currentPage !== 'Compass') return;
+    if (_mlMap && _mlMapReady && typeof fullRerenderCompass === 'function') fullRerenderCompass();
+    else rerenderCompassIfActive();
+}
 function rerenderCompassIfActive() {
     if (typeof currentPage !== 'undefined' && currentPage === 'Compass') {
         const appContent = document.getElementById('app-content');
@@ -14266,7 +14274,7 @@ function handleStartRouteClick() {
     saveMapsToLocalStorage();
 
     // Re-render — the section will now show the "routing ON" state
-    rerenderCompassIfActive();
+    refreshCompassPanels();
 }
 
 /**
@@ -14328,7 +14336,7 @@ function toggleRouteVisibility(routeId, isVisible) {
     route.isVisible = !!isVisible;
     saveMapsToLocalStorage();
     if (currentPage === 'Compass') {
-        rerenderCompassIfActive();
+        refreshCompassPanels();
     }
 }
 
@@ -14529,7 +14537,7 @@ function renderRoutesPanel(openMap) {
                                   style="background:${route.color || 'rgba(59,130,246,0.9)'}"></span>
                             <button
                                 type="button"
-                                onclick="expandedRouteEditId='${route.id}';rerenderCompassIfActive()"
+                                onclick="expandedRouteEditId='${route.id}';refreshCompassPanels()"
                                 class="px-3 py-2 rounded-lg bg-slate-700 text-white text-sm hover:bg-slate-800"
                                 title="Edit route name & colour"
                                 aria-label="Edit route"
@@ -17614,7 +17622,7 @@ function switchRouteType(type) {
 
     saveMapsToLocalStorage();
     showMessage('Switched to ' + type, 'success');
-    rerenderCompassIfActive();
+    refreshCompassPanels();
 }
 
 function saveInlineMapEdit(mapId) {
@@ -18002,12 +18010,12 @@ function buildQuickFormHtml(openMap) {
                     <i class="fas fa-camera mr-1"></i> ${_quickFormPhotoRef ? '✓ Photo' : 'Photo'}
                 </button>
                 <button type="button"
-                        onclick="_quickFormStatus='Not visited';rerenderCompassIfActive()"
+                        onclick="_quickFormStatus='Not visited';refreshCompassPanels()"
                         class="flex-1 py-2 rounded-lg text-sm font-semibold ${notVisClass}">
                     Not visited
                 </button>
                 <button type="button"
-                        onclick="_quickFormStatus='Visited';rerenderCompassIfActive()"
+                        onclick="_quickFormStatus='Visited';refreshCompassPanels()"
                         class="flex-1 py-2 rounded-lg text-sm font-semibold ${visClass}">
                     Visited
                 </button>
@@ -18265,7 +18273,7 @@ async function quickSaveFormPlace() {
     _quickFormName = '';
     _quickFormStatus = 'Not visited';
     _quickFormPhotoRef = null;
-    rerenderCompassIfActive();
+    refreshCompassPanels();
 }
 
 async function handleQuickFormPhotoSelected(event) {
@@ -18280,7 +18288,7 @@ async function handleQuickFormPhotoSelected(event) {
         if (!refs[0]) throw new Error('The photo could not be stored');
         _quickFormPhotoRef = refs[0];
         showMessage('Photo ready — tap Quick Save.', 'success');
-        rerenderCompassIfActive();
+        refreshCompassPanels();
     } catch(e) {
         console.error('Quick form photo error:', e);
         showMessage('Could not process photo.', 'error');
@@ -18399,7 +18407,7 @@ async function handleQuickPhotoPlaceSelected(event) {
     _quickFormName = '';
     _quickFormStatus = 'Not visited';
     _quickFormPhotoRef = null;
-    rerenderCompassIfActive();
+    refreshCompassPanels();
 }
 
 
