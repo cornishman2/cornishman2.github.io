@@ -325,7 +325,7 @@ return maplibregl$1;
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.900
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.901
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <button id="hc-toggle-btn" type="button" onclick="toggleHighContrast()"
@@ -1440,7 +1440,7 @@ document.addEventListener('visibilitychange', function() {
 //  APP META
 // =====================
 const APP_NAME = 'Trekta – Map Your World';
-const APP_VERSION = '1.900';         // change whenever you publish (also the header)
+const APP_VERSION = '1.901';         // change whenever you publish (also the header)
 const APP_BUILD = '2026-11-06';      // optional, you can keep as a date string
 const appVersion = APP_VERSION;      // legacy alias used by older export/report code
 
@@ -8233,8 +8233,18 @@ function processLiveGpsPosition(position) {
 
     if (!hasRenderedFirstGpsFix && currentUserCoords && currentPage === 'Compass') {
         hasRenderedFirstGpsFix = true;
-        const appContent = document.getElementById('app-content');
-        if (appContent) { appContent.innerHTML = renderCompassPage(true); attachPageEventListeners(); }
+        // V1.901: redraw the panels WITHOUT throwing the map away (the old full redraw left the map blank,
+        // e.g. straight after Start Routing, which restarts GPS)
+        if (_mlMap) { try { fullRerenderCompass(); } catch (e) {} }
+        else {
+            const appContent = document.getElementById('app-content');
+            if (appContent) { appContent.innerHTML = renderCompassPage(true); attachPageEventListeners(); }
+        }
+    }
+    // V1.901 safety net: if the map has somehow been knocked off the page, build it again (keeping your view)
+    if (currentPage === 'Compass' && _mlMap && !document.body.contains(_mlMap.getContainer()) && !(typeof pocketLocked !== 'undefined' && pocketLocked)) {
+        console.warn('[Trekta] map was detached from the page - rebuilding it');
+        try { rebuildMapLibreKeepingView(); } catch (e) {}
     }
 
     if (smoothedUserCoords && activeRouteId && activeRouteMapId) {
@@ -8791,7 +8801,10 @@ function updateMapWithUserLocationAndRender() {
         return;
     }
 
-    // Fallback: full re-render if MapLibre not yet ready
+    // The map is still loading: leave it alone (replacing the page now would leave it blank)
+    if (_mlMap) return;
+
+    // Fallback: full re-render if there is no map yet
     appContent.innerHTML = renderCompassPage(true);
     if (savedScroll > 0) {
         requestAnimationFrame(() => window.scrollTo(0, savedScroll));
@@ -12983,7 +12996,10 @@ function rerenderCompassIfActive() {
             return;
         }
 
-        // Fallback: full re-render
+        // The map is still loading: leave it alone (replacing the page now would leave it blank)
+        if (_mlMap) return;
+
+        // Fallback: full re-render (no map yet)
         const savedScroll = window.scrollY;
         appContent.innerHTML = renderCompassPage(true);
         if (savedScroll > 0) requestAnimationFrame(() => window.scrollTo(0, savedScroll));
