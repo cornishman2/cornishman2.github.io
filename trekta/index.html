@@ -325,7 +325,7 @@ return maplibregl$1;
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.903
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.904
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <button id="hc-toggle-btn" type="button" onclick="toggleHighContrast()"
@@ -1440,7 +1440,7 @@ document.addEventListener('visibilitychange', function() {
 //  APP META
 // =====================
 const APP_NAME = 'Trekta – Map Your World';
-const APP_VERSION = '1.903';         // change whenever you publish (also the header)
+const APP_VERSION = '1.904';         // change whenever you publish (also the header)
 const APP_BUILD = '2026-11-06';      // optional, you can keep as a date string
 const appVersion = APP_VERSION;      // legacy alias used by older export/report code
 
@@ -8219,6 +8219,7 @@ function processLiveGpsPosition(position) {
     }
     if (currentPage === 'Compass') { try { updateAccuracyCircle(); } catch (e) {} }
     if (currentPage === 'Compass' && navigationPlaceId) { try { updateNavOverlay(); } catch (e) {} }
+    if (followRouteId) { try { followCheckAlerts(); } catch (e) {} }   // V1.904: beep / buzz, on any tab
     if (currentPage === 'Compass' && followRouteId) { try { updateFollowOverlay(); } catch (e) {} }
 
     if (navSession && navSession.active && navigationPlaceId && smoothedUserCoords) {
@@ -13726,12 +13727,86 @@ function followRouteObj() {
 function followPoints(route) {
     return ((route && route.points) || []).filter(p => p && isFinite(p.lat) && isFinite(p.lon));
 }
+// ── V1.904 Off-route alerts: a beep and/or a buzz ────────────────────────────
+// Off route for 3 seconds -> alert; repeated every 20 seconds while still off; a short signal when back on;
+// a little tune at the finish. Works while Trekta is on screen (including behind the pocket lock) - phones
+// pause web apps when the screen is switched off.
+function isFollowBeepOn()    { try { return localStorage.getItem('trekta_follow_beep') !== '0'; } catch (e) { return true; } }
+function isFollowVibrateOn() { try { return localStorage.getItem('trekta_follow_vibrate') !== '0'; } catch (e) { return true; } }
+function setFollowBeep(on)    { try { localStorage.setItem('trekta_follow_beep', on ? '1' : '0'); } catch (e) {} if (on) followAudioUnlock(); }
+function setFollowVibrate(on) { try { localStorage.setItem('trekta_follow_vibrate', on ? '1' : '0'); } catch (e) {} }
+let _followAudio = null;
+/** Phones only allow sound after a tap: call this from a tap (Follow, Test) to get the sound ready. */
+function followAudioUnlock() {
+    try {
+        if (!_followAudio) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) _followAudio = new AC(); }
+        if (_followAudio && _followAudio.state === 'suspended') _followAudio.resume();
+    } catch (e) {}
+}
+function followTone(notes) {   // notes: [[frequency Hz, seconds], ...] played one after another
+    if (!isFollowBeepOn()) return;
+    try {
+        followAudioUnlock();
+        const ac = _followAudio; if (!ac) return;
+        let t = ac.currentTime + 0.02;
+        notes.forEach(([f, d]) => {
+            const o = ac.createOscillator(), g = ac.createGain();
+            o.type = 'square'; o.frequency.value = f;
+            g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + 0.02);
+            g.gain.setValueAtTime(0.5, t + d - 0.04); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+            o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d + 0.02);
+            t += d + 0.08;
+        });
+    } catch (e) {}
+}
+function followBuzz(pattern) { if (!isFollowVibrateOn()) return; try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {} }
+const FOLLOW_SIGNALS = {
+    off:    () => { followTone([[440, 0.3], [330, 0.3], [440, 0.3], [330, 0.3]]); followBuzz([500, 150, 500, 150, 500]); },
+    back:   () => { followTone([[880, 0.12]]); followBuzz([120]); },
+    finish: () => { followTone([[523, 0.15], [659, 0.15], [784, 0.3]]); followBuzz([200, 100, 200, 100, 400]); }
+};
+let _followAlertState = 'on', _followOffSince = 0, _followOnSince = 0, _followLastOffAlert = 0, _followFinished = false;
+function followResetAlerts() { _followAlertState = 'on'; _followOffSince = 0; _followOnSince = 0; _followLastOffAlert = 0; _followFinished = false; }
+/** Called with each GPS fix, on any tab. */
+function followCheckAlerts() {
+    if (!followRouteId) return;
+    const route = followRouteObj(), pts = followPoints(route);
+    const u = (typeof smoothedUserCoords !== 'undefined' && smoothedUserCoords) || (typeof currentUserCoords !== 'undefined' && currentUserCoords) || null;
+    if (!route || pts.length < 2 || !u || !isFinite(u.lat)) return;
+    const acc = (typeof currentUserAccuracy === 'number' && isFinite(currentUserAccuracy)) ? currentUserAccuracy : 0;
+    const offLimit = Math.max(getFollowOffDistance(), acc);
+    const loc = followLocate(pts, u, offLimit);
+    const off = loc.d > offLimit, now = Date.now();
+    if (!off) { _followAlong = loc.along; _followLast = { lat: u.lat, lon: u.lon }; }
+    if (off) {
+        _followOnSince = 0;
+        if (!_followOffSince) _followOffSince = now;
+        if (now - _followOffSince >= 3000 && (_followAlertState !== 'off' || now - _followLastOffAlert >= 20000)) {
+            _followAlertState = 'off'; _followLastOffAlert = now; FOLLOW_SIGNALS.off();
+        }
+    } else {
+        _followOffSince = 0;
+        if (!_followOnSince) _followOnSince = now;
+        if (_followAlertState === 'off' && now - _followOnSince >= 3000) { _followAlertState = 'on'; FOLLOW_SIGNALS.back(); }
+        const toGo = Math.max(0, loc.total - loc.along);
+        if (!_followFinished && toGo <= Math.max(10, acc) && loc.along > loc.total * 0.5) { _followFinished = true; FOLLOW_SIGNALS.finish(); }
+    }
+}
+function testFollowSignals() {
+    followAudioUnlock();
+    const beep = isFollowBeepOn(), buzz = isFollowVibrateOn();
+    if (!beep && !buzz) { showMessage('Both the beep and the buzz are switched off.', 'warning'); return; }
+    FOLLOW_SIGNALS.off();
+    showMessage(`Testing: ${[beep ? 'beep' : '', buzz ? 'buzz' : ''].filter(Boolean).join(' and ')} for "off route". Can't hear it? Turn up the media volume.`, 'info');
+}
+
 function startFollowingRoute(routeId) {
     const om = maps.find(s => s.status === 'Open');
     const route = om && (om.tracks || []).find(t => String(t.id) === String(routeId));
     if (!route || followPoints(route).length < 2) { showMessage('This route has too few points to follow.', 'warning'); return; }
     if (navigationPlaceId) { navigationPlaceId = null; try { updateNavOverlay(); } catch (e) {} }   // one guide at a time
     followRouteId = route.id; _followFitPending = true; _followAlong = null; _followLast = null;
+    followResetAlerts(); followAudioUnlock();   // V1.904: the tap on Follow lets the phone play the beeps later
     showMessage(`Following '${route.name || 'Route'}' - it's drawn in orange.`, 'success');
     if (currentPage !== 'Compass') { currentPage = 'Compass'; try { updateActiveNavButtons(); } catch (e) {} render(); }
     else refreshCompassPanels();
@@ -13744,6 +13819,7 @@ function startFollowingRoute(routeId) {
 }
 function stopFollowingRoute() {
     followRouteId = null; _followFitPending = false; _followAlong = null; _followLast = null;
+    followResetAlerts();
     showMessage('Stopped following the route.', 'info');
     try { updateFollowOverlay(); } catch (e) {}
     if (currentPage === 'Compass') refreshCompassPanels();
@@ -15702,6 +15778,18 @@ return `
     ${FOLLOW_OFF_CHOICES.map(v => `<option value="${v}" ${getFollowOffDistance() === v ? 'selected' : ''}>${v} m from the route</option>`).join('')}
   </select>
   <p class="text-sm text-gray-600 mt-2">The pale orange band along the route shows this distance. When the GPS itself is less accurate than this, Trekta waits until you're clearly outside what the GPS could be wrong by.</p>
+  <label class="flex items-start gap-3 cursor-pointer mt-4">
+    <input type="checkbox" class="mt-1 h-5 w-5" ${isFollowBeepOn() ? 'checked' : ''} onchange="setFollowBeep(this.checked)">
+    <span><span class="font-semibold text-gray-800">Beep when I go off route</span>
+      <span class="block text-sm text-gray-600">Plays at media volume (the same as music), not ringer volume.</span></span>
+  </label>
+  <label class="flex items-start gap-3 cursor-pointer mt-3">
+    <input type="checkbox" class="mt-1 h-5 w-5" ${isFollowVibrateOn() ? 'checked' : ''} onchange="setFollowVibrate(this.checked)">
+    <span><span class="font-semibold text-gray-800">Vibrate when I go off route</span></span>
+  </label>
+  <button type="button" onclick="testFollowSignals()" class="mt-3 px-4 py-2 rounded-lg bg-orange-500 text-white font-bold"><i class="fas fa-volume-up mr-1"></i>Test</button>
+  <p class="text-sm text-gray-600 mt-2">After 3 seconds off route: a two-tone alarm and a long buzz, repeated every 20 seconds while you're off. Back on route: one short beep and buzz. At the finish: a little tune.
+    <strong>This only works while Trekta is on screen</strong> — use Trekta's pocket lock, not the phone's power button, because phones pause web apps when the screen goes off.</p>
   <p class="text-sm text-gray-600 mt-2"><strong>Please don't rely on this near cliffs or other dangers.</strong> Phone GPS is often 5–10 m out, and worse below cliffs and in steep valleys. The recorded route has the same error built in.</p>
 </div>
 
