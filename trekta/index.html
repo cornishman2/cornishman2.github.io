@@ -325,7 +325,7 @@ return maplibregl$1;
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.907
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.908
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <button id="hc-toggle-btn" type="button" onclick="toggleHighContrast()"
@@ -1440,7 +1440,7 @@ document.addEventListener('visibilitychange', function() {
 //  APP META
 // =====================
 const APP_NAME = 'Trekta – Map Your World';
-const APP_VERSION = '1.907';         // change whenever you publish (also the header)
+const APP_VERSION = '1.908';         // change whenever you publish (also the header)
 const APP_BUILD = '2026-11-06';      // optional, you can keep as a date string
 const appVersion = APP_VERSION;      // legacy alias used by older export/report code
 
@@ -13746,8 +13746,19 @@ function followRouteObj() {
     if (!om || !followRouteId) return null;
     return (om.tracks || []).find(t => String(t.id) === String(followRouteId)) || null;
 }
+let followReversed = false;   // V1.908: walking the followed route the other way round
 function followPoints(route) {
-    return ((route && route.points) || []).filter(p => p && isFinite(p.lat) && isFinite(p.lon));
+    const pts = ((route && route.points) || []).filter(p => p && isFinite(p.lat) && isFinite(p.lon));
+    return followReversed ? pts.slice().reverse() : pts;
+}
+function reverseFollowedRoute() {
+    if (!followRouteId) return;
+    followReversed = !followReversed;
+    _followAlong = null; _followLast = null;
+    try { followResetAlerts(); } catch (e) {}
+    const r = followRouteObj();
+    showMessage(`Following '${(r && r.name) || 'Route'}' ${followReversed ? 'the other way round' : 'the original way round'} - Start and Finish have swapped.`, 'info');
+    try { updateFollowOverlay(); } catch (e) {}
 }
 // ── V1.904 Off-route alerts: a beep and/or a buzz ────────────────────────────
 // Off route for 3 seconds -> alert; repeated every 20 seconds while still off; a short signal when back on;
@@ -13827,7 +13838,7 @@ function startFollowingRoute(routeId) {
     const route = om && (om.tracks || []).find(t => String(t.id) === String(routeId));
     if (!route || followPoints(route).length < 2) { showMessage('This route has too few points to follow.', 'warning'); return; }
     if (navigationPlaceId) { navigationPlaceId = null; try { updateNavOverlay(); } catch (e) {} }   // one guide at a time
-    followRouteId = route.id; _followFitPending = true; _followAlong = null; _followLast = null;
+    followRouteId = route.id; _followFitPending = true; _followAlong = null; _followLast = null; followReversed = false;
     followResetAlerts(); followAudioUnlock();   // V1.904: the tap on Follow lets the phone play the beeps later
     showMessage(`Following '${route.name || 'Route'}' - it's drawn in orange.`, 'success');
     if (currentPage !== 'Compass') { currentPage = 'Compass'; try { updateActiveNavButtons(); } catch (e) {} render(); }
@@ -13952,7 +13963,8 @@ function updateFollowOverlay() {
     bar.style.left = isMapFullscreen ? '60px' : '8px';
     const name = escapeHtml(route.name || 'Route');
     let text;
-    if (!loc) text = `Following <b>${name}</b><br><span style="color:#6b7280">Waiting for your GPS position…</span>`;
+    const nm = followReversed ? `${name} <span style="color:#c2410c">(reversed)</span>` : name;
+    if (!loc) text = `Following <b>${nm}</b><br><span style="color:#6b7280">Waiting for your GPS position…</span>`;
     else {
         if (!off) { _followAlong = loc.along; _followLast = { lat: u.lat, lon: u.lon }; }
         const toGo = Math.max(0, loc.total - loc.along);
@@ -13962,10 +13974,11 @@ function updateFollowOverlay() {
             const b = navBearingDeg(u.lat, u.lon, loc.lat, loc.lon);
             text = `<b style="color:#b91c1c">Off route</b>: <b>${navDistanceText(loc.d)}</b> ${navCompassWord(b)} to rejoin<br><span style="color:#6b7280">${name} · ${navDistanceText(toGo)} to go from there</span>`;
         } else {
-            text = `Following <b>${name}</b><br><span style="font-size:16px;font-weight:800;color:#c2410c">${navDistanceText(toGo)}</span> <span style="font-weight:600">to go</span> <span style="color:#047857">· on route</span>`;
+            text = `Following <b>${nm}</b><br><span style="font-size:16px;font-weight:800;color:#c2410c">${navDistanceText(toGo)}</span> <span style="font-weight:600">to go</span> <span style="color:#047857">· on route</span>`;
         }
     }
     bar.innerHTML = `<i class="fas fa-walking" style="color:#f97316"></i><div style="flex:1;min-width:0;line-height:1.25;">${text}</div>
+        <button type="button" onclick="event.stopPropagation(); reverseFollowedRoute()" title="Walk it the other way round" style="width:34px;height:34px;flex:none;border-radius:999px;background:${followReversed ? '#ffedd5' : '#f3f4f6'};border:1px solid ${followReversed ? '#f97316' : '#d1d5db'};font-size:17px;">⇄</button>
         <button type="button" onclick="event.stopPropagation(); stopFollowingRoute()" title="Stop following" style="width:34px;height:34px;flex:none;border-radius:999px;background:#f3f4f6;border:1px solid #d1d5db;font-size:16px;">✕</button>`;
     // first time: show the whole route (and you)
     if (_followFitPending) {
