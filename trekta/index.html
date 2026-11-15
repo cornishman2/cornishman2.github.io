@@ -325,7 +325,7 @@ return maplibregl$1;
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.905
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.906
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <button id="hc-toggle-btn" type="button" onclick="toggleHighContrast()"
@@ -1440,7 +1440,7 @@ document.addEventListener('visibilitychange', function() {
 //  APP META
 // =====================
 const APP_NAME = 'Trekta – Map Your World';
-const APP_VERSION = '1.905';         // change whenever you publish (also the header)
+const APP_VERSION = '1.906';         // change whenever you publish (also the header)
 const APP_BUILD = '2026-11-06';      // optional, you can keep as a date string
 const appVersion = APP_VERSION;      // legacy alias used by older export/report code
 
@@ -2744,7 +2744,7 @@ function exploreRoutesGeoJson() {
         const coords = r.points.filter(p => p && isFinite(p.lat) && isFinite(p.lon)).map(p => [p.lon, p.lat]);
         if (coords.length < 2) return;
         feats.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: coords },
-            properties: { color: getRouteTypeColor(r.type) || r.color || '#2563eb', width: (getRouteTypeWidth(r.type) || 1) * 2 } });
+            properties: { color: routeDisplayColor(r), width: (getRouteTypeWidth(r.type) || 1) * 2 } });
     });
     return { type: 'FeatureCollection', features: feats };
 }
@@ -4681,6 +4681,13 @@ function buildEmptyStateHtml(icon, heading, message) {
         + '</div>';
 }
 
+/** V1.906: the colour a route is drawn in. A colour you picked for this route wins; otherwise its type's colour
+ *  (Settings), as before. */
+function routeDisplayColor(r) {
+    if (!r) return '#2563eb';
+    if (r.colorChosen && r.color) return r.color;
+    return getRouteTypeColor(r.type) || r.color || '#2563eb';
+}
 function getRouteTypeColor(type) {
     return (routeTypeSettings[type] && routeTypeSettings[type].color) || '#000000';
 }
@@ -10701,7 +10708,11 @@ function saveInlineRouteEdit(routeId) {
 
     found.route.name = newName;
     found.route.type = newType;
-    if (newColor) found.route.color = newColor;
+    if (newColor) {
+        found.route.color = newColor;
+        // V1.906: a colour different from the type's is your own pick and is kept; the type's colour means "follow the type"
+        found.route.colorChosen = newColor.toLowerCase() !== String(getRouteTypeColor(newType)).toLowerCase();
+    }
     found.map.dateLastChanged = Date.now();
     saveMapsToLocalStorage();
 
@@ -13171,7 +13182,7 @@ function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pin
         properties: {
             id: String(route.id),
             rec: !!route.isRecording,
-            color: getRouteTypeColor(route.type) || route.color || '#2563eb',
+            color: routeDisplayColor(route),
             width: (getRouteTypeWidth(route.type) || 1) * 2
         },
         geometry: {
@@ -14454,7 +14465,7 @@ const toPercent = (x, y) => {
                 })
                 .join(' ');
 
-            const stroke = getRouteTypeColor(route.type) || route.color || '#2563eb';
+            const stroke = routeDisplayColor(route);
             const _rtWidth = getRouteTypeWidth(route.type) || 1;
             const routeStrokeWidth = 0.2 * _rtWidth;
             let routeLabelHtml = '';
@@ -14644,7 +14655,7 @@ const toPercent = (x, y) => {
                 })
                 .join(' ');
 
-            const stroke = getRouteTypeColor(route.type) || route.color || '#2563eb';
+            const stroke = routeDisplayColor(route);
             const _rtW = getRouteTypeWidth(route.type) || 1;
             const routeStrokeWidth = 0.2 * _rtW;
             let routeLabelHtml = '';
@@ -14914,6 +14925,7 @@ function handleStartRouteClick() {
     const name  = (nameEl  && nameEl.value.trim())  ? nameEl.value.trim()  : defName;
     const type  = (typeEl  && typeEl.value)          ? typeEl.value         : '';
     const desc  = '';
+    const colorChosen = !!(colourEl && colourEl.value && colourEl.value !== '#000000' && (!type || colourEl.value.toLowerCase() !== String(getRouteTypeColor(type)).toLowerCase()));
     const color = (colourEl && colourEl.value)      ? colourEl.value
                 : (type ? (getRouteTypeColour(type) || pickRouteColor(openMap.tracks ? openMap.tracks.length : 0))
                         : pickRouteColor(openMap.tracks ? openMap.tracks.length : 0));
@@ -14933,6 +14945,7 @@ function handleStartRouteClick() {
         isRecording: true,
         isVisible: true,
         color,
+        colorChosen,
         points: []
     };
 
@@ -15062,7 +15075,7 @@ function renderRoutesPanel(openMap) {
                     + '</span>';
 
                 // Build elevation profile SVG graph
-                const _graphColor = getRouteTypeColor(route.type) || route.color || '#000000';
+                const _graphColor = routeDisplayColor(route);
                 const _range = _maxAlt - _minAlt || 1;
                 const _w = 100, _h = 20; // viewBox units
                 const _pts = _altPts.map(function(p, i) {
@@ -15134,7 +15147,7 @@ function renderRoutesPanel(openMap) {
                                     { c: '#008080', label: 'Towpath'          },
                                     { c: '#FFFF00', label: 'Unclassified Road'},
                                 ].map(s => {
-                                    const sel = s.c === (route.color || '#FF69B4');
+                                    const sel = s.c.toLowerCase() === String(routeDisplayColor(route)).toLowerCase();
                                     return `<button type="button"
                                         onclick="(function(b){document.querySelectorAll('#inline-edit-route-swatches-${route.id} .et-swatch').forEach(x=>{x.style.borderColor='transparent';x.style.transform='scale(1)'});b.style.borderColor='#15803d';b.style.transform='scale(1.2)';document.getElementById('inline-edit-route-colour-${route.id}').value='${s.c}'})(this)"
                                         class="et-swatch w-8 h-8 rounded-full border-2 ${sel ? 'border-blue-800' : 'border-transparent'}"
@@ -15142,7 +15155,7 @@ function renderRoutesPanel(openMap) {
                                         title="${s.label}"></button>`;
                                 }).join('')}
                             </div>
-                            <input type="hidden" id="inline-edit-route-colour-${route.id}" value="${route.color || 'rgba(59,130,246,0.9)'}">
+                            <input type="hidden" id="inline-edit-route-colour-${route.id}" value="${routeDisplayColor(route)}">
                         </div>
                         <div class="flex gap-3">
                             <button type="button"
@@ -15445,15 +15458,17 @@ ${(() => {
 
     // Colour swatches — filtered by map type
     // Build route types from user settings (colour from routeTypeSettings)
+    // V1.906: the swatches offer the same colour palette as Edit Route (the type colours in Settings are
+    // often all black, which made every swatch black). Not picking one keeps the type's colour.
     const _allRouteTypes = ROUTE_TYPE_NAMES.map(function(name) {
-        return { type: name, color: getRouteTypeColor(name) };
+        return { type: name, color: (ROUTE_TYPE_COLOURS && ROUTE_TYPE_COLOURS[name]) || getRouteTypeColor(name) };
     });
     const _allowedTypes = getFilteredRouteTypes(openMap ? openMap.mapType : 'General');
     const _routeTypes = _allRouteTypes.filter(rt => _allowedTypes.includes(rt.type));
 
 
     // Default colour = first route type colour (Footpath pink)
-    const _defColor = '#000000';
+    const _defColor = '';   // V1.906: nothing pre-selected
 
     // Swatch HTML — matches Edit Route modal, default colour pre-highlighted
     const _startSwatchHtml = _routeTypes.map(s => {
@@ -15478,7 +15493,7 @@ ${(() => {
         + '</select>';
 
     // Body shown when ROUTING IS OFF — name, type, colour, cancel/start
-    const _bodyOff = '<div class="p-4">'        + '<div class="mb-3">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">New Route Name</label>'        +   '<input id="inline-route-name" type="text" value="' + _defName.replace(/"/g, '&quot;') + '" class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm" placeholder="e.g. Perimeter">'        + '</div>'        + '<div class="mb-3">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">New Route Type</label>'        +   _startTypeSelect        + '</div>'        + '<div class="mb-4">'        +   '<label class="block text-sm font-medium text-gray-700 mb-2">New Route Colour</label>'        +   '<div class="flex gap-2 flex-wrap">' + _startSwatchHtml + '</div>'        +   '<input type="hidden" id="inline-route-colour" value="' + _defColor + '">'        + '</div>'        + '<div class="flex gap-3">'        +   '<button type="button" onclick="mapRoutingExpanded=false;fullRerenderCompass()" class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>'        +   '<button id="start-route-btn" type="button" onclick="handleStartRouteClick()" class="flex-1 py-3 rounded-xl font-bold text-white shadow bg-green-600 hover:bg-green-700">\uD83D\uDFE2 Start Routing</button>'        + '</div>'        + '</div>';
+    const _bodyOff = '<div class="p-4">'        + '<div class="mb-3">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">New Route Name</label>'        +   '<input id="inline-route-name" type="text" value="' + _defName.replace(/"/g, '&quot;') + '" class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm" placeholder="e.g. Perimeter">'        + '</div>'        + '<div class="mb-3">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">New Route Type</label>'        +   _startTypeSelect        + '</div>'        + '<div class="mb-4">'        +   '<label class="block text-sm font-medium text-gray-700 mb-2">New Route Colour <span class="font-normal text-gray-500">(optional — otherwise the type\'s colour)</span></label>'        +   '<div class="flex gap-2 flex-wrap">' + _startSwatchHtml + '</div>'        +   '<input type="hidden" id="inline-route-colour" value="">'        + '</div>'        + '<div class="flex gap-3">'        +   '<button type="button" onclick="mapRoutingExpanded=false;fullRerenderCompass()" class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>'        +   '<button id="start-route-btn" type="button" onclick="handleStartRouteClick()" class="flex-1 py-3 rounded-xl font-bold text-white shadow bg-green-600 hover:bg-green-700">\uD83D\uDFE2 Start Routing</button>'        + '</div>'        + '</div>';
 
     // Body shown when ROUTING IS ON — status + stop
     const _bodyOn = '<div class="p-4">'        + '<p class="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">'        +   '<i class="fas fa-circle text-green-500"></i>'        +   (activeRoute ? ('<span class="text-gray-800">' + (activeRoute.name || 'Route') + '</span>') : 'Recording…')        + '</p>'        + '<div class="mb-4">'        +   '<label class="block text-sm font-medium text-gray-700 mb-1">Change Route Type</label>'        +   '<select id="switch-route-type" class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm" onchange="switchRouteType(this.value);this.value=\'\'">'        +   '<option value="">— change route type —</option>'        + getFilteredRouteTypes(openMap ? openMap.mapType : 'General').map(function(t){ return '<option value="' + t + '">' + t + '</option>'; }).join('')        +   '</select>'        + '</div>'        + '<div class="flex gap-3">'        +   '<button type="button" onclick="mapRoutingExpanded=false;fullRerenderCompass()" class="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-300">Cancel</button>'        +   '<button id="stop-route-btn" type="button" onclick="handleStopRouteClick()" class="flex-1 py-3 rounded-xl font-bold text-white shadow bg-red-600 hover:bg-red-700">🔴 Stop Routing</button>'        + '</div>'
@@ -18832,7 +18847,7 @@ function buildElevationGraphHtml(openMap) {
     const W = 100, H = 28;
     let ptIdx = 0;
     const polylines = segments.map(function(seg) {
-        const color = getRouteTypeColor(seg.route.type) || seg.route.color || '#000000';
+        const color = routeDisplayColor(seg.route);
         const smoothed = smoothAlts(seg.pts);
         const pts = smoothed.map(function(p) {
             const x = (cumDist[ptIdx] / totalDist * W).toFixed(2);
