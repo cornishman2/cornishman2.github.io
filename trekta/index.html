@@ -172,6 +172,10 @@ return maplibregl$1;
   summary { list-style: none !important; display: flex !important; }
   summary::-webkit-details-marker { display: none !important; }
   summary::marker { display: none !important; content: none !important; }
+    /* V1.898 Centre Map: a ring that pulses round the place for a few seconds */
+    .centre-pulse { width: 22px; height: 22px; border-radius: 50%; border: 4px solid #0284c7; box-shadow: 0 0 0 2px #fff;
+        animation: centrePulse 1s ease-out 4; pointer-events: none; }
+    @keyframes centrePulse { 0% { transform: scale(0.6); opacity: 1; } 100% { transform: scale(3.2); opacity: 0; } }
 </style>
 <style>
   /* Map page collapsible panel headers — flex, title left, chevron right */
@@ -321,7 +325,7 @@ return maplibregl$1;
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.897
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Trekta V1.899
                   <span class="block text-xs font-semibold text-gray-500">Map Your World</span></h1>
 
                 <button id="hc-toggle-btn" type="button" onclick="toggleHighContrast()"
@@ -1436,7 +1440,7 @@ document.addEventListener('visibilitychange', function() {
 //  APP META
 // =====================
 const APP_NAME = 'Trekta – Map Your World';
-const APP_VERSION = '1.897';         // change whenever you publish (also the header)
+const APP_VERSION = '1.899';         // change whenever you publish (also the header)
 const APP_BUILD = '2026-11-06';      // optional, you can keep as a date string
 const appVersion = APP_VERSION;      // legacy alias used by older export/report code
 
@@ -5290,7 +5294,9 @@ function clearNavigationPlace() {
         navSession.baseBearingDeg = null;
     }
 
-    showMessage('Navigation place cleared.', 'info');
+    showMessage('Stopped navigating.', 'info');
+    _navFitPending = false;
+    try { updateNavOverlay(); } catch (e) {}
 
     if (currentPage === 'Compass') {
         refreshCompassPanels();
@@ -8205,6 +8211,7 @@ function processLiveGpsPosition(position) {
         lastGpsUiRefreshMs = now;
         updateMapWithUserLocationAndRender();
     }
+    if (currentPage === 'Compass' && navigationPlaceId) { try { updateNavOverlay(); } catch (e) {} }
 
     if (navSession && navSession.active && navigationPlaceId && smoothedUserCoords) {
         if (!Array.isArray(navSession.path)) navSession.path = [];
@@ -11499,20 +11506,15 @@ function handlePlaceAction(element) {
 
 
             case 'navigate': {
-                navigationPlaceId = placeId;
-                showMessage(`Navigation place set: "${place.description}".`, 'success');
-                currentPage = 'Compass';
-                render();
+                // V1.899: a straight line from your GPS position to the place, with distance and direction
+                startNavigationTo(place, map);
                 return; // no content change
             }
 
             case 'centerOnMap': {
-                (map.targets || []).forEach(t => {
-                    t.centerOnMap = (t.id === placeId);
-                });
-                currentPage = 'Compass';
-                showMessage('Centre on map updated for this place.', 'success');
-                render();
+                // V1.898: open the Map tab zoomed in on this place (the old version only worked on the old map)
+                (map.targets || []).forEach(t => { t.centerOnMap = false; });
+                centreMapOnPlace(place, map);
                 return; // no content change
             }
 
@@ -13313,6 +13315,7 @@ function updateMapLibreOverlay(parsedCoords, drawRoutes, userCoord, invZoom, pin
         _mlUserMarker.remove();
         _mlUserMarker = null;
     }
+    try { updateNavOverlay(); } catch (e) {}
 }
 
 /**
@@ -13532,6 +13535,146 @@ document.addEventListener('visibilitychange', () => {
 // V1.893: remember where you had zoomed to when the map is put away (e.g. going to Explore),
 // so it comes back the same - but only for the same open map.
 let _mlSavedView = null;
+/** V1.898 Centre Map: show the Map tab zoomed in on a place, with its pin briefly highlighted.
+ *  It counts as you moving the map, so it stays put (tabs, GPS) until Show everything. */
+const CENTRE_ZOOM = 17.5;
+function centreMapOnPlace(place, map) {
+    const c = place && parseLatLonStr(place.coordinates);
+    if (!c) { showMessage('This place has no coordinates to centre on.', 'warning'); return; }
+    if (map && map.status !== 'Open') { showMessage('Open this map first to see the place on the Map tab.', 'warning'); return; }
+    const view = { center: [c.lon, c.lat], zoom: CENTRE_ZOOM, bearing: 0 };
+    const name = place.description || 'this place';
+    const highlight = () => {
+        try {
+            const el = document.createElement('div');
+            el.className = 'centre-pulse';
+            const mk = new maplibregl.Marker({ element: el }).setLngLat(view.center).addTo(_mlMap);
+            setTimeout(() => { try { mk.remove(); } catch (e) {} }, 4000);
+        } catch (e) {}
+        const box = document.getElementById('place-map-container');
+        if (box) box.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    };
+    showMessage(`Centred on '${name}'. Show everything goes back to the whole map.`, 'success');
+    if (currentPage === 'Compass' && _mlMap && _mlMapReady) {
+        _mlUserInteracted = true;
+        _mlMap.jumpTo(view);
+        highlight();
+        return;
+    }
+    // Going to the Map tab builds a fresh map, which starts at the remembered view
+    const om = maps.find(s => s.status === 'Open');
+    currentPage = 'Compass';
+    try { updateActiveNavButtons(); } catch (e) {}
+    render();
+    _mlSavedView = { mapId: om ? om.id : null, center: view.center, zoom: view.zoom, bearing: 0 };
+    if (_mlMap && _mlMapReady) { _mlUserInteracted = true; _mlMap.jumpTo(view); _mlSavedView = null; highlight(); return; }
+    const t0 = Date.now();
+    const wait = () => {
+        if (_mlMap && _mlMapReady && !_mlSavedView) setTimeout(highlight, 450);
+        else if (Date.now() - t0 < 15000) setTimeout(wait, 200);
+    };
+    wait();
+}
+
+// ── V1.899 Navigate: a straight line from you to a place ──────────────────────
+let _navFitPending = false;
+function navPlaceObj() {
+    const om = maps.find(s => s.status === 'Open');
+    if (!om || !navigationPlaceId) return null;
+    return getActivePlaces(om).find(t => String(t.id) === String(navigationPlaceId)) || null;
+}
+function navBearingDeg(lat1, lon1, lat2, lon2) {
+    const r = Math.PI / 180, p1 = lat1 * r, p2 = lat2 * r, dl = (lon2 - lon1) * r;
+    const y = Math.sin(dl) * Math.cos(p2), x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+    return (Math.atan2(y, x) / r + 360) % 360;
+}
+function navCompassWord(b) { return ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'][Math.round(b / 45) % 8]; }
+function navDistanceText(m) { return m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(m < 10000 ? 2 : 1) + ' km'; }
+function startNavigationTo(place, map) {
+    const c = place && parseLatLonStr(place.coordinates);
+    if (!c) { showMessage('This place has no coordinates to navigate to.', 'warning'); return; }
+    if (map && map.status !== 'Open') { showMessage('Open this map first to navigate to its places.', 'warning'); return; }
+    navigationPlaceId = place.id;
+    _navFitPending = true;   // fit you and the place on the map as soon as your position is known
+    showMessage(`Navigating to '${place.description || 'this place'}' - follow the dashed line.`, 'success');
+    const om = maps.find(s => s.status === 'Open');
+    if (currentPage !== 'Compass') {
+        currentPage = 'Compass';
+        try { updateActiveNavButtons(); } catch (e) {}
+        render();
+        // until GPS answers, show the place
+        _mlSavedView = { mapId: om ? om.id : null, center: [c.lon, c.lat], zoom: 17, bearing: 0 };
+        if (_mlMap && _mlMapReady) { _mlUserInteracted = true; _mlMap.jumpTo({ center: [c.lon, c.lat], zoom: 17 }); _mlSavedView = null; }
+    } else {
+        refreshCompassPanels();
+    }
+    try { if (!liveMapWatchId) startLiveMapLocationWatch(); } catch (e) {}
+    const t0 = Date.now();
+    const tick = () => { updateNavOverlay(); if (_navFitPending && navigationPlaceId && Date.now() - t0 < 20000) setTimeout(tick, 500); };
+    setTimeout(tick, 300);
+    const box = document.getElementById('place-map-container');
+    if (box) setTimeout(() => box.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+}
+/** Draw / update the line and the bar on the Map tab's map. */
+function updateNavOverlay() {
+    if (!_mlMap || !_mlMapReady) return;
+    const place = navPlaceObj();
+    const pc = place && parseLatLonStr(place.coordinates);
+    const u = (typeof smoothedUserCoords !== 'undefined' && smoothedUserCoords) || (typeof currentUserCoords !== 'undefined' && currentUserCoords) || null;
+    const hasU = !!(u && isFinite(u.lat) && isFinite(u.lon));
+    const data = { type: 'FeatureCollection', features: (pc && hasU) ? [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [[u.lon, u.lat], [pc.lon, pc.lat]] } }] : [] };
+    try {
+        if (_mlMap.getSource('trekta-nav')) _mlMap.getSource('trekta-nav').setData(data);
+        else {
+            _mlMap.addSource('trekta-nav', { type: 'geojson', data });
+            const before = (_mlMap.getStyle().layers || []).find(l => l.id.startsWith('trekta-places'));
+            _mlMap.addLayer({ id: 'trekta-nav-edge', type: 'line', source: 'trekta-nav', layout: { 'line-cap': 'round' },
+                paint: { 'line-color': '#ffffff', 'line-width': 8, 'line-opacity': 0.9 } }, before ? before.id : undefined);
+            _mlMap.addLayer({ id: 'trekta-nav', type: 'line', source: 'trekta-nav',
+                paint: { 'line-color': '#db2777', 'line-width': 4, 'line-dasharray': [2, 1.5] } }, before ? before.id : undefined);
+        }
+    } catch (e) {}
+    const box = _mlMap.getContainer();
+    let bar = box.querySelector('#nav-bar');
+    if (!place) {
+        if (bar) bar.remove();
+        if (navigationPlaceId && !place) navigationPlaceId = null;   // the place has gone
+        return;
+    }
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'nav-bar';
+        bar.style.cssText = 'position:absolute;top:8px;right:60px;z-index:6;background:rgba(255,255,255,0.96);border:2px solid #db2777;border-radius:12px;padding:6px 8px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,0.25);font-size:14px;color:#111827;';
+        box.appendChild(bar);
+    }
+    bar.style.left = isMapFullscreen ? '60px' : '8px';   // keep clear of the exit-full-screen button
+    const name = escapeHtml(place.description || 'Unnamed Place');
+    let text;
+    if (!pc) text = `<b>${name}</b> has no coordinates`;
+    else if (!hasU) text = `To <b>${name}</b><br><span style="color:#6b7280">Waiting for your GPS position…</span>`;
+    else {
+        const d = distanceMeters(u.lat, u.lon, pc.lat, pc.lon), acc = Math.round(Number(u.accuracy) || (typeof currentUserAccuracy === 'number' ? currentUserAccuracy : 0) || 0);
+        if (d <= Math.max(5, acc)) text = `<b style="color:#047857">✔ You're at ${name}</b><br><span style="color:#6b7280">within GPS accuracy${acc ? ' (±' + acc + ' m)' : ''}</span>`;
+        else {
+            const b = navBearingDeg(u.lat, u.lon, pc.lat, pc.lon);
+            text = `To <b>${name}</b><br><span style="font-size:16px;font-weight:800;color:#be185d">${navDistanceText(d)}</span> <span style="font-weight:600">${navCompassWord(b)}</span> <span style="color:#6b7280">(${Math.round(b)}°)</span>`;
+        }
+    }
+    bar.innerHTML = `<i class="fas fa-location-arrow" style="color:#db2777"></i><div style="flex:1;min-width:0;line-height:1.25;overflow:hidden;text-overflow:ellipsis;">${text}</div>
+        <button type="button" onclick="event.stopPropagation(); clearNavigationPlace()" title="Stop navigating" style="width:34px;height:34px;flex:none;border-radius:999px;background:#f3f4f6;border:1px solid #d1d5db;font-size:16px;">✕</button>`;
+    // first time we know both: show you and the place together
+    if (_navFitPending && pc && hasU) {
+        _navFitPending = false;
+        try {
+            _mlUserInteracted = true;
+            _mlMap.fitBounds([[Math.min(u.lon, pc.lon), Math.min(u.lat, pc.lat)], [Math.max(u.lon, pc.lon), Math.max(u.lat, pc.lat)]],
+                { padding: { top: 80, bottom: 50, left: 50, right: 70 }, maxZoom: 18, duration: 0 });
+        } catch (e) {}
+        const mc = document.getElementById('place-map-container');
+        if (mc && !isMapFullscreen) mc.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+}
+
 function destroyMapLibre() {
     try {
         if (_mlMap && _mlMapReady && _mlUserInteracted) {
