@@ -341,7 +341,7 @@ return maplibregl$1;
     <header class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
         <div class="container mx-auto max-w-lg">
             <div class="flex items-center justify-between p-4">
-              <h1 class="text-xl font-extrabold text-primary leading-tight">Detekta V1.92
+              <h1 class="text-xl font-extrabold text-primary leading-tight">Detekta V1.93
                   <span class="block text-xs font-semibold text-gray-500">A Metal Detecting App</span></h1>
 
                 <button id="hc-toggle-btn" type="button" onclick="toggleHighContrast()"
@@ -2033,7 +2033,7 @@ document.addEventListener('visibilitychange', function() {
 //  APP META
 // =====================
 const APP_NAME = 'Detekta – A Metal Detecting App';
-const APP_VERSION = '1.92.0';         // change whenever you publish
+const APP_VERSION = '1.93.0';         // change whenever you publish
 const APP_BUILD = '2026-11-04';      // optional, you can keep as a date string
 
         
@@ -3846,12 +3846,12 @@ function renderHelpPage() {
         <div class="text-sm text-gray-700 space-y-1 mb-2">
           <div><strong>10m / 15m / 20m</strong> — place a grid of that size <strong>centred on your current GPS position</strong> — you stand in the middle, by the red arrow. Stand where you want the middle of the grid, tap the button, and push a flag into the ground at your feet — that's the centre, and the grid turns about it. Rotation is reset to north-aligned on each fresh placement. These buttons are disabled while tracking is active (stop tracking first to reposition a grid).</div>
           <div><strong>Show / Hide</strong> — toggle the grid overlay. Completed tiles remain visible as green areas on the dig map even when the grid is hidden.</div>
-          <div><i class="fas fa-border-all"></i> <strong>Square to grid</strong> — the button at the top-left of the map turns the map so the grid's edges line up with the screen, so "up the screen" is along your grid lines. The button then becomes a <strong>north arrow</strong> showing which way north is; tap it to put north back at the top. The angle comes from the grid, not the phone's compass, so it never wobbles. The W N S E buttons still move the grid by real compass directions. You can adjust the grid on a turned map: the map holds its angle while you adjust, and squares up to the grid again when you tap Done.</div>
-          <div><i class="fas fa-vector-square"></i> <strong>Adjust the grid</strong> — the button in the map's corner. A bar above the map shows the grid's angle and how far its corner (the flag) has moved. <strong>Drag the grid</strong> to move it, and drag the round <i class="fas fa-sync-alt"></i> handle on its top-left corner to <strong>rotate</strong> it about its centre (the red arrow). <strong>Done</strong> keeps the change; <strong>Cancel</strong> puts the grid back. Zoom in first: a small grid is hard to grab. In full screen the Adjust button is in the right-hand column, and while adjusting the panel at the bottom shows the arrow and rotate buttons.</div>
+          <div><i class="fas fa-arrow-up" style="color:#ef4444"></i> <strong>Arrow up</strong> — the button at the top-left of the map (its red arrow shows which way the grid's arrow points) turns the map so the grid's arrow points straight up the screen and the grid's edges line up with the screen, so "up the screen" is along your grid lines. The button then becomes a <strong>north arrow</strong> showing which way north is; tap it to put north back at the top. The angle comes from the grid, not the phone's compass, so it never wobbles. The W N S E buttons still move the grid by real compass directions. You can adjust the grid on a turned map: the map holds its angle while you adjust, and squares up to the grid again when you tap Done.</div>
+          <div><i class="fas fa-vector-square"></i> <strong>Adjust the grid</strong> — the button in the map's corner. A bar above the map shows the grid's angle and how far its centre (your flag) has moved. <strong>Drag the grid</strong> to move it, and drag the <strong>ring on the arrow's tip</strong> to <strong>aim the arrow</strong> — the grid turns with it about its centre, where you stand. <strong>Done</strong> keeps the change; <strong>Cancel</strong> puts the grid back. Zoom in first: a small grid is hard to grab. In full screen the Adjust button is in the right-hand column, and while adjusting the panel at the bottom shows the arrow and rotate buttons.</div>
           <div><i class="fas fa-street-view"></i> <strong>Centre on me</strong> (the red button at the end of that row) — moves the grid, keeping its angle, so its middle is where you're standing now. Use it after you've walked away from the middle.</div>
           <div><strong>W N S E</strong> (in the row just above the map, with the rotate buttons) — nudge the entire tile one metre in any direction. Only available when the grid is placed, shown, and tracking is off.</div>
           <div><strong>↺ / ↻ rotate buttons</strong> — rotate the tile 5° anti-clockwise or clockwise around its <strong>centre</strong>, so the middle of the grid stays where it is. <strong>0°</strong> resets to north-aligned (also around the centre). Same availability rules as W N S E.</div>
-          <div><strong>The red arrow</strong> in the middle of the grid points “up the grid” — north on a new grid. When you turn the grid, the arrow turns with it, so you can point it at a landmark (a gate, a tree, a church tower) and walk the grid's lanes towards it. <i class="fas fa-border-all"></i> <strong>Square to grid</strong> then turns the map so the arrow points straight up the screen.</div>
+          <div><strong>The red arrow</strong> in the middle of the grid points “up the grid” — north on a new grid. When you turn the grid, the arrow turns with it, so you can point it at a landmark (a gate, a tree, a church tower) and walk the grid's lanes towards it. <strong>To aim it:</strong> tap <i class="fas fa-vector-square"></i> Adjust, drag the ring on the arrow's tip until the arrow points at the landmark on the map, and tap Done. Then <i class="fas fa-arrow-up" style="color:#ef4444"></i> <strong>Arrow up</strong> turns the map so the arrow points straight up the screen — hold the phone with its top towards the real landmark and the map matches what you see.</div>
           <div><strong>Complete</strong> — mark the current tile as done. It is saved as a coloured area on the dig map. You can complete a tile even with no painted coverage.</div>
           <div><strong>Clear</strong> — wipe the painted coverage of the current tile without marking it complete.</div>
         </div>
@@ -13317,7 +13317,8 @@ function gridAdjustReadoutText() {
     if (!t) return '';
     let moved = 0;
     if (gridAdjustSaved) {
-        const a = gridTileSw(t), b = gridTileSw(gridAdjustSaved);
+        // V1.93: how far the grid's CENTRE (where you stand) has moved - turning doesn't move it
+        const a = { lat: Number(t.centerLat), lon: Number(t.centerLon) }, b = { lat: Number(gridAdjustSaved.centerLat), lon: Number(gridAdjustSaved.centerLon) };
         moved = Math.hypot((a.lat - b.lat) * 110574, (a.lon - b.lon) * 111320 * Math.cos(a.lat * Math.PI / 180));
     }
     return `${Number(t.rotationDeg) || 0}° · moved ${moved.toFixed(1)} m`;
@@ -13329,7 +13330,7 @@ function gridAdjustBarHtml() {
         <div class="flex items-center gap-2">
             <i class="fas fa-vector-square text-red-500"></i>
             <span class="flex-1 min-w-0 leading-tight"><span id="grid-adjust-readout" class="text-sm font-semibold text-gray-800 whitespace-nowrap">${gridAdjustReadoutText()}</span>
-                <span class="block text-xs text-gray-500">Drag the grid to move it · drag <i class="fas fa-sync-alt"></i> to rotate</span></span>
+                <span class="block text-xs text-gray-500">Drag the grid to move it · drag the arrow's tip to aim it</span></span>
             <button type="button" onclick="finishGridAdjust(true)" class="px-3 h-10 rounded-lg bg-gray-200 font-bold text-sm">Cancel</button>
             <button type="button" onclick="finishGridAdjust(false)" class="px-4 h-10 rounded-lg bg-green-600 text-white font-bold text-sm">Done</button>
         </div></div>`;
@@ -13435,8 +13436,8 @@ document.addEventListener('pointermove', (e) => {
     }
     const ro = document.getElementById('grid-adjust-readout');
     if (ro && gridAdjustSaved) {
-        const b = gridTileSw(gridAdjustSaved);
-        const m = Math.hypot((tileDrag.sw.lat - b.lat) * 110574, (tileDrag.sw.lon - b.lon) * 111320 * Math.cos(b.lat * Math.PI / 180));
+        const b = { lat: Number(gridAdjustSaved.centerLat), lon: Number(gridAdjustSaved.centerLon) };
+        const m = Math.hypot((c.lat - b.lat) * 110574, (c.lon - b.lon) * 111320 * Math.cos(b.lat * Math.PI / 180));
         ro.textContent = `${tileDrag.rot}° · moved ${m.toFixed(1)} m`;
     }
 }, { capture: true, passive: false });
@@ -13517,9 +13518,9 @@ function mapRotateBtnHtml(extraStyle, big) {
             class="fs-ctl ${pos}${size} rounded-xl flex flex-col items-center justify-center fs-ctl-on" ${extraStyle ? `style="${extraStyle}"` : ''}>
             <span style="display:inline-flex;flex-direction:column;align-items:center;transform:rotate(${rot}deg);line-height:1;">
                 <span style="font:700 10px Arial,sans-serif;">N</span><i class="fas fa-long-arrow-alt-up" style="font-size:16px;"></i></span></button>`;
-    return `<button type="button" onclick="toggleMapGridUp()" title="Square the map to the grid"
+    return `<button type="button" onclick="toggleMapGridUp()" title="Arrow up - turn the map so the grid's arrow points up the screen"
             class="fs-ctl ${pos}${size} rounded-xl flex items-center justify-center" ${extraStyle ? `style="${extraStyle}"` : ''}>
-            <i class="fas fa-border-all" style="transform:rotate(${-(Number(t.rotationDeg) || 0)}deg);"></i></button>`;
+            <i class="fas fa-arrow-up" style="color:#ef4444;transform:rotate(${Number(t.rotationDeg) || 0}deg);"></i></button>`;
 }
 
 /** The plot layer is drawn this many times the map's size (a power of 2 near the zoom), so small things keep their precision. */
@@ -18040,24 +18041,23 @@ const toPercent = (x, y) => {
                 : `background: rgba(239,68,68,0.05); z-index: 21;`;
             // adjust mode: the rotate handle on the top-left (north-west) corner, clear of the map's corner buttons;
             // the grid turns about its centre (V1.91)
-            const rotateHandle = gridAdjusting ? `
-                <div id="tile-rotate-handle" title="Drag to rotate the grid"
-                     style="position:absolute;left:0;top:0;width:44px;height:44px;transform:translate(-50%,-50%) scale(var(--iz, 1));
-                            pointer-events:auto;touch-action:none;cursor:grab;display:flex;align-items:center;justify-content:center;z-index:2;">
-                    <div style="width:30px;height:30px;border-radius:50%;background:#fff;border:3px solid #ef4444;box-shadow:0 1px 4px rgba(0,0,0,.4);
-                                display:flex;align-items:center;justify-content:center;color:#ef4444;font-size:13px;pointer-events:none;">
-                        <i class="fas fa-sync-alt"></i></div></div>
-` : '';
+            const rotateHandle = '';   // V1.93: you turn the grid by dragging the arrow's tip (below)
             // V1.91: an arrow in the middle of the grid, pointing up the grid (north until the grid is turned);
             // the grid turns about this point. Hidden while the grid is too small to see (the "Grid" label shows instead).
             // V1.92: the arrow starts just beyond the centre (your position dot stays visible) and points away from you
             const gridArrow = (wp) => `<div class="tile-arrow" title="The grid's direction"
                      style="position:absolute;left:50%;top:50%;width:30px;height:50px;pointer-events:none;z-index:2;
                             transform-origin:50% 100%;transform:translate(-50%,-100%) scale(var(--iz, 1));
-                            opacity: clamp(0, calc((${((wp / 100) * (isMapFullscreen ? window.innerWidth : Math.min(window.innerWidth - 32, 480)) * layerBase).toFixed(4)} / var(--iz, 1) - 36) / 12), 1);">
+                            opacity: ${gridAdjusting ? '1;' : ''}clamp(0, calc((${((wp / 100) * (isMapFullscreen ? window.innerWidth : Math.min(window.innerWidth - 32, 480)) * layerBase).toFixed(4)} / var(--iz, 1) - 36) / 12), 1);">
                     <svg viewBox="0 0 30 50" width="30" height="50" style="display:block;overflow:visible;">
                         <path d="M15 2 L27 18 L19 18 L19 36 L11 36 L11 18 L3 18 Z" fill="#ef4444" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>
-                    </svg></div>`;
+                    </svg>
+                    ${gridAdjusting ? `<div id="tile-rotate-handle" title="Drag the arrow's tip to aim it - the grid turns about its centre"
+                         style="position:absolute;left:50%;top:8px;width:48px;height:48px;transform:translate(-50%,-50%);
+                                pointer-events:auto;touch-action:none;cursor:grab;display:flex;align-items:center;justify-content:center;z-index:3;">
+                        <div style="width:34px;height:34px;border-radius:50%;border:3px solid #ef4444;background:rgba(255,255,255,0.35);
+                                    box-shadow:0 0 0 2px #fff, 0 1px 4px rgba(0,0,0,.4);pointer-events:none;"></div></div>` : ''}
+                    </div>`;
             // The 1 m cells (as in the Tile Grid panel) and the ones you have walked over
             const n = Math.max(1, Math.round(sizeM));
             const cellPct = 100 / n;
